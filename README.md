@@ -22,30 +22,15 @@ flutter analyze
 - Ejecutar en **Web**: `flutter run -d chrome`
 - APK de prueba: `flutter build apk --debug`
 
-## Documentación de producto
-
-Especificación de pantallas de la fase de inicio de sesión: `docs/ui-vistas-fase-inicio-sesion.md`.
-
-## Estructura de `lib/` (inicial)
-
-| Ruta | Uso previsto |
-|------|----------------|
-| `lib/app/` | `MaterialApp`, tema, enrutado global. |
-| `lib/core/` | Constantes, utilidades, errores compartidos. |
-| `lib/features/` | Funcionalidades por dominio (auth, eventos, …). |
-
-Recursos estáticos: carpeta `assets/` (ya registrada en `pubspec.yaml`).
 
 ## Subir a GitHub
 
-1. Crea el repositorio vacío en GitHub (sin README si ya tienes uno local).
-2. En la carpeta del proyecto:
 
 ```bash
 git add .
 git commit -m "Proyecto inicial LOOP (Flutter: Android + Web)"
 git branch -M main
-git remote add origin https://github.com/TU_USUARIO/TU_REPO.git
+git remote add origin https://github.com...
 git push -u origin main
 ```
 
