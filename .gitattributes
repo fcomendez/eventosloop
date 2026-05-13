@@ -1,0 +1,13 @@
+# Texto normalizado para GitHub / CI (evita diffs por fin de línea)
+*.dart text eol=lf
+*.gradle text eol=lf
+*.gradle.kts text eol=lf
+*.java text eol=lf
+*.kt text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.xml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+pubspec.lock text eol=lf
+*.bat text eol=crlf
