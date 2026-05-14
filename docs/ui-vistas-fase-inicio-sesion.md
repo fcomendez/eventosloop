@@ -164,3 +164,33 @@ Cuando cierres los ítems de la sección 4, este documento se puede actualizar c
 - **Targets:** solo **Android** y **Web** (carpetas `android/`, `web/`); se quitaron `ios`, `windows`, `linux`, `macos` para reducir ruido.
 - **Código:** `lib/main.dart` arranca `lib/app/loop_app.dart`; esqueleto en `lib/core/` y `lib/features/`; recursos en `assets/`.
 - **Comandos y doctor:** ver `README.md` en la raíz del proyecto.
+
+---
+
+## 7. Nota MER recibida (usuario como entidad central)
+
+Con las 3 capturas iniciales del MER y esta cuarta captura, se confirma que `usuario` actúa como entidad pivote para módulos sociales y de administración.
+
+### Tablas conectadas directamente a `usuario` vistas en las capturas
+
+- `comunidades`
+- `intereses`
+- `miembro_comunidad`
+- `reporte_publicacion`
+- `adm_log`
+- `roles_sistema`
+- `seguidores`
+- `tienev2` (tabla puente de seguimiento)
+- `publicaciones`
+- `comentario`
+- `reacciones_post`
+- `evento`
+
+### Impacto inmediato en arquitectura MVVC (Flutter)
+
+- **Feature `auth`**: usa `usuario` como modelo raíz de sesión/perfil.
+- **Feature `social`**: depende de `publicaciones`, `comentario`, `reacciones_post`, `seguidores`, `intereses`, `comunidades`.
+- **Feature `events`**: `evento` ligado a `usuario` (creador) y a ubicación (`comuna`/`region`).
+- **Feature `admin`**: `roles_sistema`, `reporte_publicacion`, `adm_log` para moderación/auditoría.
+
+> Esta sección es de alineación funcional previa. Al recibir el MER final (idealmente completo o exportado), se deben cerrar tipos exactos, cardinalidades y reglas de negocio por tabla.
