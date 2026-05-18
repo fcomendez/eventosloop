@@ -25,6 +25,7 @@ flutter analyze
 ## Documentación de producto
 
 Especificación de pantallas de la fase de inicio de sesión: `docs/ui-vistas-fase-inicio-sesion.md`.
+Guía de conexión con Supabase: `docs/supabase-integracion.md`.
 
 ## Estructura de `lib/` (inicial)
 

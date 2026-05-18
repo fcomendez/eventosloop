@@ -1,22 +1,24 @@
 import 'dart:async';
 
 import 'package:eventosloop/features/auth/models/register_form_model.dart';
+import 'package:eventosloop/features/auth/services/auth_api_service.dart';
 import 'package:flutter/foundation.dart';
 
 class RegisterController extends ChangeNotifier {
-  final Set<String> _emailsExistentes = <String>{
-    'admin@loop.com',
-    'test@loop.com',
-    'usuario@loop.com',
-  };
+  RegisterController({AuthApiService? service})
+      : _service = service ?? AuthApiService();
+
+  final AuthApiService _service;
 
   bool _checkingEmail = false;
   bool _emailDisponible = true;
   String? _emailMensaje;
+  String? _lastError;
 
   bool get checkingEmail => _checkingEmail;
   bool get emailDisponible => _emailDisponible;
   String? get emailMensaje => _emailMensaje;
+  String? get lastError => _lastError;
 
   static final RegExp _emailRegex = RegExp(
     r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
@@ -39,10 +41,11 @@ class RegisterController extends ChangeNotifier {
     _emailMensaje = null;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 550));
+    await Future<void>.delayed(const Duration(milliseconds: 350));
 
-    _emailDisponible = !_emailsExistentes.contains(normalized);
-    _emailMensaje = _emailDisponible ? null : 'Este correo ya esta registrado';
+    // Con Supabase email unique se valida de forma definitiva en signUp.
+    _emailDisponible = true;
+    _emailMensaje = null;
     _checkingEmail = false;
     notifyListeners();
     return _emailDisponible;
@@ -117,12 +120,13 @@ class RegisterController extends ChangeNotifier {
   }
 
   Future<bool> enviarRegistro(RegisterFormModel model) async {
-    final String normalized = model.email.trim().toLowerCase();
-    final bool disponible = await validarCorreoUnico(normalized);
+    _lastError = null;
+    final bool disponible = await validarCorreoUnico(model.email);
     if (!disponible) {
       return false;
     }
-    _emailsExistentes.add(normalized);
-    return true;
+    final ServiceResult result = await _service.registrarUsuario(model);
+    _lastError = result.errorMessage;
+    return result.ok;
   }
 }

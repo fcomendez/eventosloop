@@ -99,7 +99,11 @@ class _RegisterViewState extends State<RegisterView> {
 
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No se pudo crear. Correo ya registrado')),
+      SnackBar(
+        content: Text(
+          _controller.lastError ?? 'No se pudo crear. Correo ya registrado.',
+        ),
+      ),
     );
   }
 

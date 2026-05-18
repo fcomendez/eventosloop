@@ -1,6 +1,8 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/auth/controllers/login_controller.dart';
+import 'package:eventosloop/features/auth/views/forgot_password_view.dart';
 import 'package:eventosloop/features/auth/views/register_view.dart';
+import 'package:eventosloop/features/feed/views/feed_home_view.dart';
 import 'package:flutter/material.dart';
 
 class LoginView extends StatefulWidget {
@@ -37,8 +39,10 @@ class _LoginViewState extends State<LoginView> {
       return;
     }
     if (session != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sesion iniciada: ${session.email}')),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => FeedHomeView(email: session.email),
+        ),
       );
       return;
     }
@@ -59,8 +63,10 @@ class _LoginViewState extends State<LoginView> {
       _iniciandoGoogle = false;
     });
     if (session != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sesion Google iniciada: ${session.email}')),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => FeedHomeView(email: session.email),
+        ),
       );
       return;
     }
@@ -151,7 +157,14 @@ class _LoginViewState extends State<LoginView> {
                               ),
                               const Spacer(),
                               TextButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) =>
+                                          const ForgotPasswordView(),
+                                    ),
+                                  );
+                                },
                                 child: const Text(
                                   'Olvide mi contrasena',
                                   style: TextStyle(fontSize: 10),
