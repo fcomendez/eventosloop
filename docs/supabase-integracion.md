@@ -82,3 +82,18 @@ with check (auth_user_id = auth.uid());
   - `feat(auth): recovery otp`
 
 Esto permite avanzar interfaz y backend en paralelo con menor riesgo de conflictos.
+
+## 7) Intereses (MER: `intereses` + `usuario_intereses`)
+
+Para respetar la normalizacion de datos del MER (sin texto libre en `usuario`):
+
+1. Abre Supabase -> SQL Editor.
+2. Ejecuta completo el script:
+   - `docs/sql/intereses_usuario_intereses.sql`
+
+Ese script crea:
+- `public.intereses` (catalogo maestro)
+- `public.usuario_intereses` (tabla puente N:N con `auth.users`)
+- indices para lectura rapida
+- politicas RLS para que cada usuario solo manipule sus propios intereses
+- una semilla inicial de ejemplo (luego se reemplaza con tu listado final)

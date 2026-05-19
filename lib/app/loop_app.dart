@@ -1,6 +1,7 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/auth/views/splash_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 /// Raiz de la aplicacion LOOP.
 class LoopApp extends StatelessWidget {
@@ -11,6 +12,16 @@ class LoopApp extends StatelessWidget {
     return MaterialApp(
       title: 'LOOP',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('es', 'CL'),
+      supportedLocales: const <Locale>[
+        Locale('es', 'CL'),
+        Locale('es'),
+      ],
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         scaffoldBackgroundColor: AppColors.screenBackground,
         colorScheme: ColorScheme.fromSeed(

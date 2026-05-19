@@ -19,8 +19,6 @@ class _RegisterViewState extends State<RegisterView> {
   final TextEditingController _username = TextEditingController();
   final TextEditingController _fechaNacimiento = TextEditingController();
   final TextEditingController _direccion = TextEditingController();
-  final TextEditingController _comuna = TextEditingController();
-  final TextEditingController _region = TextEditingController();
   final TextEditingController _postal = TextEditingController();
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
@@ -31,6 +29,41 @@ class _RegisterViewState extends State<RegisterView> {
   bool _acceptedTerms = false;
   DateTime? _fechaNacimientoSeleccionada;
   String? _generoSeleccionado;
+  String? _regionSeleccionada;
+  String? _comunaSeleccionada;
+
+  static const Map<String, List<String>> _regionesYComunas =
+      <String, List<String>>{
+        'Arica y Parinacota': <String>['Arica', 'Camarones', 'Putre', 'General Lagos'],
+        'Tarapaca': <String>['Iquique', 'Alto Hospicio', 'Pozo Almonte'],
+        'Antofagasta': <String>['Antofagasta', 'Calama', 'Mejillones', 'Tocopilla'],
+        'Atacama': <String>['Copiapo', 'Caldera', 'Vallenar', 'Chanaral'],
+        'Coquimbo': <String>['La Serena', 'Coquimbo', 'Ovalle', 'Illapel'],
+        'Valparaiso': <String>['Valparaiso', 'Vina del Mar', 'Quilpue', 'San Antonio'],
+        'Metropolitana de Santiago': <String>[
+          'Santiago',
+          'Puente Alto',
+          'Maipu',
+          'Las Condes',
+          'La Florida',
+          'Providencia',
+          'Nuñoa',
+        ],
+        'O Higgins': <String>['Rancagua', 'San Fernando', 'Rengo', 'Santa Cruz'],
+        'Maule': <String>['Talca', 'Curico', 'Linares', 'Constitucion'],
+        'Nuble': <String>['Chillan', 'San Carlos', 'Bulnes', 'Quillon'],
+        'Biobio': <String>['Concepcion', 'Talcahuano', 'Los Angeles', 'Chiguayante'],
+        'La Araucania': <String>['Temuco', 'Padre Las Casas', 'Villarrica', 'Angol'],
+        'Los Rios': <String>['Valdivia', 'La Union', 'Rio Bueno', 'Panguipulli'],
+        'Los Lagos': <String>['Puerto Montt', 'Osorno', 'Castro', 'Puerto Varas'],
+        'Aysen': <String>['Coyhaique', 'Aysen', 'Chile Chico', 'Cochrane'],
+        'Magallanes y de la Antartica Chilena': <String>[
+          'Punta Arenas',
+          'Puerto Natales',
+          'Porvenir',
+          'Cabo de Hornos',
+        ],
+      };
 
   @override
   void initState() {
@@ -49,8 +82,6 @@ class _RegisterViewState extends State<RegisterView> {
     _username.dispose();
     _fechaNacimiento.dispose();
     _direccion.dispose();
-    _comuna.dispose();
-    _region.dispose();
     _postal.dispose();
     _email.dispose();
     _password.dispose();
@@ -78,8 +109,8 @@ class _RegisterViewState extends State<RegisterView> {
       fechaNacimiento: _fechaNacimientoSeleccionada!,
       genero: _generoSeleccionado!,
       direccion: _direccion.text,
-      comuna: _comuna.text,
-      region: _region.text,
+      comuna: _comunaSeleccionada!,
+      region: _regionSeleccionada!,
       codigoPostal: _postal.text,
       email: _email.text,
       password: _password.text,
@@ -114,6 +145,7 @@ class _RegisterViewState extends State<RegisterView> {
       initialDate: DateTime(now.year - 18),
       firstDate: DateTime(1900),
       lastDate: DateTime(now.year - 10),
+      locale: const Locale('es', 'CL'),
     );
     if (selected == null) {
       return;
@@ -178,6 +210,13 @@ class _RegisterViewState extends State<RegisterView> {
         ),
       ],
     );
+  }
+
+  List<String> get _comunasFiltradas {
+    if (_regionSeleccionada == null) {
+      return const <String>[];
+    }
+    return _regionesYComunas[_regionSeleccionada] ?? const <String>[];
   }
 
   @override
@@ -321,18 +360,69 @@ class _RegisterViewState extends State<RegisterView> {
                             _controller.validarRequerido(v, 'Direccion'),
                       ),
                       const SizedBox(height: 10),
-                      _field(
-                        controller: _comuna,
-                        label: 'Comuna',
-                        validator: (String? v) =>
-                            _controller.validarRequerido(v, 'Comuna'),
+                      const Text(
+                        'Region',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        initialValue: _regionSeleccionada,
+                        decoration: const InputDecoration(
+                          hintText: 'Selecciona una region',
+                        ),
+                        items: _regionesYComunas.keys
+                            .map(
+                              (String region) => DropdownMenuItem<String>(
+                                value: region,
+                                child: Text(region),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (String? value) {
+                          setState(() {
+                            _regionSeleccionada = value;
+                            _comunaSeleccionada = null;
+                          });
+                        },
+                        validator: (String? value) =>
+                            _controller.validarRequerido(value, 'Region'),
                       ),
                       const SizedBox(height: 10),
-                      _field(
-                        controller: _region,
-                        label: 'Region',
-                        validator: (String? v) =>
-                            _controller.validarRequerido(v, 'Region'),
+                      const Text(
+                        'Comuna',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        initialValue: _comunaSeleccionada,
+                        decoration: InputDecoration(
+                          hintText: _regionSeleccionada == null
+                              ? 'Primero selecciona una region'
+                              : 'Selecciona una comuna',
+                        ),
+                        items: _comunasFiltradas
+                            .map(
+                              (String comuna) => DropdownMenuItem<String>(
+                                value: comuna,
+                                child: Text(comuna),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _regionSeleccionada == null
+                            ? null
+                            : (String? value) {
+                                setState(() {
+                                  _comunaSeleccionada = value;
+                                });
+                              },
+                        validator: (String? value) =>
+                            _controller.validarRequerido(value, 'Comuna'),
                       ),
                       const SizedBox(height: 10),
                       _field(

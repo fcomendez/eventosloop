@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/auth/controllers/otp_verification_controller.dart';
 import 'package:eventosloop/features/auth/views/reset_password_view.dart';
@@ -17,9 +19,13 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _otpController = TextEditingController();
   bool _loading = false;
+  bool _reenviando = false;
+  int _segundosRestantes = 0;
+  Timer? _cooldownTimer;
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     _otpController.dispose();
     super.dispose();
   }
@@ -56,6 +62,55 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
         ),
       ),
     );
+  }
+
+  Future<void> _reenviarCodigo() async {
+    if (_reenviando || _segundosRestantes > 0) {
+      return;
+    }
+    setState(() {
+      _reenviando = true;
+    });
+    final bool ok = await _controller.reenviarCodigo(widget.email);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _reenviando = false;
+    });
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo reenviar el codigo')),
+      );
+      return;
+    }
+    _iniciarCooldown();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Te enviamos un nuevo codigo')),
+    );
+  }
+
+  void _iniciarCooldown() {
+    _cooldownTimer?.cancel();
+    setState(() {
+      _segundosRestantes = 30;
+    });
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_segundosRestantes <= 1) {
+        timer.cancel();
+        setState(() {
+          _segundosRestantes = 0;
+        });
+        return;
+      }
+      setState(() {
+        _segundosRestantes--;
+      });
+    });
   }
 
   @override
@@ -101,7 +156,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'CODIGO OTP (6 DIGITOS)',
+                        'CODIGO DE VERIFICACION',
                         style: TextStyle(
                           fontSize: 10,
                           color: AppColors.textSecondary,
@@ -112,10 +167,10 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                       TextFormField(
                         controller: _otpController,
                         validator: _controller.validarOtp,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
+                        keyboardType: TextInputType.text,
+                        maxLength: 16,
                         decoration: const InputDecoration(
-                          hintText: '123456',
+                          hintText: 'Ingresa tu codigo',
                           counterText: '',
                         ),
                       ),
@@ -137,6 +192,20 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                                 )
                               : const Text('Verificar'),
                         ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed:
+                            (_reenviando || _segundosRestantes > 0)
+                                ? null
+                                : _reenviarCodigo,
+                        child: _reenviando
+                            ? const Text('Reenviando...')
+                            : Text(
+                                _segundosRestantes > 0
+                                    ? 'Reenviar codigo en ${_segundosRestantes}s'
+                                    : 'Reenviar codigo',
+                              ),
                       ),
                     ],
                   ),

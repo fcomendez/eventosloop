@@ -3,6 +3,8 @@ import 'package:eventosloop/features/auth/controllers/login_controller.dart';
 import 'package:eventosloop/features/auth/views/forgot_password_view.dart';
 import 'package:eventosloop/features/auth/views/register_view.dart';
 import 'package:eventosloop/features/feed/views/feed_home_view.dart';
+import 'package:eventosloop/features/onboarding/services/intereses_service.dart';
+import 'package:eventosloop/features/onboarding/views/welcome_view.dart';
 import 'package:flutter/material.dart';
 
 class LoginView extends StatefulWidget {
@@ -27,6 +29,29 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
+  Future<void> _navegarPostLogin(String email) async {
+    final bool tieneIntereses =
+        await InteresesService().usuarioTieneIntereses();
+    if (!mounted) {
+      return;
+    }
+    if (tieneIntereses) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (_) => FeedHomeView(email: email),
+        ),
+        (_) => false,
+      );
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (_) => const WelcomeView(),
+        ),
+        (_) => false,
+      );
+    }
+  }
+
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
@@ -39,11 +64,7 @@ class _LoginViewState extends State<LoginView> {
       return;
     }
     if (session != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => FeedHomeView(email: session.email),
-        ),
-      );
+      await _navegarPostLogin(session.email);
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
@@ -63,11 +84,7 @@ class _LoginViewState extends State<LoginView> {
       _iniciandoGoogle = false;
     });
     if (session != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => FeedHomeView(email: session.email),
-        ),
-      );
+      await _navegarPostLogin(session.email);
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(

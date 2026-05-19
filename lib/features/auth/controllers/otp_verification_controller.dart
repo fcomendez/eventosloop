@@ -6,14 +6,13 @@ class OtpVerificationController {
 
   final AuthApiService _service;
 
-  static final RegExp _otpRegex = RegExp(r'^\d{6}$');
-
   String? validarOtp(String? value) {
-    if (value == null || value.trim().isEmpty) {
+    final String normalized = value?.trim() ?? '';
+    if (normalized.isEmpty) {
       return 'Codigo obligatorio';
     }
-    if (!_otpRegex.hasMatch(value.trim())) {
-      return 'Ingresa 6 digitos';
+    if (normalized.length < 6 || normalized.length > 16) {
+      return 'Ingresa un codigo entre 6 y 16 caracteres';
     }
     return null;
   }
@@ -23,5 +22,9 @@ class OtpVerificationController {
     required String otp,
   }) {
     return _service.validarOtp(email: email, otp: otp);
+  }
+
+  Future<bool> reenviarCodigo(String email) {
+    return _service.solicitarCodigoRecuperacion(email: email);
   }
 }

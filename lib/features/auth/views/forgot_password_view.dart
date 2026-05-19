@@ -88,7 +88,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'Ingresa tu correo para recibir un codigo OTP de 6 digitos.',
+                        'Ingresa tu correo para recibir un codigo de verificacion.',
                         style: TextStyle(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 18),
