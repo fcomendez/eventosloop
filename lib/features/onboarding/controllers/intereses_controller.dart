@@ -23,6 +23,8 @@ class InteresesController extends ChangeNotifier {
   String? get error => _error;
   int get cantidadSeleccionados => _seleccionados.length;
   bool get puedeAvanzar => _seleccionados.length >= minimoIntereses;
+  bool puedeGuardarConMinimo(int minimo) => _seleccionados.length >= minimo;
+  bool alcanzoMaximo(int maximo) => _seleccionados.length >= maximo;
 
   List<String> get categorias {
     final Set<String> cats = <String>{};
@@ -55,19 +57,29 @@ class InteresesController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleInteres(int idInteres) {
+  bool toggleInteres(int idInteres, {int? maximo}) {
     if (_seleccionados.contains(idInteres)) {
       _seleccionados.remove(idInteres);
-    } else {
+    } else if (maximo == null || _seleccionados.length < maximo) {
       _seleccionados.add(idInteres);
+    } else {
+      return false;
     }
     notifyListeners();
+    return true;
   }
 
   bool estaSeleccionado(int idInteres) => _seleccionados.contains(idInteres);
 
   Future<bool> guardarSeleccion() async {
     if (!puedeAvanzar) {
+      return false;
+    }
+    return guardarSeleccionConMinimo(minimoIntereses);
+  }
+
+  Future<bool> guardarSeleccionConMinimo(int minimo) async {
+    if (!puedeGuardarConMinimo(minimo)) {
       return false;
     }
     _guardando = true;

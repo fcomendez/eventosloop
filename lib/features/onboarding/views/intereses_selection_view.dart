@@ -1,9 +1,8 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
-import 'package:eventosloop/features/feed/views/feed_home_view.dart';
 import 'package:eventosloop/features/onboarding/controllers/intereses_controller.dart';
 import 'package:eventosloop/features/onboarding/models/interes_model.dart';
+import 'package:eventosloop/features/onboarding/views/join_communities_view.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InteresesSelectionView extends StatefulWidget {
   const InteresesSelectionView({super.key});
@@ -42,11 +41,9 @@ class _InteresesSelectionViewState extends State<InteresesSelectionView> {
       );
       return;
     }
-    final String email =
-        Supabase.instance.client.auth.currentUser?.email ?? '';
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
-        builder: (_) => FeedHomeView(email: email),
+        builder: (_) => const JoinCommunitiesView(),
       ),
       (_) => false,
     );

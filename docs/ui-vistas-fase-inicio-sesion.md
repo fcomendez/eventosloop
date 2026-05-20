@@ -167,7 +167,7 @@ Cuando cierres los ítems de la sección 4, este documento se puede actualizar c
 
 ---
 
-## 7. Nota MER recibida (usuario como entidad central)
+## 7. Nota MER (usuario como entidad central)
 
 Con las 3 capturas iniciales del MER y esta cuarta captura, se confirma que `usuario` actúa como entidad pivote para módulos sociales y de administración.
 
