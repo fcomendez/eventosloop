@@ -1,3 +1,4 @@
+import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
@@ -201,21 +202,22 @@ class _ExploreHome extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 22),
-      children: const <Widget>[
-        _ExploreSectionTitle(
+      children: <Widget>[
+        const _ExploreSectionTitle(
           title: 'Eventos cerca de ti',
           action: 'Ver todo',
         ),
-        _NearbyEventsCarousel(),
-        SizedBox(height: 18),
-        _ExploreSectionTitle(title: 'Comunidades recomendadas'),
-        _CommunitiesCarousel(),
-        SizedBox(height: 18),
-        _ExploreSectionTitle(title: 'Eventos proximos'),
-        _UpcomingEventsCarousel(),
-        SizedBox(height: 18),
-        _ExploreSectionTitle(title: 'Publicaciones destacadas'),
+        const _NearbyEventsCarousel(),
+        const SizedBox(height: 18),
+        const _ExploreSectionTitle(title: 'Comunidades recomendadas'),
+        const _CommunitiesCarousel(),
+        const SizedBox(height: 18),
+        const _ExploreSectionTitle(title: 'Eventos proximos'),
+        const _UpcomingEventsCarousel(),
+        const SizedBox(height: 18),
+        const _ExploreSectionTitle(title: 'Publicaciones destacadas'),
         _ImagePostCard(
+          postId: 118,
           user: '@martina.loop',
           linkedTo: 'Comunidad: Running Santiago',
           imageLabel: 'Atardecer en el parque',
@@ -223,9 +225,11 @@ class _ExploreHome extends StatelessWidget {
               'Gran salida grupal despues del trabajo. Buen ritmo, buena energia y nuevas personas para seguir entrenando.',
           likes: 42,
           comments: 11,
+          onOpen: () => openPostDetail(context, 118),
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         _TextPostCard(
+          postId: 120,
           user: '@diego.dev',
           linkedTo: 'Evento: Workshop UX Editorial',
           title: 'Que llevarian a una jornada creativa?',
@@ -233,9 +237,11 @@ class _ExploreHome extends StatelessWidget {
               'Estoy armando mi lista para el proximo encuentro y quiero recomendaciones de materiales, libros o apps utiles.',
           replies: 18,
           likes: 31,
+          onOpen: () => openPostDetail(context, 120),
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         _ImagePostCard(
+          postId: 115,
           user: '@camila.foodie',
           linkedTo: 'Evento: Feria gastronomica',
           imageLabel: 'Sabores locales',
@@ -243,6 +249,7 @@ class _ExploreHome extends StatelessWidget {
               'Probamos cafeterias nuevas y varios stands de comida chilena. Recomendadisimo para ir en grupo.',
           likes: 76,
           comments: 24,
+          onOpen: () => openPostDetail(context, 115),
         ),
       ],
     );
@@ -300,18 +307,21 @@ class _NearbyEventsCarousel extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         children: const <Widget>[
           _EventCompactCard(
+            eventId: 6,
             title: 'Yoga al amanecer',
             meta: 'Providencia · 1.8 km',
             date: 'Hoy 07:30',
             color: Color(0xFF7BC8B7),
           ),
           _EventCompactCard(
+            eventId: 2,
             title: 'Cafe y lectura',
             meta: 'Nunoa · 2.4 km',
             date: 'Hoy 18:00',
             color: Color(0xFFD9A441),
           ),
           _EventCompactCard(
+            eventId: 4,
             title: 'Running nocturno',
             meta: 'Las Condes · 3.1 km',
             date: 'Manana 20:00',
@@ -365,18 +375,21 @@ class _UpcomingEventsCarousel extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         children: const <Widget>[
           _EventCompactCard(
+            eventId: 5,
             title: 'Festival urbano',
             meta: 'Santiago Centro',
             date: 'Sab 25',
             color: Color(0xFFC94F4F),
           ),
           _EventCompactCard(
+            eventId: 1,
             title: 'Torneo de ajedrez',
             meta: 'La Reina',
             date: 'Dom 26',
             color: Color(0xFF2C3E50),
           ),
           _EventCompactCard(
+            eventId: 3,
             title: 'Taller de ceramica',
             meta: 'Barrio Italia',
             date: 'Mar 28',
@@ -390,12 +403,14 @@ class _UpcomingEventsCarousel extends StatelessWidget {
 
 class _EventCompactCard extends StatelessWidget {
   const _EventCompactCard({
+    required this.eventId,
     required this.title,
     required this.meta,
     required this.date,
     required this.color,
   });
 
+  final int eventId;
   final String title;
   final String meta;
   final String date;
@@ -403,7 +418,10 @@ class _EventCompactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: () => openEventDetail(context, eventId),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       width: 158,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
@@ -488,6 +506,7 @@ class _EventCompactCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -564,24 +583,31 @@ class _CommunityCard extends StatelessWidget {
 
 class _ImagePostCard extends StatelessWidget {
   const _ImagePostCard({
+    required this.postId,
     required this.user,
     required this.linkedTo,
     required this.imageLabel,
     required this.caption,
     required this.likes,
     required this.comments,
+    required this.onOpen,
   });
 
+  final int postId;
   final String user;
   final String linkedTo;
   final String imageLabel;
   final String caption;
   final int likes;
   final int comments;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: onOpen,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
@@ -679,30 +705,38 @@ class _ImagePostCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
 
 class _TextPostCard extends StatelessWidget {
   const _TextPostCard({
+    required this.postId,
     required this.user,
     required this.linkedTo,
     required this.title,
     required this.body,
     required this.replies,
     required this.likes,
+    required this.onOpen,
   });
 
+  final int postId;
   final String user;
   final String linkedTo;
   final String title;
   final String body;
   final int replies;
   final int likes;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: onOpen,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -765,6 +799,7 @@ class _TextPostCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -802,14 +837,38 @@ class _SearchResults extends StatelessWidget {
           _PersonResult(name: 'Martina Flores', username: '@martina.loop'),
           _PersonResult(name: 'Diego Rojas', username: '@diego.dev'),
           _PersonResult(name: 'Camila Torres', username: '@camila.foodie'),
-        ] else if (filter == ExploreFilter.comunidades) ...const <Widget>[
-          _CommunityResult(name: 'Running Santiago', members: '1.8k miembros'),
-          _CommunityResult(name: 'Cine Club', members: '840 miembros'),
-          _CommunityResult(name: 'Outdoor Chile', members: '1.4k miembros'),
-        ] else ...const <Widget>[
-          _EventResult(name: 'Yoga al amanecer', meta: 'Hoy · Providencia'),
-          _EventResult(name: 'Festival urbano', meta: 'Sab 25 · Santiago'),
-          _EventResult(name: 'Taller de ceramica', meta: 'Mar 28 · Barrio Italia'),
+        ] else if (filter == ExploreFilter.comunidades) ...<Widget>[
+          _CommunityResult(
+            communityId: 1,
+            name: 'Running Santiago',
+            members: '1.8k miembros',
+          ),
+          _CommunityResult(
+            communityId: 2,
+            name: 'Cine Club',
+            members: '840 miembros',
+          ),
+          _CommunityResult(
+            communityId: 3,
+            name: 'Outdoor Chile',
+            members: '1.4k miembros',
+          ),
+        ] else ...<Widget>[
+          _EventResult(
+            eventId: 6,
+            name: 'Yoga al amanecer',
+            meta: 'Hoy · Providencia',
+          ),
+          _EventResult(
+            eventId: 5,
+            name: 'Festival urbano',
+            meta: 'Sab 25 · Santiago',
+          ),
+          _EventResult(
+            eventId: 3,
+            name: 'Taller de ceramica',
+            meta: 'Mar 28 · Barrio Italia',
+          ),
         ],
       ],
     );
@@ -838,10 +897,12 @@ class _PersonResult extends StatelessWidget {
 
 class _CommunityResult extends StatelessWidget {
   const _CommunityResult({
+    required this.communityId,
     required this.name,
     required this.members,
   });
 
+  final int communityId;
   final String name;
   final String members;
 
@@ -851,17 +912,20 @@ class _CommunityResult extends StatelessWidget {
       icon: Icons.groups_outlined,
       title: name,
       subtitle: members,
-      action: 'Unirme',
+      action: 'Ver',
+      onAction: () => openCommunityDetail(context, communityId),
     );
   }
 }
 
 class _EventResult extends StatelessWidget {
   const _EventResult({
+    required this.eventId,
     required this.name,
     required this.meta,
   });
 
+  final int eventId;
   final String name;
   final String meta;
 
@@ -872,6 +936,7 @@ class _EventResult extends StatelessWidget {
       title: name,
       subtitle: meta,
       action: 'Ver evento',
+      onAction: () => openEventDetail(context, eventId),
     );
   }
 }
@@ -882,60 +947,66 @@ class _ResultTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.action,
+    this.onAction,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final String action;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: <Widget>[
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.inputBackground,
-            child: Icon(icon, color: AppColors.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+    return InkWell(
+      onTap: onAction,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: <Widget>[
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: AppColors.inputBackground,
+              child: Icon(icon, color: AppColors.primary),
             ),
-          ),
-          Text(
-            action,
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Text(
+              action,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

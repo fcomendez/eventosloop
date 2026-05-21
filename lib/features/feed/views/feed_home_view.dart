@@ -1,3 +1,4 @@
+import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/features/feed/controllers/feed_controller.dart';
@@ -41,6 +42,14 @@ class _FeedHomeViewState extends State<FeedHomeView> {
     if (_scrollController.position.pixels >= threshold) {
       _controller.loadMore();
     }
+  }
+
+  int _eventIdFor(FeedItemModel item) {
+    return switch (item.id) {
+      120 => 1,
+      117 => 4,
+      _ => 1,
+    };
   }
 
   @override
@@ -91,6 +100,13 @@ class _FeedHomeViewState extends State<FeedHomeView> {
                           return _FeedPostCard(
                             item: item,
                             onLike: () => _controller.toggleLike(item.id),
+                            onOpen: () {
+                              if (item.type == FeedItemType.evento) {
+                                openEventDetail(context, _eventIdFor(item));
+                              } else {
+                                openPostDetail(context, item.id);
+                              }
+                            },
                           );
                         },
                       ),
@@ -154,14 +170,19 @@ class _FeedPostCard extends StatelessWidget {
   const _FeedPostCard({
     required this.item,
     required this.onLike,
+    required this.onOpen,
   });
 
   final FeedItemModel item;
   final VoidCallback onLike;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: onOpen,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -287,6 +308,7 @@ class _FeedPostCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

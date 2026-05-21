@@ -1,3 +1,4 @@
+import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
@@ -175,6 +176,7 @@ class _CommunitiesList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 22),
       children: const <Widget>[
         _CommunityMemberCard(
+          id: 1,
           title: 'Creative Collective',
           category: 'Arte y diseno',
           description:
@@ -183,6 +185,7 @@ class _CommunitiesList extends StatelessWidget {
           color: Color(0xFFC9D9D1),
         ),
         _CommunityMemberCard(
+          id: 2,
           title: 'Tech Founders Circle',
           category: 'Emprendimiento',
           description:
@@ -191,6 +194,7 @@ class _CommunitiesList extends StatelessWidget {
           color: Color(0xFF192B3A),
         ),
         _CommunityMemberCard(
+          id: 3,
           title: 'Open Source Explorers',
           category: 'Tecnologia',
           description:
@@ -199,6 +203,7 @@ class _CommunitiesList extends StatelessWidget {
           color: Color(0xFF0E3554),
         ),
         _CommunityMemberCard(
+          id: 4,
           title: 'Digital Canvas Lab',
           category: 'Fotografia y arte',
           description:
@@ -213,6 +218,7 @@ class _CommunitiesList extends StatelessWidget {
 
 class _CommunityMemberCard extends StatelessWidget {
   const _CommunityMemberCard({
+    required this.id,
     required this.title,
     required this.category,
     required this.description,
@@ -220,6 +226,7 @@ class _CommunityMemberCard extends StatelessWidget {
     required this.color,
   });
 
+  final int id;
   final String title;
   final String category;
   final String description;
@@ -331,7 +338,7 @@ class _CommunityMemberCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () => openCommunityDetail(context, id),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
                         side: const BorderSide(color: AppColors.divider),
@@ -361,6 +368,7 @@ class _RegisteredEventsList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 22),
       children: const <Widget>[
         _RegisteredEventCard(
+          eventId: 1,
           title: 'UX/UI Mastery: The Luminous Curator Deep Dive',
           category: 'Diseno colectivo',
           date: 'Manana, 24 Oct',
@@ -369,6 +377,7 @@ class _RegisteredEventsList extends StatelessWidget {
           highlighted: true,
         ),
         _RegisteredEventCard(
+          eventId: 2,
           title: 'Digital Storytelling in the Age of AI',
           category: 'LOOP creators',
           date: 'Sab, 28 Oct',
@@ -376,6 +385,7 @@ class _RegisteredEventsList extends StatelessWidget {
           color: Color(0xFF7A4D22),
         ),
         _RegisteredEventCard(
+          eventId: 3,
           title: 'Founder Meetup: Scaling Beyond Zero',
           category: 'Startup hub',
           date: 'Mar, 31 Oct',
@@ -389,6 +399,7 @@ class _RegisteredEventsList extends StatelessWidget {
 
 class _RegisteredEventCard extends StatelessWidget {
   const _RegisteredEventCard({
+    required this.eventId,
     required this.title,
     required this.category,
     required this.date,
@@ -397,6 +408,7 @@ class _RegisteredEventCard extends StatelessWidget {
     this.highlighted = false,
   });
 
+  final int eventId;
   final String title;
   final String category;
   final String date;
@@ -521,7 +533,7 @@ class _RegisteredEventCard extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () => openEventDetail(context, eventId),
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           highlighted ? AppColors.primary : AppColors.white,

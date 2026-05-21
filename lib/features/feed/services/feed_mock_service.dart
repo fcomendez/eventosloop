@@ -15,6 +15,8 @@ class FeedPageResult {
 class FeedMockService {
   static const int _pageSize = 6;
 
+  List<FeedItemModel> get allItems => _items;
+
   static final List<FeedItemModel> _items = <FeedItemModel>[
     const FeedItemModel(
       id: 120,
