@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
+import 'package:eventosloop/features/communities/views/communities_events_view.dart';
 import 'package:eventosloop/features/create/views/create_hub_view.dart';
 import 'package:eventosloop/features/explore/views/explore_view.dart';
 import 'package:eventosloop/features/feed/views/feed_home_view.dart';
@@ -140,11 +141,7 @@ void navigateFromBar(BuildContext context, BarraInteractivaItem item) {
       destination = const ProfileView();
       break;
     case BarraInteractivaItem.comunidades:
-      destination = const NavPlaceholderView(
-        selected: BarraInteractivaItem.comunidades,
-        title: 'Comunidades y eventos',
-        message: 'Aqui va comunidades y eventos',
-      );
+      destination = const CommunitiesEventsView();
       break;
     case BarraInteractivaItem.crear:
       destination = const CreateHubView();
