@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/pending_requests_banner.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +64,7 @@ class _CommunitiesEventsViewState extends State<CommunitiesEventsView> {
                   ],
                 ),
               ),
+              const PendingRequestsBanner(),
               Expanded(
                 child: _selectedTab == 0
                     ? const _CommunitiesList()

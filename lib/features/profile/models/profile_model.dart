@@ -12,8 +12,13 @@ class ProfileModel {
     required this.imagePosts,
     required this.writtenPosts,
     required this.pastEvents,
+    required this.communities,
+    this.userId,
+    this.isFollowing = false,
   });
 
+  final int? userId;
+  final bool isFollowing;
   final String fullName;
   final String username;
   final String avatarInitials;
@@ -26,6 +31,23 @@ class ProfileModel {
   final List<ProfileImagePostModel> imagePosts;
   final List<ProfileWrittenPostModel> writtenPosts;
   final List<ProfilePastEventModel> pastEvents;
+  final List<ProfileCommunityModel> communities;
+}
+
+class ProfileCommunityModel {
+  const ProfileCommunityModel({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.membersLabel,
+    required this.coverColorHex,
+  });
+
+  final int id;
+  final String name;
+  final String category;
+  final String membersLabel;
+  final String coverColorHex;
 }
 
 class ProfileImagePostModel {

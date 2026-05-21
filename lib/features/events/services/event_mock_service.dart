@@ -23,6 +23,8 @@ class EventMockService {
       communityId: 1,
       isFlash: true,
       isHighlighted: true,
+      isPrivate: true,
+      whatsappLink: 'https://chat.whatsapp.com/loop-ux-mastery',
     ),
     const EventModel(
       id: 2,
@@ -42,6 +44,7 @@ class EventMockService {
       joinedCount: 12,
       coverColorHex: '#7A4D22',
       communityId: 2,
+      whatsappLink: 'https://chat.whatsapp.com/loop-storytelling',
     ),
     const EventModel(
       id: 3,

@@ -6,22 +6,28 @@ import 'package:eventosloop/features/profile/controllers/profile_controller.dart
 import 'package:eventosloop/features/profile/models/profile_model.dart';
 import 'package:eventosloop/features/profile/views/followers_following_view.dart';
 import 'package:eventosloop/features/profile/views/profile_settings_view.dart';
+import 'package:eventosloop/features/profile/views/user_history_views.dart';
 import 'package:flutter/material.dart';
 
 class ProfileView extends StatefulWidget {
-  const ProfileView({super.key});
+  const ProfileView({super.key, this.userId});
+
+  final int? userId;
+
+  bool get isOwnProfile => userId == null;
 
   @override
   State<ProfileView> createState() => _ProfileViewState();
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  final ProfileController _controller = ProfileController();
+  late final ProfileController _controller;
   int _selectedSection = 0;
 
   @override
   void initState() {
     super.initState();
+    _controller = ProfileController(userId: widget.userId);
     _controller.loadProfile();
   }
 
@@ -67,6 +73,9 @@ class _ProfileViewState extends State<ProfileView> {
                         children: <Widget>[
                           _ProfileHeader(
                             profile: profile,
+                            isOwnProfile: widget.isOwnProfile,
+                            isFollowing: _controller.isFollowing,
+                            onFollowTap: _controller.toggleFollow,
                             onFollowersTap: () => _openConnections(
                               initialTab: 0,
                               profile: profile,
@@ -91,22 +100,26 @@ class _ProfileViewState extends State<ProfileView> {
                           else if (_selectedSection == 1)
                             _WrittenPosts(posts: profile.writtenPosts)
                           else
-                            _StatsSection(profile: profile),
+                            _StatsSection(
+                              profile: profile,
+                              allPastEvents: _controller.allPastEvents,
+                            ),
                         ],
                       ),
                     );
                   },
                 ),
               ),
-              BarraInteractiva(
-                selected: BarraInteractivaItem.perfil,
-                onTap: (BarraInteractivaItem item) {
-                  if (item == BarraInteractivaItem.perfil) {
-                    return;
-                  }
-                  navigateFromBar(context, item);
-                },
-              ),
+              if (widget.isOwnProfile)
+                BarraInteractiva(
+                  selected: BarraInteractivaItem.perfil,
+                  onTap: (BarraInteractivaItem item) {
+                    if (item == BarraInteractivaItem.perfil) {
+                      return;
+                    }
+                    navigateFromBar(context, item);
+                  },
+                ),
             ],
           ),
         ),
@@ -119,6 +132,14 @@ class _ProfileViewState extends State<ProfileView> {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       child: Row(
         children: <Widget>[
+          if (!widget.isOwnProfile)
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back),
+              color: AppColors.primaryDark,
+            )
+          else
+            const SizedBox(width: 48),
           const Expanded(
             child: Text(
               'LOOP',
@@ -130,17 +151,20 @@ class _ProfileViewState extends State<ProfileView> {
               ),
             ),
           ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ProfileSettingsView(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.settings_outlined),
-            color: AppColors.primaryDark,
-          ),
+          if (widget.isOwnProfile)
+            IconButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const ProfileSettingsView(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.settings_outlined),
+              color: AppColors.primaryDark,
+            )
+          else
+            const SizedBox(width: 48),
         ],
       ),
     );
@@ -165,11 +189,17 @@ class _ProfileViewState extends State<ProfileView> {
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.profile,
+    required this.isOwnProfile,
+    required this.isFollowing,
+    required this.onFollowTap,
     required this.onFollowersTap,
     required this.onFollowingTap,
   });
 
   final ProfileModel profile;
+  final bool isOwnProfile;
+  final bool isFollowing;
+  final VoidCallback onFollowTap;
   final VoidCallback onFollowersTap;
   final VoidCallback onFollowingTap;
 
@@ -258,6 +288,32 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ],
         ),
+        if (!isOwnProfile) ...<Widget>[
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onFollowTap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isFollowing ? AppColors.white : AppColors.primary,
+                foregroundColor:
+                    isFollowing ? AppColors.primary : AppColors.white,
+                side: isFollowing
+                    ? const BorderSide(color: AppColors.primary)
+                    : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Text(
+                isFollowing ? 'Siguiendo' : 'Seguir',
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -399,7 +455,10 @@ class _ImageGrid extends StatelessWidget {
       itemCount: posts.length,
       itemBuilder: (BuildContext context, int index) {
         final ProfileImagePostModel post = posts[index];
-        return Container(
+        return InkWell(
+          onTap: () => openPostDetail(context, post.id),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             gradient: LinearGradient(
@@ -420,6 +479,7 @@ class _ImageGrid extends StatelessWidget {
               ),
             ),
           ),
+          ),
         );
       },
     );
@@ -439,7 +499,10 @@ class _WrittenPosts extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: posts.map((ProfileWrittenPostModel post) {
-        return Container(
+        return InkWell(
+          onTap: () => openPostDetail(context, post.id),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -493,6 +556,7 @@ class _WrittenPosts extends StatelessWidget {
               ),
             ],
           ),
+        ),
         );
       }).toList(),
     );
@@ -500,9 +564,13 @@ class _WrittenPosts extends StatelessWidget {
 }
 
 class _StatsSection extends StatelessWidget {
-  const _StatsSection({required this.profile});
+  const _StatsSection({
+    required this.profile,
+    required this.allPastEvents,
+  });
 
   final ProfileModel profile;
+  final List<ProfilePastEventModel> allPastEvents;
 
   @override
   Widget build(BuildContext context) {
@@ -533,12 +601,32 @@ class _StatsSection extends StatelessWidget {
           title: 'Eventos participados',
           subtitle: 'Historial de participacion',
           value: '${profile.eventsAttendedCount}',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => UserEventsHistoryView(
+                  userName: profile.fullName,
+                  events: allPastEvents,
+                ),
+              ),
+            );
+          },
         ),
         _ActivityCard(
           icon: Icons.groups_outlined,
           title: 'Comunidades activas',
           subtitle: 'Membresias vigentes',
           value: '${profile.communitiesJoinedCount}',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => UserCommunitiesListView(
+                  userName: profile.fullName,
+                  communities: profile.communities,
+                ),
+              ),
+            );
+          },
         ),
         const SizedBox(height: 18),
         Row(
@@ -595,16 +683,21 @@ class _ActivityCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.value,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -654,6 +747,7 @@ class _ActivityCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

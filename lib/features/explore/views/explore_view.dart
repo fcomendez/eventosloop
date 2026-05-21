@@ -833,10 +833,22 @@ class _SearchResults extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        if (filter == ExploreFilter.personas) ...const <Widget>[
-          _PersonResult(name: 'Martina Flores', username: '@martina.loop'),
-          _PersonResult(name: 'Diego Rojas', username: '@diego.dev'),
-          _PersonResult(name: 'Camila Torres', username: '@camila.foodie'),
+        if (filter == ExploreFilter.personas) ...<Widget>[
+          _PersonResult(
+            userId: 101,
+            name: 'Martina Flores',
+            username: '@martina.loop',
+          ),
+          _PersonResult(
+            userId: 102,
+            name: 'Diego Rojas',
+            username: '@diego.dev',
+          ),
+          _PersonResult(
+            userId: 103,
+            name: 'Camila Torres',
+            username: '@camila.foodie',
+          ),
         ] else if (filter == ExploreFilter.comunidades) ...<Widget>[
           _CommunityResult(
             communityId: 1,
@@ -877,10 +889,12 @@ class _SearchResults extends StatelessWidget {
 
 class _PersonResult extends StatelessWidget {
   const _PersonResult({
+    required this.userId,
     required this.name,
     required this.username,
   });
 
+  final int userId;
   final String name;
   final String username;
 
@@ -891,6 +905,7 @@ class _PersonResult extends StatelessWidget {
       title: name,
       subtitle: username,
       action: 'Ver perfil',
+      onAction: () => openUserProfile(context, userId),
     );
   }
 }

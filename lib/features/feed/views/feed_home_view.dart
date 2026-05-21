@@ -3,6 +3,7 @@ import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/features/feed/controllers/feed_controller.dart';
 import 'package:eventosloop/features/feed/models/feed_item_model.dart';
+import 'package:eventosloop/features/notifications/services/notification_mock_service.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
 import 'package:flutter/material.dart';
 
@@ -52,6 +53,14 @@ class _FeedHomeViewState extends State<FeedHomeView> {
     };
   }
 
+  void _openItem(BuildContext context, FeedItemModel item) {
+    if (item.type == FeedItemType.evento) {
+      openEventDetail(context, _eventIdFor(item));
+    } else {
+      openPostDetail(context, item.id);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,7 +76,7 @@ class _FeedHomeViewState extends State<FeedHomeView> {
         child: SafeArea(
           child: Column(
             children: <Widget>[
-              const _FeedTopBar(),
+              _FeedTopBar(),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _controller,
@@ -100,13 +109,7 @@ class _FeedHomeViewState extends State<FeedHomeView> {
                           return _FeedPostCard(
                             item: item,
                             onLike: () => _controller.toggleLike(item.id),
-                            onOpen: () {
-                              if (item.type == FeedItemType.evento) {
-                                openEventDetail(context, _eventIdFor(item));
-                              } else {
-                                openPostDetail(context, item.id);
-                              }
-                            },
+                            onOpen: () => _openItem(context, item),
                           );
                         },
                       ),
@@ -131,11 +134,20 @@ class _FeedHomeViewState extends State<FeedHomeView> {
   }
 }
 
-class _FeedTopBar extends StatelessWidget {
+class _FeedTopBar extends StatefulWidget {
   const _FeedTopBar();
 
   @override
+  State<_FeedTopBar> createState() => _FeedTopBarState();
+}
+
+class _FeedTopBarState extends State<_FeedTopBar> {
+  final NotificationMockService _notificationService = NotificationMockService();
+
+  @override
   Widget build(BuildContext context) {
+    final int badgeCount = _notificationService.unreadCount;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       decoration: BoxDecoration(
@@ -155,10 +167,40 @@ class _FeedTopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none),
-            color: AppColors.primaryDark,
+          Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              IconButton(
+                onPressed: () => openNotifications(context),
+                icon: const Icon(Icons.notifications_none),
+                color: AppColors.primaryDark,
+              ),
+              if (badgeCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      badgeCount > 9 ? '9+' : '$badgeCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -295,7 +337,7 @@ class _FeedPostCard extends StatelessWidget {
                 _ActionButton(
                   icon: Icons.mode_comment_outlined,
                   label: '${item.commentsCount}',
-                  onTap: () {},
+                  onTap: onOpen,
                 ),
                 const Spacer(),
                 IconButton(

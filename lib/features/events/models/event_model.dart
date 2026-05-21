@@ -19,6 +19,8 @@ class EventModel {
     this.subCategory,
     this.isFlash = false,
     this.isHighlighted = false,
+    this.isPrivate = false,
+    this.whatsappLink,
   });
 
   final int id;
@@ -40,6 +42,8 @@ class EventModel {
   final int communityId;
   final bool isFlash;
   final bool isHighlighted;
+  final bool isPrivate;
+  final String? whatsappLink;
 
   double get capacityProgress =>
       capacity <= 0 ? 0 : (joinedCount / capacity).clamp(0, 1);

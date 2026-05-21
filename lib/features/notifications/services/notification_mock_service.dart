@@ -1,0 +1,82 @@
+import 'package:eventosloop/features/notifications/models/notification_model.dart';
+
+class NotificationMockService {
+  Future<List<NotificationModel>> fetchAll() async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    return _items;
+  }
+
+  int get unreadCount => _items.where((NotificationModel n) => n.isUnread).length;
+
+  static final List<NotificationModel> _items = <NotificationModel>[
+    const NotificationModel(
+      id: 0,
+      type: NotificationType.solicitud,
+      title: '4 solicitudes pendientes',
+      body: 'UX/UI Mastery: The Luminous Curator Deep Dive',
+      timeLabel: 'hace 5 min',
+      groupLabel: 'Hoy',
+      isUnread: true,
+      authorInitials: '!',
+      eventId: 1,
+    ),
+    const NotificationModel(
+      id: 1,
+      type: NotificationType.evento,
+      title: 'Sarah Chen se unio a tu evento',
+      body: 'Sunset Yoga Flow',
+      timeLabel: 'hace 2 min',
+      groupLabel: 'Hoy',
+      isUnread: true,
+      authorInitials: 'SC',
+      eventId: 6,
+    ),
+    const NotificationModel(
+      id: 2,
+      type: NotificationType.comunidad,
+      title: 'Nueva publicacion en Creative Collective',
+      body: 'Explorando la profundidad del azul en diseno UI...',
+      timeLabel: 'hace 45 min',
+      groupLabel: 'Hoy',
+      isUnread: true,
+      authorInitials: 'CC',
+      communityId: 1,
+      postId: 201,
+    ),
+    const NotificationModel(
+      id: 3,
+      type: NotificationType.mencion,
+      title: 'Marcus Rivera te etiqueto',
+      body: 'En una foto de Beach Cleanup Day',
+      timeLabel: 'hace 3 h',
+      groupLabel: 'Hoy',
+      isUnread: true,
+      authorInitials: 'MR',
+      userId: 102,
+      postId: 118,
+    ),
+    const NotificationModel(
+      id: 4,
+      type: NotificationType.recordatorio,
+      title: 'Recordatorio de evento',
+      body: 'Weekly Code & Coffee empieza en 1 hora en The Brew Hall',
+      timeLabel: 'Ayer 9:00 AM',
+      groupLabel: 'Ayer',
+      isUnread: false,
+      authorInitials: 'EV',
+      eventId: 2,
+    ),
+    const NotificationModel(
+      id: 5,
+      type: NotificationType.comentario,
+      title: 'Elena Solis respondio tu comentario',
+      body: 'En su publicacion',
+      timeLabel: 'Ayer 4:22 PM',
+      groupLabel: 'Ayer',
+      isUnread: false,
+      authorInitials: 'ES',
+      postId: 115,
+      quote: 'Totalmente de acuerdo, la iluminacion ahi es increible!',
+    ),
+  ];
+}

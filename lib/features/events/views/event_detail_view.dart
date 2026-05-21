@@ -1,8 +1,10 @@
+import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/loop_event_map.dart';
 import 'package:eventosloop/features/events/models/event_model.dart';
 import 'package:eventosloop/features/events/services/event_mock_service.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EventDetailView extends StatefulWidget {
   const EventDetailView({super.key, required this.eventId});
@@ -81,13 +83,23 @@ class _EventDetailViewState extends State<EventDetailView> {
                                   address: '${_event!.address}, ${_event!.comuna}',
                                 ),
                               ),
-                              const SizedBox(height: 14),
-                              _ChatSection(eventTitle: _event!.title),
+                              if (_event!.whatsappLink != null) ...<Widget>[
+                                const SizedBox(height: 14),
+                                _WhatsAppSection(link: _event!.whatsappLink!),
+                              ],
+                              if (_event!.isPrivate) ...<Widget>[
+                                const SizedBox(height: 14),
+                                _PrivateEventActions(
+                                  eventId: _event!.id,
+                                  eventTitle: _event!.title,
+                                ),
+                              ],
                             ],
                           ),
                         ),
                         _BottomAction(
                           onTap: () {},
+                          isPrivate: _event!.isPrivate,
                         ),
                       ],
                     ),
@@ -321,68 +333,37 @@ class _CapacityCard extends StatelessWidget {
   }
 }
 
-class _ChatSection extends StatelessWidget {
-  const _ChatSection({required this.eventTitle});
+class _WhatsAppSection extends StatelessWidget {
+  const _WhatsAppSection({required this.link});
 
-  final String eventTitle;
+  final String link;
+
+  Future<void> _openWhatsApp() async {
+    final Uri uri = Uri.parse(link);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: 'Chat grupal',
+      title: 'Grupo de WhatsApp',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              const Icon(Icons.chat_bubble_outline, color: AppColors.primary),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Acceso privado',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'PRIVADO',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              'Hay mensajes nuevos en el chat de $eventTitle. El acceso se valida al unirte al evento.',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                height: 1.35,
-              ),
+          const Text(
+            'La coordinacion del evento se realiza por WhatsApp. Al participar podras acceder al grupo.',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              height: 1.35,
             ),
           ),
-          const SizedBox(height: 10),
-          OutlinedButton(
-            onPressed: () {},
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _openWhatsApp,
+            icon: const Icon(Icons.open_in_new, size: 18),
+            label: const Text('Abrir grupo de WhatsApp'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.primary,
               side: const BorderSide(color: AppColors.divider),
@@ -390,7 +371,54 @@ class _ChatSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
               ),
             ),
-            child: const Text('Solicitar acceso al chat'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrivateEventActions extends StatelessWidget {
+  const _PrivateEventActions({
+    required this.eventId,
+    required this.eventTitle,
+  });
+
+  final int eventId;
+  final String eventTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Evento privado',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            'Este evento requiere aprobacion de participantes antes de confirmar la inscripcion.',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => openParticipantRequests(
+                context,
+                eventId: eventId,
+                eventTitle: eventTitle,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              child: const Text('Gestionar solicitudes'),
+            ),
           ),
         ],
       ),
@@ -515,9 +543,13 @@ class _Chip extends StatelessWidget {
 }
 
 class _BottomAction extends StatelessWidget {
-  const _BottomAction({required this.onTap});
+  const _BottomAction({
+    required this.onTap,
+    required this.isPrivate,
+  });
 
   final VoidCallback onTap;
+  final bool isPrivate;
 
   @override
   Widget build(BuildContext context) {
@@ -543,9 +575,9 @@ class _BottomAction extends StatelessWidget {
                 borderRadius: BorderRadius.circular(22),
               ),
             ),
-            child: const Text(
-              'Participar',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            child: Text(
+              isPrivate ? 'Solicitar participacion' : 'Participar',
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
             ),
           ),
         ),
