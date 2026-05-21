@@ -118,25 +118,17 @@ class _ProfileViewState extends State<ProfileView> {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       child: Row(
         children: <Widget>[
-          IconButton(
-            onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              }
-            },
-            icon: const Icon(Icons.menu),
-            color: AppColors.primaryDark,
-          ),
-          const SizedBox(width: 4),
-          const Text(
-            'LOOP',
-            style: TextStyle(
-              color: AppColors.primaryDark,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
+          const Expanded(
+            child: Text(
+              'LOOP',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.primaryDark,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
-          const Spacer(),
           IconButton(
             onPressed: () {
               Navigator.of(context).push(

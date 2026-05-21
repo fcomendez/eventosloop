@@ -1,4 +1,6 @@
+import 'package:eventosloop/core/data/chile_comunas.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/features/create/data/user_communities_mock.dart';
 import 'package:flutter/material.dart';
 
 class CreateEventView extends StatefulWidget {
@@ -13,9 +15,21 @@ class _CreateEventViewState extends State<CreateEventView> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _capacityController =
-      TextEditingController(text: '20');
+  final TextEditingController _addressController = TextEditingController();
+
+  String? _selectedCommunityId;
+  String? _selectedComuna;
+  String _selectedCapacity = '20';
+
+  static const List<String> _capacityOptions = <String>[
+    '5',
+    '10',
+    '20',
+    '50',
+    '100',
+    '200',
+    'sin_limite',
+  ];
 
   @override
   void dispose() {
@@ -23,9 +37,15 @@ class _CreateEventViewState extends State<CreateEventView> {
     _descriptionController.dispose();
     _dateController.dispose();
     _timeController.dispose();
-    _locationController.dispose();
-    _capacityController.dispose();
+    _addressController.dispose();
     super.dispose();
+  }
+
+  String _capacityLabel(String value) {
+    if (value == 'sin_limite') {
+      return 'Sin limite';
+    }
+    return '$value personas';
   }
 
   @override
@@ -67,12 +87,7 @@ class _CreateEventViewState extends State<CreateEventView> {
                     const SizedBox(height: 18),
                     _imageBox(),
                     const SizedBox(height: 16),
-                    _input(
-                      label: 'Comunidad',
-                      hint: 'Selecciona una comunidad',
-                      icon: Icons.groups_outlined,
-                      readOnly: true,
-                    ),
+                    _communityField(),
                     _input(
                       label: 'Titulo del evento',
                       hint: 'Escribe un nombre vibrante',
@@ -104,18 +119,13 @@ class _CreateEventViewState extends State<CreateEventView> {
                       ],
                     ),
                     _input(
-                      label: 'Ubicacion',
-                      hint: 'Ciudad, lugar o enlace virtual',
+                      label: 'Direccion',
+                      hint: 'Calle, numero o enlace virtual',
                       icon: Icons.location_on_outlined,
-                      controller: _locationController,
+                      controller: _addressController,
                     ),
-                    _input(
-                      label: 'Cupo maximo',
-                      hint: 'Cantidad de personas',
-                      icon: Icons.people_outline,
-                      controller: _capacityController,
-                      keyboardType: TextInputType.number,
-                    ),
+                    _comunaField(),
+                    _capacityField(),
                     const SizedBox(height: 10),
                     SizedBox(
                       height: 48,
@@ -178,7 +188,6 @@ class _CreateEventViewState extends State<CreateEventView> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.35),
-          style: BorderStyle.solid,
         ),
       ),
       child: const Center(
@@ -205,14 +214,134 @@ class _CreateEventViewState extends State<CreateEventView> {
     );
   }
 
+  Widget _communityField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            'Comunidad',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedCommunityId,
+            decoration: const InputDecoration(
+              hintText: 'Selecciona una comunidad',
+              prefixIcon: Icon(Icons.groups_outlined, size: 19),
+            ),
+            items: UserCommunitiesMock.participando
+                .map(
+                  (UserCommunityOption community) => DropdownMenuItem<String>(
+                    value: community.id,
+                    child: Text(community.name),
+                  ),
+                )
+                .toList(),
+            onChanged: (String? value) {
+              setState(() {
+                _selectedCommunityId = value;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _comunaField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            'Comuna',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedComuna,
+            decoration: const InputDecoration(
+              hintText: 'Selecciona una comuna',
+              prefixIcon: Icon(Icons.map_outlined, size: 19),
+            ),
+            items: ChileComunas.todas
+                .map(
+                  (String comuna) => DropdownMenuItem<String>(
+                    value: comuna,
+                    child: Text(comuna),
+                  ),
+                )
+                .toList(),
+            onChanged: (String? value) {
+              setState(() {
+                _selectedComuna = value;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _capacityField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            'Cupo maximo',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedCapacity,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.people_outline, size: 19),
+            ),
+            items: _capacityOptions
+                .map(
+                  (String value) => DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(_capacityLabel(value)),
+                  ),
+                )
+                .toList(),
+            onChanged: (String? value) {
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _selectedCapacity = value;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _input({
     required String label,
     required String hint,
     TextEditingController? controller,
     IconData? icon,
     int maxLines = 1,
-    bool readOnly = false,
-    TextInputType? keyboardType,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -231,14 +360,9 @@ class _CreateEventViewState extends State<CreateEventView> {
           TextField(
             controller: controller,
             maxLines: maxLines,
-            readOnly: readOnly,
-            keyboardType: keyboardType,
             decoration: InputDecoration(
               hintText: hint,
               prefixIcon: icon == null ? null : Icon(icon, size: 19),
-              suffixIcon: readOnly
-                  ? const Icon(Icons.keyboard_arrow_down, size: 20)
-                  : null,
             ),
           ),
         ],

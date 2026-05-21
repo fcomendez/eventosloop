@@ -93,15 +93,6 @@ class _TopBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
         children: <Widget>[
-          IconButton(
-            onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              }
-            },
-            icon: const Icon(Icons.menu),
-            color: AppColors.primaryDark,
-          ),
           const Expanded(
             child: Text(
               'LOOP',
@@ -112,11 +103,6 @@ class _TopBar extends StatelessWidget {
                 fontWeight: FontWeight.w900,
               ),
             ),
-          ),
-          const CircleAvatar(
-            radius: 17,
-            backgroundColor: AppColors.inputBackground,
-            child: Icon(Icons.person, color: AppColors.primary, size: 19),
           ),
         ],
       ),

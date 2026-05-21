@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/features/create/data/user_communities_mock.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CreatePostView extends StatefulWidget {
   const CreatePostView({super.key});
@@ -11,6 +15,10 @@ class CreatePostView extends StatefulWidget {
 class _CreatePostViewState extends State<CreatePostView> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
+
+  String? _selectedCommunityId;
+  XFile? _selectedImage;
 
   @override
   void dispose() {
@@ -19,8 +27,90 @@ class _CreatePostViewState extends State<CreatePostView> {
     super.dispose();
   }
 
+  UserCommunityOption? get _selectedCommunity {
+    if (_selectedCommunityId == null) {
+      return null;
+    }
+    for (final UserCommunityOption community in UserCommunitiesMock.participando) {
+      if (community.id == _selectedCommunityId) {
+        return community;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (!mounted || image == null) {
+        return;
+      }
+      setState(() {
+        _selectedImage = image;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir la galeria del telefono'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openCommunityPicker() async {
+    final String? selected = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Tus comunidades',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              ...UserCommunitiesMock.participando.map(
+                (UserCommunityOption community) => ListTile(
+                  leading: const Icon(Icons.groups_outlined, color: AppColors.primary),
+                  title: Text(community.name),
+                  onTap: () => Navigator.of(context).pop(community.id),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected == null) {
+      return;
+    }
+    setState(() {
+      _selectedCommunityId = selected;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final UserCommunityOption? community = _selectedCommunity;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -39,7 +129,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
                   children: <Widget>[
-                    _communitySelector(),
+                    _communitySelector(community),
                     const SizedBox(height: 18),
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -77,8 +167,6 @@ class _CreatePostViewState extends State<CreatePostView> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _toolBar(),
                     const SizedBox(height: 18),
                     SizedBox(
                       height: 48,
@@ -135,96 +223,88 @@ class _CreatePostViewState extends State<CreatePostView> {
     );
   }
 
-  Widget _communitySelector() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: <Widget>[
-          const CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.inputBackground,
-            child: Icon(Icons.groups_outlined, color: AppColors.primary),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'Publicar en comunidad',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  'Selecciona una comunidad',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.keyboard_arrow_down),
-            color: AppColors.textSecondary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _mediaPlaceholder() {
-    return Container(
-      height: 96,
-      decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider.withValues(alpha: 0.6)),
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _communitySelector(UserCommunityOption? community) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: _openCommunityPicker,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
           children: <Widget>[
-            Icon(Icons.image_outlined, color: AppColors.primary),
-            SizedBox(height: 4),
-            Text(
-              'Agregar imagen opcional',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w700,
+            const CircleAvatar(
+              radius: 18,
+              backgroundColor: AppColors.inputBackground,
+              child: Icon(Icons.groups_outlined, color: AppColors.primary),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text(
+                    'Publicar en comunidad',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    community?.name ?? 'Selecciona una comunidad',
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
               ),
             ),
+            const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
           ],
         ),
       ),
     );
   }
 
-  Widget _toolBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: const <Widget>[
-          Icon(Icons.image_outlined, color: AppColors.textSecondary),
-          Icon(Icons.link, color: AppColors.textSecondary),
-          Icon(Icons.format_list_bulleted, color: AppColors.textSecondary),
-          Icon(Icons.alternate_email, color: AppColors.textSecondary),
-          Icon(Icons.tag, color: AppColors.textSecondary),
-        ],
+  Widget _mediaPlaceholder() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: _pickImageFromGallery,
+      child: Container(
+        height: _selectedImage == null ? 96 : 180,
+        decoration: BoxDecoration(
+          color: AppColors.inputBackground,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.divider.withValues(alpha: 0.6)),
+          image: _selectedImage == null
+              ? null
+              : DecorationImage(
+                  image: FileImage(File(_selectedImage!.path)),
+                  fit: BoxFit.cover,
+                ),
+        ),
+        child: _selectedImage == null
+            ? const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(Icons.image_outlined, color: AppColors.primary),
+                    SizedBox(height: 4),
+                    Text(
+                      'Agregar imagen opcional',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : null,
       ),
     );
   }

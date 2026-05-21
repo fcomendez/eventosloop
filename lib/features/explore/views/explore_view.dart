@@ -125,12 +125,6 @@ class _SearchHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              const CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.inputBackground,
-                child: Icon(Icons.person, color: AppColors.primary, size: 20),
-              ),
             ],
           ),
           const SizedBox(height: 12),
