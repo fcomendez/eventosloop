@@ -1,6 +1,7 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/features/create/views/create_hub_view.dart';
+import 'package:eventosloop/features/explore/views/explore_view.dart';
 import 'package:eventosloop/features/feed/views/feed_home_view.dart';
 import 'package:eventosloop/features/profile/views/profile_view.dart';
 import 'package:flutter/material.dart';
@@ -149,11 +150,7 @@ void navigateFromBar(BuildContext context, BarraInteractivaItem item) {
       destination = const CreateHubView();
       break;
     case BarraInteractivaItem.explorar:
-      destination = const NavPlaceholderView(
-        selected: BarraInteractivaItem.explorar,
-        title: 'Explorador',
-        message: 'Aqui va explorador',
-      );
+      destination = const ExploreView();
       break;
     case BarraInteractivaItem.inicio:
       destination = const FeedHomeView(email: '');
