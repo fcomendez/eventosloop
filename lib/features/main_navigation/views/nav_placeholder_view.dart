@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
+import 'package:eventosloop/features/create/views/create_hub_view.dart';
 import 'package:eventosloop/features/feed/views/feed_home_view.dart';
 import 'package:eventosloop/features/profile/views/profile_view.dart';
 import 'package:flutter/material.dart';
@@ -145,11 +146,7 @@ void navigateFromBar(BuildContext context, BarraInteractivaItem item) {
       );
       break;
     case BarraInteractivaItem.crear:
-      destination = const NavPlaceholderView(
-        selected: BarraInteractivaItem.crear,
-        title: 'Crear',
-        message: 'Aqui va creacion de post o eventos',
-      );
+      destination = const CreateHubView();
       break;
     case BarraInteractivaItem.explorar:
       destination = const NavPlaceholderView(

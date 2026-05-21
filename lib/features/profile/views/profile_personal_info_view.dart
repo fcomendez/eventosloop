@@ -353,8 +353,6 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const Spacer(),
-          const Icon(Icons.check, color: AppColors.primary),
         ],
       ),
     );

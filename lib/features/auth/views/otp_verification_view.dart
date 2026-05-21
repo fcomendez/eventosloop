@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/auth/controllers/otp_verification_controller.dart';
+import 'package:eventosloop/features/auth/services/auth_api_service.dart';
 import 'package:eventosloop/features/auth/views/reset_password_view.dart';
 import 'package:flutter/material.dart';
 
@@ -71,16 +72,20 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     setState(() {
       _reenviando = true;
     });
-    final bool ok = await _controller.reenviarCodigo(widget.email);
+    final ServiceResult result = await _controller.reenviarCodigo(widget.email);
     if (!mounted) {
       return;
     }
     setState(() {
       _reenviando = false;
     });
-    if (!ok) {
+    if (!result.ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo reenviar el codigo')),
+        SnackBar(
+          content: Text(
+            result.errorMessage ?? 'No se pudo reenviar el codigo',
+          ),
+        ),
       );
       return;
     }

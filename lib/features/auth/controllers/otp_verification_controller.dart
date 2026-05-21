@@ -24,7 +24,7 @@ class OtpVerificationController {
     return _service.validarOtp(email: email, otp: otp);
   }
 
-  Future<bool> reenviarCodigo(String email) {
+  Future<ServiceResult> reenviarCodigo(String email) {
     return _service.solicitarCodigoRecuperacion(email: email);
   }
 }

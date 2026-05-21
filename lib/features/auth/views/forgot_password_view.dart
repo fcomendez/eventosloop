@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/auth/controllers/forgot_password_controller.dart';
+import 'package:eventosloop/features/auth/services/auth_api_service.dart';
 import 'package:eventosloop/features/auth/views/otp_verification_view.dart';
 import 'package:flutter/material.dart';
 
@@ -29,16 +30,21 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
     setState(() {
       _loading = true;
     });
-    final bool ok = await _controller.enviarCodigo(_emailController.text);
+    final ServiceResult result =
+        await _controller.enviarCodigo(_emailController.text);
     if (!mounted) {
       return;
     }
     setState(() {
       _loading = false;
     });
-    if (!ok) {
+    if (!result.ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo enviar el codigo')),
+        SnackBar(
+          content: Text(
+            result.errorMessage ?? 'No se pudo enviar el codigo',
+          ),
+        ),
       );
       return;
     }

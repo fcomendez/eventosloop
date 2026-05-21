@@ -237,8 +237,6 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const Spacer(),
-          const Icon(Icons.settings_outlined, color: AppColors.primaryDark),
         ],
       ),
     );

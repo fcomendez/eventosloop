@@ -109,17 +109,23 @@ class AuthApiService {
     return AuthSessionModel.fromJson(data);
   }
 
-  Future<bool> solicitarCodigoRecuperacion({
+  Future<ServiceResult> solicitarCodigoRecuperacion({
     required String email,
   }) async {
     if (AppEnv.useSupabase) {
       try {
         await _supabase.auth.resetPasswordForEmail(email.trim().toLowerCase());
-        return true;
-      } on AuthException {
-        return false;
-      } catch (_) {
-        return false;
+        return ServiceResult(ok: true);
+      } on AuthException catch (e) {
+        return ServiceResult(
+          ok: false,
+          errorMessage: e.message,
+        );
+      } catch (e) {
+        return ServiceResult(
+          ok: false,
+          errorMessage: 'Error inesperado al solicitar recuperacion: $e',
+        );
       }
     }
 
@@ -133,7 +139,13 @@ class AuthApiService {
         'email': email.trim().toLowerCase(),
       }),
     );
-    return response.statusCode >= 200 && response.statusCode <= 299;
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      return ServiceResult(ok: true);
+    }
+    return ServiceResult(
+      ok: false,
+      errorMessage: 'No se pudo solicitar recuperacion (${response.statusCode}).',
+    );
   }
 
   Future<String?> validarOtp({

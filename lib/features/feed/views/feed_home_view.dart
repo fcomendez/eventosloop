@@ -58,7 +58,7 @@ class _FeedHomeViewState extends State<FeedHomeView> {
         child: SafeArea(
           child: Column(
             children: <Widget>[
-              _FeedTopBar(email: widget.email),
+              const _FeedTopBar(),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _controller,
@@ -116,9 +116,7 @@ class _FeedHomeViewState extends State<FeedHomeView> {
 }
 
 class _FeedTopBar extends StatelessWidget {
-  const _FeedTopBar({required this.email});
-
-  final String email;
+  const _FeedTopBar();
 
   @override
   Widget build(BuildContext context) {
@@ -140,43 +138,15 @@ class _FeedTopBar extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(width: 8),
-          const Text(
-            'Feed',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
           const Spacer(),
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.notifications_none),
             color: AppColors.primaryDark,
           ),
-          CircleAvatar(
-            radius: 15,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.14),
-            child: Text(
-              _initials(email),
-              style: const TextStyle(
-                color: AppColors.primaryDark,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
         ],
       ),
     );
-  }
-
-  static String _initials(String email) {
-    if (email.trim().isEmpty) {
-      return 'L';
-    }
-    return email.trim()[0].toUpperCase();
   }
 }
 
@@ -304,11 +274,6 @@ class _FeedPostCard extends StatelessWidget {
                 _ActionButton(
                   icon: Icons.mode_comment_outlined,
                   label: '${item.commentsCount}',
-                  onTap: () {},
-                ),
-                _ActionButton(
-                  icon: Icons.repeat,
-                  label: '${item.sharesCount}',
                   onTap: () {},
                 ),
                 const Spacer(),

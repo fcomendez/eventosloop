@@ -20,7 +20,7 @@ class ForgotPasswordController {
     return null;
   }
 
-  Future<bool> enviarCodigo(String email) {
+  Future<ServiceResult> enviarCodigo(String email) {
     return _service.solicitarCodigoRecuperacion(email: email);
   }
 }

@@ -215,8 +215,6 @@ class _ProfileInterestsSettingsViewState
               fontWeight: FontWeight.w800,
             ),
           ),
-          const Spacer(),
-          const Icon(Icons.check, color: AppColors.primary),
         ],
       ),
     );
