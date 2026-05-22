@@ -1,4 +1,5 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/features/admin/views/admin_dashboard_view.dart';
 import 'package:eventosloop/features/profile/views/profile_interests_settings_view.dart';
 import 'package:eventosloop/features/profile/views/profile_personal_info_view.dart';
 import 'package:flutter/material.dart';
@@ -176,6 +177,13 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                                 ),
                               );
                             },
+                          ),
+                          const Divider(height: 18),
+                          _settingsAction(
+                            icon: Icons.admin_panel_settings_outlined,
+                            title: 'Panel administracion',
+                            subtitle: 'Preview web — dashboard, analytics y moderacion.',
+                            onTap: () => openAdminDashboard(context),
                           ),
                         ],
                       ),
