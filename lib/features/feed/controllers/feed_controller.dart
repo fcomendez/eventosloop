@@ -1,12 +1,13 @@
 import 'package:eventosloop/features/feed/models/feed_item_model.dart';
-import 'package:eventosloop/features/feed/services/feed_mock_service.dart';
+import 'package:eventosloop/features/feed/models/feed_page_result.dart';
+import 'package:eventosloop/features/feed/services/feed_service.dart';
 import 'package:flutter/foundation.dart';
 
 class FeedController extends ChangeNotifier {
-  FeedController({FeedMockService? service})
-      : _service = service ?? FeedMockService();
+  FeedController({FeedService? service})
+      : _service = service ?? FeedService();
 
-  final FeedMockService _service;
+  final FeedService _service;
 
   final List<FeedItemModel> _items = <FeedItemModel>[];
   int? _cursor;

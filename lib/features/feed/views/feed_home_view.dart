@@ -92,6 +92,19 @@ class _FeedHomeViewState extends State<FeedHomeView> {
                       );
                     }
 
+                    if (_controller.items.isEmpty) {
+                      return RefreshIndicator(
+                        onRefresh: _controller.loadInitial,
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: const <Widget>[
+                            SizedBox(height: 80),
+                            _FeedEmptyState(),
+                          ],
+                        ),
+                      );
+                    }
+
                     return RefreshIndicator(
                       onRefresh: _controller.loadInitial,
                       child: ListView.builder(
@@ -497,6 +510,54 @@ class _FeedFooter extends StatelessWidget {
       );
     }
     return const SizedBox(height: 18);
+  }
+}
+
+class _FeedEmptyState extends StatelessWidget {
+  const _FeedEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: <Widget>[
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.dynamic_feed_outlined,
+              color: AppColors.primary,
+              size: 34,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Tu feed esta listo',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Aun no hay publicaciones. Crea la primera desde la pestaña Crear '
+            'o unete a una comunidad para ver contenido aqui.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

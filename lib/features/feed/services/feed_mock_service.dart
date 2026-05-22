@@ -1,19 +1,7 @@
 import 'package:eventosloop/features/feed/models/feed_item_model.dart';
+import 'package:eventosloop/features/feed/models/feed_page_result.dart';
 
-class FeedPageResult {
-  const FeedPageResult({
-    required this.items,
-    required this.nextCursor,
-    required this.hasMore,
-  });
-
-  final List<FeedItemModel> items;
-  final int? nextCursor;
-  final bool hasMore;
-}
-
-class FeedMockService {
-  static const int _pageSize = 6;
+class FeedMockService {  static const int _pageSize = 6;
 
   List<FeedItemModel> get allItems => _items;
 
