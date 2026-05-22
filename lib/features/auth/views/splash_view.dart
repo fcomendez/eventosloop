@@ -2,9 +2,8 @@ import 'dart:ui';
 
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/auth/controllers/splash_controller.dart';
-import 'package:eventosloop/features/auth/views/login_view.dart';
+import 'package:eventosloop/features/auth/navigation/auth_navigation.dart';
 import 'package:flutter/material.dart';
-
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
 
@@ -40,15 +39,12 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
     );
 
     _animationController.forward();
-    Future<void>.delayed(_controller.totalDuration, () {
+    Future<void>.delayed(_controller.totalDuration, () async {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const LoginView()),
-      );
-    });
-  }
+      await AuthNavigation.navigateFromSplash(context);
+    });  }
 
   @override
   void dispose() {

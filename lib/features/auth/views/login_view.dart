@@ -1,12 +1,9 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/auth/controllers/login_controller.dart';
+import 'package:eventosloop/features/auth/navigation/auth_navigation.dart';
 import 'package:eventosloop/features/auth/views/forgot_password_view.dart';
 import 'package:eventosloop/features/auth/views/register_view.dart';
-import 'package:eventosloop/features/feed/views/feed_home_view.dart';
-import 'package:eventosloop/features/onboarding/services/intereses_service.dart';
-import 'package:eventosloop/features/onboarding/views/welcome_view.dart';
 import 'package:flutter/material.dart';
-
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
@@ -30,28 +27,8 @@ class _LoginViewState extends State<LoginView> {
   }
 
   Future<void> _navegarPostLogin(String email) async {
-    final bool tieneIntereses =
-        await InteresesService().usuarioTieneIntereses();
-    if (!mounted) {
-      return;
-    }
-    if (tieneIntereses) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(
-          builder: (_) => FeedHomeView(email: email),
-        ),
-        (_) => false,
-      );
-    } else {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(
-          builder: (_) => const WelcomeView(),
-        ),
-        (_) => false,
-      );
-    }
+    await AuthNavigation.navigateAfterAuth(context, email: email);
   }
-
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;

@@ -8,7 +8,7 @@ class InteresesController extends ChangeNotifier {
 
   final InteresesService _service;
 
-  static const int minimoIntereses = 5;
+  static const int minimoIntereses = InteresesService.minimoRequerido;
 
   List<InteresModel> _intereses = const <InteresModel>[];
   final Set<int> _seleccionados = <int>{};
@@ -45,12 +45,18 @@ class InteresesController extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    _intereses = await _service.obtenerIntereses();
-    final List<int> previos = await _service.obtenerInteresesUsuario();
-    _seleccionados.addAll(previos);
-
-    if (_intereses.isEmpty) {
-      _error = 'No se pudieron cargar los intereses';
+    try {
+      _intereses = await _service.obtenerIntereses();
+      final List<int> previos = await _service.obtenerInteresesUsuario();
+      _seleccionados
+        ..clear()
+        ..addAll(previos);
+      if (_intereses.isEmpty) {
+        _error = 'No hay intereses disponibles en el catalogo';
+      }
+    } catch (e) {
+      _intereses = const <InteresModel>[];
+      _error = e.toString().replaceFirst('Exception: ', '');
     }
 
     _cargando = false;
@@ -85,13 +91,18 @@ class InteresesController extends ChangeNotifier {
     _guardando = true;
     notifyListeners();
 
-    final bool ok = await _service.guardarIntereses(_seleccionados);
+    try {
+      await _service.guardarIntereses(_seleccionados);
+      _error = null;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      _guardando = false;
+      notifyListeners();
+      return false;
+    }
 
     _guardando = false;
-    if (!ok) {
-      _error = 'No se pudieron guardar los intereses';
-    }
     notifyListeners();
-    return ok;
+    return true;
   }
 }

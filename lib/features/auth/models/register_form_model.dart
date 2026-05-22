@@ -6,7 +6,7 @@ class RegisterFormModel {
     required this.fechaNacimiento,
     required this.genero,
     required this.direccion,
-    required this.comuna,
+    required this.comunaId,
     required this.region,
     required this.codigoPostal,
     required this.email,
@@ -19,7 +19,7 @@ class RegisterFormModel {
   final DateTime fechaNacimiento;
   final String genero;
   final String direccion;
-  final String comuna;
+  final int comunaId;
   final String region;
   final String codigoPostal;
   final String email;

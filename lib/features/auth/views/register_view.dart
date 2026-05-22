@@ -1,8 +1,13 @@
+import 'package:eventosloop/core/config/app_env.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/auth/controllers/register_controller.dart';
 import 'package:eventosloop/features/auth/models/register_form_model.dart';
+import 'package:eventosloop/features/auth/models/ubicacion_models.dart';
+import 'package:eventosloop/features/auth/navigation/auth_navigation.dart';
+import 'package:eventosloop/features/auth/services/ubicacion_service.dart';
+import 'package:eventosloop/features/onboarding/views/welcome_view.dart';
 import 'package:flutter/material.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
 
@@ -12,8 +17,8 @@ class RegisterView extends StatefulWidget {
 
 class _RegisterViewState extends State<RegisterView> {
   final RegisterController _controller = RegisterController();
+  final UbicacionService _ubicacionService = UbicacionService();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   final TextEditingController _nombres = TextEditingController();
   final TextEditingController _apellidos = TextEditingController();
   final TextEditingController _username = TextEditingController();
@@ -29,41 +34,12 @@ class _RegisterViewState extends State<RegisterView> {
   bool _acceptedTerms = false;
   DateTime? _fechaNacimientoSeleccionada;
   String? _generoSeleccionado;
-  String? _regionSeleccionada;
-  String? _comunaSeleccionada;
-
-  static const Map<String, List<String>> _regionesYComunas =
-      <String, List<String>>{
-        'Arica y Parinacota': <String>['Arica', 'Camarones', 'Putre', 'General Lagos'],
-        'Tarapaca': <String>['Iquique', 'Alto Hospicio', 'Pozo Almonte'],
-        'Antofagasta': <String>['Antofagasta', 'Calama', 'Mejillones', 'Tocopilla'],
-        'Atacama': <String>['Copiapo', 'Caldera', 'Vallenar', 'Chanaral'],
-        'Coquimbo': <String>['La Serena', 'Coquimbo', 'Ovalle', 'Illapel'],
-        'Valparaiso': <String>['Valparaiso', 'Vina del Mar', 'Quilpue', 'San Antonio'],
-        'Metropolitana de Santiago': <String>[
-          'Santiago',
-          'Puente Alto',
-          'Maipu',
-          'Las Condes',
-          'La Florida',
-          'Providencia',
-          'Nuñoa',
-        ],
-        'O Higgins': <String>['Rancagua', 'San Fernando', 'Rengo', 'Santa Cruz'],
-        'Maule': <String>['Talca', 'Curico', 'Linares', 'Constitucion'],
-        'Nuble': <String>['Chillan', 'San Carlos', 'Bulnes', 'Quillon'],
-        'Biobio': <String>['Concepcion', 'Talcahuano', 'Los Angeles', 'Chiguayante'],
-        'La Araucania': <String>['Temuco', 'Padre Las Casas', 'Villarrica', 'Angol'],
-        'Los Rios': <String>['Valdivia', 'La Union', 'Rio Bueno', 'Panguipulli'],
-        'Los Lagos': <String>['Puerto Montt', 'Osorno', 'Castro', 'Puerto Varas'],
-        'Aysen': <String>['Coyhaique', 'Aysen', 'Chile Chico', 'Cochrane'],
-        'Magallanes y de la Antartica Chilena': <String>[
-          'Punta Arenas',
-          'Puerto Natales',
-          'Porvenir',
-          'Cabo de Hornos',
-        ],
-      };
+  int? _regionId;
+  int? _comunaId;
+  List<RegionOption> _regiones = const <RegionOption>[];
+  List<ComunaOption> _comunas = const <ComunaOption>[];
+  bool _cargandoUbicacion = true;
+  String? _errorUbicacion;
 
   @override
   void initState() {
@@ -73,8 +49,30 @@ class _RegisterViewState extends State<RegisterView> {
         _controller.validarCorreoUnico(_email.text);
       }
     });
+    _cargarUbicacion();
   }
 
+  Future<void> _cargarUbicacion() async {
+    setState(() {
+      _cargandoUbicacion = true;
+      _errorUbicacion = null;
+    });
+    final List<RegionOption> regiones =
+        await _ubicacionService.fetchRegiones();
+    final List<ComunaOption> comunas = await _ubicacionService.fetchComunas();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _regiones = regiones;
+      _comunas = comunas;
+      _cargandoUbicacion = false;
+      if (AppEnv.useSupabase && (regiones.isEmpty || comunas.isEmpty)) {
+        _errorUbicacion =
+            'No se pudieron cargar regiones/comunas. Ejecuta docs/sql/region_comuna_public_read.sql en Supabase.';
+      }
+    });
+  }
   @override
   void dispose() {
     _nombres.dispose();
@@ -102,6 +100,21 @@ class _RegisterViewState extends State<RegisterView> {
       return;
     }
 
+    if (_comunaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona una comuna valida')),
+      );
+      return;
+    }
+
+    final RegionOption? region = _regionActual;
+    if (region == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona una region valida')),
+      );
+      return;
+    }
+
     final RegisterFormModel model = RegisterFormModel(
       nombres: _nombres.text,
       apellidos: _apellidos.text,
@@ -109,8 +122,8 @@ class _RegisterViewState extends State<RegisterView> {
       fechaNacimiento: _fechaNacimientoSeleccionada!,
       genero: _generoSeleccionado!,
       direccion: _direccion.text,
-      comuna: _comunaSeleccionada!,
-      region: _regionSeleccionada!,
+      comunaId: _comunaId!,
+      region: region.nombre,
       codigoPostal: _postal.text,
       email: _email.text,
       password: _password.text,
@@ -121,13 +134,29 @@ class _RegisterViewState extends State<RegisterView> {
       return;
     }
     if (ok) {
+      final Session? session = Supabase.instance.client.auth.currentSession;
+      if (session != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cuenta creada correctamente')),
+        );
+        await AuthNavigation.navigateAfterAuth(
+          context,
+          email: session.user.email ?? model.email,
+        );
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cuenta creada correctamente')),
+        const SnackBar(
+          content: Text(
+            'Cuenta creada. Revisa tu correo para confirmar e inicia sesion.',
+          ),
+        ),
       );
-      Navigator.of(context).pop();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const WelcomeView()),
+      );
       return;
     }
-
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -212,13 +241,37 @@ class _RegisterViewState extends State<RegisterView> {
     );
   }
 
-  List<String> get _comunasFiltradas {
-    if (_regionSeleccionada == null) {
-      return const <String>[];
+  List<ComunaOption> get _comunasFiltradas {
+    if (_regionId == null) {
+      return const <ComunaOption>[];
     }
-    return _regionesYComunas[_regionSeleccionada] ?? const <String>[];
+    return _comunas
+        .where((ComunaOption comuna) => comuna.regionId == _regionId)
+        .toList();
   }
 
+  RegionOption? get _regionActual {
+    for (final RegionOption region in _regiones) {
+      if (region.id == _regionId) {
+        return region;
+      }
+    }
+    return null;
+  }
+
+  String? _validarRegion(int? value) {
+    if (value == null) {
+      return 'Region es obligatoria';
+    }
+    return null;
+  }
+
+  String? _validarComuna(int? value) {
+    if (value == null) {
+      return 'Comuna es obligatoria';
+    }
+    return null;
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -360,70 +413,96 @@ class _RegisterViewState extends State<RegisterView> {
                             _controller.validarRequerido(v, 'Direccion'),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        'Region',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      DropdownButtonFormField<String>(
-                        initialValue: _regionSeleccionada,
-                        decoration: const InputDecoration(
-                          hintText: 'Selecciona una region',
-                        ),
-                        items: _regionesYComunas.keys
-                            .map(
-                              (String region) => DropdownMenuItem<String>(
-                                value: region,
-                                child: Text(region),
+                      if (_cargandoUbicacion)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (_errorUbicacion != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              Text(
+                                _errorUbicacion!,
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 12,
+                                  height: 1.35,
+                                ),
                               ),
-                            )
-                            .toList(),
-                        onChanged: (String? value) {
-                          setState(() {
-                            _regionSeleccionada = value;
-                            _comunaSeleccionada = null;
-                          });
-                        },
-                        validator: (String? value) =>
-                            _controller.validarRequerido(value, 'Region'),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Comuna',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      DropdownButtonFormField<String>(
-                        initialValue: _comunaSeleccionada,
-                        decoration: InputDecoration(
-                          hintText: _regionSeleccionada == null
-                              ? 'Primero selecciona una region'
-                              : 'Selecciona una comuna',
-                        ),
-                        items: _comunasFiltradas
-                            .map(
-                              (String comuna) => DropdownMenuItem<String>(
-                                value: comuna,
-                                child: Text(comuna),
+                              TextButton(
+                                onPressed: _cargarUbicacion,
+                                child: const Text('Reintentar ubicaciones'),
                               ),
-                            )
-                            .toList(),
-                        onChanged: _regionSeleccionada == null
-                            ? null
-                            : (String? value) {
-                                setState(() {
-                                  _comunaSeleccionada = value;
-                                });
-                              },
-                        validator: (String? value) =>
-                            _controller.validarRequerido(value, 'Comuna'),
-                      ),
+                            ],
+                          ),
+                        )
+                      else ...<Widget>[
+                        const Text(
+                          'Region',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        DropdownButtonFormField<int>(
+                          initialValue: _regionId,
+                          decoration: const InputDecoration(
+                            hintText: 'Selecciona una region',
+                          ),
+                          items: _regiones
+                              .map(
+                                (RegionOption region) => DropdownMenuItem<int>(
+                                  value: region.id,
+                                  child: Text(region.nombre),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (int? value) {
+                            setState(() {
+                              _regionId = value;
+                              _comunaId = null;
+                            });
+                          },
+                          validator: _validarRegion,
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Comuna',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        DropdownButtonFormField<int>(
+                          initialValue: _comunaId,
+                          decoration: InputDecoration(
+                            hintText: _regionId == null
+                                ? 'Primero selecciona una region'
+                                : 'Selecciona una comuna',
+                          ),
+                          items: _comunasFiltradas
+                              .map(
+                                (ComunaOption comuna) => DropdownMenuItem<int>(
+                                  value: comuna.id,
+                                  child: Text(comuna.nombre),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: _regionId == null
+                              ? null
+                              : (int? value) {
+                                  setState(() {
+                                    _comunaId = value;
+                                  });
+                                },
+                          validator: _validarComuna,
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       _field(
                         controller: _postal,

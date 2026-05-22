@@ -3,7 +3,13 @@ import 'package:eventosloop/features/onboarding/models/interes_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InteresesService {
-  SupabaseClient get _supabase => Supabase.instance.client;
+  InteresesService({SupabaseClient? client}) : _client = client;
+
+  final SupabaseClient? _client;
+
+  SupabaseClient get _supabase => _client ?? Supabase.instance.client;
+
+  static const int minimoRequerido = 5;
 
   Future<List<InteresModel>> obtenerIntereses() async {
     if (!AppEnv.useSupabase) {
@@ -17,8 +23,8 @@ class InteresesService {
           .order('categoria')
           .order('nombre');
       return data.map(InteresModel.fromJson).toList();
-    } catch (_) {
-      return const <InteresModel>[];
+    } catch (e) {
+      throw Exception('No se pudieron cargar los intereses: $e');
     }
   }
 
@@ -38,17 +44,20 @@ class InteresesService {
       return data
           .map((Map<String, dynamic> row) => (row['id_interes'] as num).toInt())
           .toList();
-    } catch (_) {
-      return const <int>[];
+    } catch (e) {
+      throw Exception('No se pudieron leer tus intereses: $e');
     }
   }
 
-  Future<bool> guardarIntereses(Set<int> ids) async {
+  Future<void> guardarIntereses(Set<int> ids) async {
     if (!AppEnv.useSupabase) {
-      return false;
+      throw Exception('Supabase no esta configurado');
     }
     if (_supabase.auth.currentUser == null) {
-      return false;
+      throw Exception('Debes iniciar sesion para guardar intereses');
+    }
+    if (ids.length < minimoRequerido) {
+      throw Exception('Selecciona al menos $minimoRequerido intereses');
     }
     try {
       await _supabase.rpc(
@@ -57,14 +66,23 @@ class InteresesService {
           'ids': ids.toList(),
         },
       );
-      return true;
-    } catch (_) {
-      return false;
+    } catch (e) {
+      throw Exception('No se pudieron guardar los intereses: $e');
     }
   }
 
   Future<bool> usuarioTieneIntereses() async {
-    final List<int> ids = await obtenerInteresesUsuario();
-    return ids.length >= 5;
+    if (!AppEnv.useSupabase) {
+      return false;
+    }
+    if (_supabase.auth.currentUser == null) {
+      return false;
+    }
+    try {
+      final List<int> ids = await obtenerInteresesUsuario();
+      return ids.length >= minimoRequerido;
+    } catch (_) {
+      return false;
+    }
   }
 }

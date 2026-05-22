@@ -240,21 +240,31 @@ class AuthApiService {
         );
       }
 
+      final String fechaNacimiento =
+          '${model.fechaNacimiento.year.toString().padLeft(4, '0')}-'
+          '${model.fechaNacimiento.month.toString().padLeft(2, '0')}-'
+          '${model.fechaNacimiento.day.toString().padLeft(2, '0')}';
+
       try {
-        final int? comunaId = int.tryParse(model.comuna.trim());
-        await _supabase.from('usuario').upsert(<String, dynamic>{
-          'auth_user_id': user.id,
-          'email': model.email.trim().toLowerCase(),
-          'username': model.username.trim(),
-          'nombres': model.nombres.trim(),
-          'apellidos': model.apellidos.trim(),
-          'fecha_nacimiento': model.fechaNacimiento.toIso8601String(),
-          'genero': model.genero.trim(),
-          if (comunaId != null) 'comuna_id_comuna': comunaId,
-        });
-      } catch (_) {
-        // El registro auth ya existe. Si la tabla MER aún no está lista,
-        // permitimos continuar y se sincroniza en un paso posterior.
+        await _supabase.from('usuario').upsert(
+          <String, dynamic>{
+            'auth_user_id': user.id,
+            'email': model.email.trim().toLowerCase(),
+            'username': model.username.trim(),
+            'nombres': model.nombres.trim(),
+            'apellidos': model.apellidos.trim(),
+            'fecha_nacimiento': fechaNacimiento,
+            'genero': model.genero.trim(),
+            'comuna_id_comuna': model.comunaId,
+          },
+          onConflict: 'auth_user_id',
+        );
+      } catch (e) {
+        return ServiceResult(
+          ok: false,
+          errorMessage:
+              'Cuenta creada pero no se guardo el perfil. Revisa comuna_id_comuna: $e',
+        );
       }
 
       return ServiceResult(ok: true);
@@ -263,10 +273,10 @@ class AuthApiService {
         ok: false,
         errorMessage: e.message,
       );
-    } catch (_) {
+    } catch (e) {
       return ServiceResult(
         ok: false,
-        errorMessage: 'Error inesperado al registrar usuario.',
+        errorMessage: 'Error inesperado al registrar usuario: $e',
       );
     }
   }
