@@ -1,5 +1,6 @@
 import 'package:eventosloop/features/admin/models/admin_models.dart';
 import 'package:eventosloop/features/admin/models/admin_community_models.dart';
+import 'package:eventosloop/features/admin/models/admin_directory_models.dart';
 import 'package:flutter/material.dart';
 
 class AdminMockService {
@@ -255,6 +256,105 @@ class AdminMockService {
         status: AdminReportStatus.pending,
         actionLabel: 'Processed by AI',
         incidentReportId: '849204',
+      ),
+    ];
+  }
+
+  List<AdminUserRow> fetchUsers() {
+    return const <AdminUserRow>[
+      AdminUserRow(
+        name: 'Sarah Jenkins',
+        email: 'sarah.j@loop.io',
+        role: 'ADMIN',
+        interests: <String>['Design', 'AI'],
+        joinedLabel: 'Jan 12, 2024',
+        status: AdminUserStatus.active,
+        avatarColor: 0xFF0682BC,
+      ),
+      AdminUserRow(
+        name: 'Marcus Vance',
+        email: 'marcus.v@loop.io',
+        role: 'USER',
+        interests: <String>['Fintech', 'Running'],
+        joinedLabel: 'Mar 03, 2024',
+        status: AdminUserStatus.pending,
+        avatarColor: 0xFF7B61B5,
+      ),
+      AdminUserRow(
+        name: 'Elena Solis',
+        email: 'elena.s@loop.io',
+        role: 'USER',
+        interests: <String>['Wellness', 'Yoga'],
+        joinedLabel: 'Jun 18, 2024',
+        status: AdminUserStatus.active,
+        avatarColor: 0xFF2E9E6A,
+      ),
+      AdminUserRow(
+        name: 'Diego Rojas',
+        email: 'diego.r@loop.io',
+        role: 'USER',
+        interests: <String>['Gaming', 'Tech'],
+        joinedLabel: 'Aug 02, 2023',
+        status: AdminUserStatus.suspended,
+        avatarColor: 0xFFD64545,
+      ),
+    ];
+  }
+
+  List<AdminEventStat> fetchEventStats() {
+    return const <AdminEventStat>[
+      AdminEventStat(label: 'Active Events', value: '1,284'),
+      AdminEventStat(label: 'Pending Requests', value: '432'),
+      AdminEventStat(label: 'Chat Velocity', value: 'High'),
+      AdminEventStat(label: 'Flagged Content', value: '12'),
+    ];
+  }
+
+  List<AdminEventRow> fetchLiveEvents() {
+    return const <AdminEventRow>[
+      AdminEventRow(
+        name: 'Urban Music Project',
+        dateLabel: 'Oct 21, 2025',
+        community: 'Creative Arts Hub',
+        type: AdminEventType.publicEvent,
+        participantsLabel: '164/150',
+        chatStatus: AdminEventChatStatus.active,
+        chatDetail: 'Active (63 msg/min)',
+        iconColor: 0xFF005F9A,
+        needsModeration: false,
+      ),
+      AdminEventRow(
+        name: 'Startup Pitch Night',
+        dateLabel: 'Oct 21, 2025',
+        community: 'Founders Circle',
+        type: AdminEventType.privateEvent,
+        participantsLabel: '48/50',
+        chatStatus: AdminEventChatStatus.quiet,
+        chatDetail: 'Quiet',
+        iconColor: 0xFF7B61B5,
+        needsModeration: false,
+      ),
+      AdminEventRow(
+        name: 'Night Run Santiago',
+        dateLabel: 'Oct 22, 2025',
+        community: 'Running Santiago',
+        type: AdminEventType.publicEvent,
+        participantsLabel: '92/120',
+        chatStatus: AdminEventChatStatus.moderationRequired,
+        chatDetail: 'Moderation Required',
+        iconColor: 0xFFD64545,
+        needsModeration: true,
+      ),
+      AdminEventRow(
+        name: 'Ceramics Workshop',
+        dateLabel: 'Oct 23, 2025',
+        community: 'Maker Studio',
+        type: AdminEventType.publicEvent,
+        participantsLabel: '24/30',
+        chatStatus: AdminEventChatStatus.active,
+        chatDetail: 'Active (12 msg/min)',
+        iconColor: 0xFF0682BC,
+        needsModeration: false,
       ),
     ];
   }

@@ -2,8 +2,10 @@ import 'package:eventosloop/features/admin/models/admin_models.dart';
 import 'package:eventosloop/features/admin/views/admin_analytics_view.dart';
 import 'package:eventosloop/features/admin/views/admin_community_management_view.dart';
 import 'package:eventosloop/features/admin/views/admin_dashboard_view.dart';
+import 'package:eventosloop/features/admin/views/admin_event_management_view.dart';
 import 'package:eventosloop/features/admin/views/admin_moderation_queue_view.dart';
 import 'package:eventosloop/features/admin/views/admin_moderation_review_view.dart';
+import 'package:eventosloop/features/admin/views/admin_user_management_view.dart';
 import 'package:flutter/material.dart';
 
 void openAdminDashboard(BuildContext context) {
@@ -30,8 +32,8 @@ void handleAdminSidebarNavigation(
   bool replace = false,
 }) {
   final Widget? target = switch (item) {
-    AdminSidebarItem.userManagement => const AdminCommunityManagementView(),
-    AdminSidebarItem.contentFeed => const AdminAnalyticsView(),
+    AdminSidebarItem.userManagement => const AdminUserManagementView(),
+    AdminSidebarItem.contentFeed => const AdminEventManagementView(),
     AdminSidebarItem.moderation => const AdminModerationQueueView(),
     AdminSidebarItem.adConsole || AdminSidebarItem.systemStatus => null,
   };
