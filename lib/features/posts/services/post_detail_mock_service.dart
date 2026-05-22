@@ -69,6 +69,8 @@ class PostDetailMockService {
             commentsCount: post.commentsCount,
             sharesCount: 0,
             likedByMe: false,
+            isOwnedByMe: post.id == 301,
+            communityId: 'creative',
             hashtags: post.isLinked
                 ? const <String>['#Vinculado', '#Comunidad', '#LOOP']
                 : const <String>['#Comunidad', '#LOOP'],
@@ -105,6 +107,8 @@ class PostDetailMockService {
       commentsCount: item.commentsCount,
       sharesCount: item.sharesCount,
       likedByMe: item.likedByMe,
+      isOwnedByMe: item.id == 301,
+      communityId: 'tech',
       hashtags: _hashtagsFor(item),
       comments: _defaultComments,
     );
@@ -135,6 +139,8 @@ class PostDetailMockService {
       sharesCount: 32,
       likedByMe: false,
       isActive: true,
+      isOwnedByMe: true,
+      communityId: 'opensource',
       hashtags: const <String>[
         '#Sustainability',
         '#CircularEconomy',
@@ -143,4 +149,41 @@ class PostDetailMockService {
       comments: _defaultComments,
     ),
   };
+
+  Future<void> updatePost({
+    required int postId,
+    required String title,
+    required String body,
+    String? communityId,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    final PostDetailModel? existing = _mockPosts[postId];
+    if (existing != null) {
+      _mockPosts[postId] = PostDetailModel(
+        id: existing.id,
+        authorName: existing.authorName,
+        authorInitials: existing.authorInitials,
+        username: existing.username,
+        publishedLabel: existing.publishedLabel,
+        title: title,
+        body: body,
+        mediaLabel: existing.mediaLabel,
+        mediaColorHex: existing.mediaColorHex,
+        likesCount: existing.likesCount,
+        commentsCount: existing.commentsCount,
+        sharesCount: existing.sharesCount,
+        likedByMe: existing.likedByMe,
+        isActive: existing.isActive,
+        isOwnedByMe: existing.isOwnedByMe,
+        communityId: communityId ?? existing.communityId,
+        hashtags: existing.hashtags,
+        comments: existing.comments,
+      );
+    }
+  }
+
+  Future<void> deletePost(int postId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    _mockPosts.remove(postId);
+  }
 }

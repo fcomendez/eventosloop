@@ -21,6 +21,7 @@ class EventModel {
     this.isHighlighted = false,
     this.isPrivate = false,
     this.whatsappLink,
+    this.isHostedByMe = false,
   });
 
   final int id;
@@ -44,6 +45,7 @@ class EventModel {
   final bool isHighlighted;
   final bool isPrivate;
   final String? whatsappLink;
+  final bool isHostedByMe;
 
   double get capacityProgress =>
       capacity <= 0 ? 0 : (joinedCount / capacity).clamp(0, 1);

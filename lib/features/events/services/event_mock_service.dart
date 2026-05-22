@@ -83,6 +83,7 @@ class EventMockService {
       joinedCount: 9,
       coverColorHex: '#0682BC',
       communityId: 3,
+      isHostedByMe: true,
     ),
     const EventModel(
       id: 5,
@@ -138,5 +139,53 @@ class EventMockService {
     return _events
         .where((EventModel event) => event.communityId == communityId)
         .toList();
+  }
+
+  Future<void> updateEvent({
+    required int eventId,
+    required String title,
+    required String description,
+    required String dateLabel,
+    required String timeLabel,
+    required String address,
+    String? comuna,
+    int? communityId,
+    int? capacity,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    final int index = _events.indexWhere((EventModel e) => e.id == eventId);
+    if (index == -1) {
+      return;
+    }
+    final EventModel current = _events[index];
+    _events[index] = EventModel(
+      id: current.id,
+      title: title,
+      description: description,
+      category: current.category,
+      subCategory: current.subCategory,
+      hostName: current.hostName,
+      dateLabel: dateLabel,
+      timeLabel: timeLabel,
+      address: address,
+      locationName: current.locationName,
+      comuna: comuna ?? current.comuna,
+      latitude: current.latitude,
+      longitude: current.longitude,
+      capacity: capacity ?? current.capacity,
+      joinedCount: current.joinedCount,
+      coverColorHex: current.coverColorHex,
+      communityId: communityId ?? current.communityId,
+      isFlash: current.isFlash,
+      isHighlighted: current.isHighlighted,
+      isPrivate: current.isPrivate,
+      whatsappLink: current.whatsappLink,
+      isHostedByMe: current.isHostedByMe,
+    );
+  }
+
+  Future<void> cancelEvent(int eventId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    _events.removeWhere((EventModel event) => event.id == eventId);
   }
 }

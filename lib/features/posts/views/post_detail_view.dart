@@ -1,6 +1,10 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/content_options_sheet.dart';
+import 'package:eventosloop/features/create/views/edit_post_view.dart';
 import 'package:eventosloop/features/posts/models/post_comment_model.dart';
 import 'package:eventosloop/features/posts/services/post_detail_mock_service.dart';
+import 'package:eventosloop/features/report/models/report_content_model.dart';
+import 'package:eventosloop/features/report/views/report_content_view.dart';
 import 'package:flutter/material.dart';
 
 class PostDetailView extends StatefulWidget {
@@ -44,6 +48,49 @@ class _PostDetailViewState extends State<PostDetailView> {
     });
   }
 
+  void _openOptions(PostDetailModel post) {
+    final List<ContentOptionItem> options = <ContentOptionItem>[
+      if (post.isOwnedByMe)
+        ContentOptionItem(
+          icon: Icons.edit_outlined,
+          label: 'Editar publicación',
+          subtitle: 'Modifica título, texto o imagen de tu publicación.',
+          onTap: () async {
+            final bool? updated = await Navigator.of(context).push<bool>(
+              MaterialPageRoute<bool>(
+                builder: (_) => EditPostView(postId: post.id),
+              ),
+            );
+            if (updated == true) {
+              await _load();
+            }
+          },
+        ),
+      ContentOptionItem(
+        icon: Icons.flag_outlined,
+        label: 'Reportar contenido',
+        subtitle: 'Informa spam, acoso o contenido que incumple las normas.',
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => ReportContentView(
+                contentType: ReportContentType.post,
+                contentId: post.id,
+                contentTitle: post.title ?? post.body,
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+
+    showContentOptionsSheet(
+      context,
+      title: 'Opciones de publicación',
+      options: options,
+    );
+  }
+
   Color _parseHex(String? value) {
     final String clean = (value ?? '#D9EAF5').replaceFirst('#', '');
     return Color(int.parse('FF$clean', radix: 16));
@@ -67,7 +114,10 @@ class _PostDetailViewState extends State<PostDetailView> {
                   ? _NotFound(onBack: () => Navigator.pop(context))
                   : Column(
                       children: <Widget>[
-                        _TopBar(onBack: () => Navigator.pop(context)),
+                        _TopBar(
+                          onBack: () => Navigator.pop(context),
+                          onOptions: () => _openOptions(_post!),
+                        ),
                         Expanded(
                           child: ListView(
                             padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
@@ -113,9 +163,10 @@ class _PostDetailViewState extends State<PostDetailView> {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.onBack});
+  const _TopBar({required this.onBack, required this.onOptions});
 
   final VoidCallback onBack;
+  final VoidCallback onOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +191,7 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: onOptions,
             icon: const Icon(Icons.more_vert),
             color: AppColors.primaryDark,
           ),
@@ -528,7 +579,7 @@ class _NotFound extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        _TopBar(onBack: onBack),
+        _TopBar(onBack: onBack, onOptions: () {}),
         const Expanded(
           child: Center(
             child: Text(

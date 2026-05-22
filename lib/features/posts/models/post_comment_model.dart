@@ -34,6 +34,8 @@ class PostDetailModel {
     this.mediaLabel,
     this.mediaColorHex,
     this.isActive = true,
+    this.isOwnedByMe = false,
+    this.communityId,
   });
 
   final int id;
@@ -50,6 +52,8 @@ class PostDetailModel {
   final int sharesCount;
   final bool likedByMe;
   final bool isActive;
+  final bool isOwnedByMe;
+  final String? communityId;
   final List<String> hashtags;
   final List<PostCommentModel> comments;
 }

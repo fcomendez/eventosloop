@@ -1,8 +1,12 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/content_options_sheet.dart';
 import 'package:eventosloop/core/widgets/loop_event_map.dart';
+import 'package:eventosloop/features/create/views/edit_event_view.dart';
 import 'package:eventosloop/features/events/models/event_model.dart';
 import 'package:eventosloop/features/events/services/event_mock_service.dart';
+import 'package:eventosloop/features/report/models/report_content_model.dart';
+import 'package:eventosloop/features/report/views/report_content_view.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -37,6 +41,49 @@ class _EventDetailViewState extends State<EventDetailView> {
     });
   }
 
+  void _openOptions(EventModel event) {
+    final List<ContentOptionItem> options = <ContentOptionItem>[
+      if (event.isHostedByMe)
+        ContentOptionItem(
+          icon: Icons.edit_outlined,
+          label: 'Editar evento',
+          subtitle: 'Actualiza fecha, lugar, cupo o descripción.',
+          onTap: () async {
+            final bool? updated = await Navigator.of(context).push<bool>(
+              MaterialPageRoute<bool>(
+                builder: (_) => EditEventView(eventId: event.id),
+              ),
+            );
+            if (updated == true) {
+              await _load();
+            }
+          },
+        ),
+      ContentOptionItem(
+        icon: Icons.flag_outlined,
+        label: 'Reportar evento',
+          subtitle: 'Informa contenido engañoso, inapropiado o peligroso.',
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => ReportContentView(
+                contentType: ReportContentType.event,
+                contentId: event.id,
+                contentTitle: event.title,
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+
+    showContentOptionsSheet(
+      context,
+      title: 'Opciones del evento',
+      options: options,
+    );
+  }
+
   Color _parseHex(String value) {
     final String clean = value.replaceFirst('#', '');
     return Color(int.parse('FF$clean', radix: 16));
@@ -60,7 +107,10 @@ class _EventDetailViewState extends State<EventDetailView> {
                   ? _NotFound(onBack: () => Navigator.pop(context))
                   : Column(
                       children: <Widget>[
-                        _TopBar(onBack: () => Navigator.pop(context)),
+                        _TopBar(
+                          onBack: () => Navigator.pop(context),
+                          onOptions: () => _openOptions(_event!),
+                        ),
                         Expanded(
                           child: ListView(
                             padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
@@ -110,9 +160,10 @@ class _EventDetailViewState extends State<EventDetailView> {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.onBack});
+  const _TopBar({required this.onBack, required this.onOptions});
 
   final VoidCallback onBack;
+  final VoidCallback onOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -137,8 +188,8 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.share_outlined),
+            onPressed: onOptions,
+            icon: const Icon(Icons.more_vert),
             color: AppColors.primaryDark,
           ),
         ],
@@ -595,7 +646,7 @@ class _NotFound extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        _TopBar(onBack: onBack),
+        _TopBar(onBack: onBack, onOptions: () {}),
         const Expanded(
           child: Center(
             child: Text(
