@@ -13,6 +13,8 @@ class FeedMockService {  static const int _pageSize = 6;
         name: 'Marcos Castillo',
         username: '@marcos.eventos',
         avatarInitials: 'MC',
+        avatarUrl:
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
       ),
       publishedLabel: 'hace 12 min',
       title: 'Workshop de UX Editorial',

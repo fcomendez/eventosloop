@@ -1,3 +1,5 @@
+import 'package:eventosloop/features/events/models/event_status.dart';
+
 class EventModel {
   const EventModel({
     required this.id,
@@ -22,6 +24,8 @@ class EventModel {
     this.isPrivate = false,
     this.whatsappLink,
     this.isHostedByMe = false,
+    this.status = EventStatus.active,
+    this.hostAvatarUrl,
   });
 
   final int id;
@@ -46,7 +50,16 @@ class EventModel {
   final bool isPrivate;
   final String? whatsappLink;
   final bool isHostedByMe;
+  final EventStatus status;
+  final String? hostAvatarUrl;
 
   double get capacityProgress =>
       capacity <= 0 ? 0 : (joinedCount / capacity).clamp(0, 1);
+
+  bool get isDeleted => status == EventStatus.deleted;
+
+  bool get isSuspended => status == EventStatus.suspended;
+
+  bool get isJoinableByParticipants =>
+      status == EventStatus.active && !isHostedByMe;
 }

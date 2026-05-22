@@ -33,31 +33,14 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Moderacion de contenido',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Priorizamos la seguridad y los estandares comunitarios en todo el ecosistema LOOP.',
-                      style: TextStyle(color: AppColors.textSecondary, height: 1.35),
-                    ),
-                  ],
-                ),
-              ),
+          AdminPageHeader(
+            title: 'Moderacion de contenido',
+            subtitle:
+                'Priorizamos la seguridad y los estandares comunitarios en todo el ecosistema LOOP.',
+            trailing: <Widget>[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFCE8EA),
                   borderRadius: BorderRadius.circular(999),

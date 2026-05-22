@@ -1,6 +1,7 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
+import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/feed/controllers/feed_controller.dart';
 import 'package:eventosloop/features/feed/models/feed_item_model.dart';
 import 'package:eventosloop/features/notifications/services/notification_mock_service.dart';
@@ -249,17 +250,11 @@ class _FeedPostCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
               child: Row(
                 children: <Widget>[
-                  CircleAvatar(
+                  LoopUserAvatar(
+                    avatarUrl: item.author.avatarUrl,
+                    initials: item.author.avatarInitials,
                     radius: 19,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-                    child: Text(
-                      item.author.avatarInitials,
-                      style: const TextStyle(
-                        color: AppColors.primaryDark,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
+                    fontSize: 12,
                   ),
                   const SizedBox(width: 10),
                   Expanded(

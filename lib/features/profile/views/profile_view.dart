@@ -2,6 +2,7 @@ import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/core/widgets/edge_to_edge_image_grid.dart';
+import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
 import 'package:eventosloop/features/profile/controllers/profile_controller.dart';
 import 'package:eventosloop/features/profile/models/profile_model.dart';
@@ -225,34 +226,19 @@ class _ProfileHeader extends StatelessWidget {
         Stack(
           alignment: Alignment.bottomRight,
           children: <Widget>[
-            Container(
-              width: 104,
-              height: 104,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <Color>[Color(0xFF0E3554), Color(0xFFB8DFF6)],
+            LoopUserAvatar(
+              avatarUrl: profile.avatarUrl,
+              initials: profile.avatarInitials,
+              radius: 52,
+              fontSize: 30,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: AppColors.primaryDark.withValues(alpha: 0.18),
+                  blurRadius: 16,
+                  offset: const Offset(0, 7),
                 ),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: AppColors.primaryDark.withValues(alpha: 0.18),
-                    blurRadius: 16,
-                    offset: const Offset(0, 7),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  profile.avatarInitials,
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
+              ],
             ),
             Container(
               width: 28,

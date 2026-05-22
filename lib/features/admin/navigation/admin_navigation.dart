@@ -8,6 +8,7 @@ import 'package:eventosloop/features/admin/views/admin_moderation_queue_view.dar
 import 'package:eventosloop/features/admin/views/admin_moderation_review_view.dart';
 import 'package:eventosloop/features/admin/views/admin_system_status_view.dart';
 import 'package:eventosloop/features/admin/views/admin_user_management_view.dart';
+import 'package:eventosloop/features/feed/views/feed_home_view.dart';
 import 'package:flutter/material.dart';
 
 void openAdminDashboard(BuildContext context) {
@@ -93,5 +94,14 @@ void openAdminModerationReview(BuildContext context, {String? reportId}) {
     MaterialPageRoute<void>(
       builder: (_) => AdminModerationReviewView(reportId: reportId),
     ),
+  );
+}
+
+void exitAdminToFeed(BuildContext context) {
+  Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute<void>(
+      builder: (_) => const FeedHomeView(email: ''),
+    ),
+    (Route<dynamic> route) => false,
   );
 }

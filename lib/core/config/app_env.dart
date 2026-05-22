@@ -30,6 +30,11 @@ class AppEnv {
     return normalized;
   }
 
+  static const String googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: '',
+  );
+
   static String get loginEndpoint => '$apiBaseUrl/auth/login';
   static String get loginGoogleEndpoint => '$apiBaseUrl/auth/login/google';
   static String get forgotPasswordEndpoint =>

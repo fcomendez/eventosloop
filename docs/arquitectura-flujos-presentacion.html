@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOOP — Arquitectura (presentación animada)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" />
+  <style>
+    :root {
+      --loop-primary: #0682bc;
+      --loop-dark: #0e3554;
+    }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--loop-dark); text-transform: none; }
+    .reveal .slides section { text-align: left; }
+    .reveal .slides section.center-slide { text-align: center; }
+    .reveal .subtitle { color: #5a7085; font-size: 0.55em; margin-top: -0.4em; }
+    .reveal .mermaid-wrap {
+      background: #f4f9fd;
+      border-radius: 16px;
+      padding: 12px;
+      margin-top: 12px;
+      overflow: auto;
+      max-height: 62vh;
+    }
+    .reveal .hint {
+      font-size: 0.42em;
+      color: #6b8194;
+      margin-top: 14px;
+    }
+    .reveal .badge {
+      display: inline-block;
+      background: var(--loop-primary);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.45em;
+      margin-bottom: 8px;
+    }
+    .logo { font-weight: 900; letter-spacing: 0.08em; color: var(--loop-dark); }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <section class="center-slide">
+        <p class="logo">LOOP</p>
+        <h1>Arquitectura y flujos</h1>
+        <p class="subtitle">Presentación animada · eventosloop</p>
+        <p class="hint">← → flechas · F pantalla completa · S auto-reproducir · Esc salir</p>
+      </section>
+
+      <section>
+        <span class="badge">Parte 1</span>
+        <h2>Mapa general de capas</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TB
+  subgraph app ["app/"]
+    LoopApp["LoopApp\nMaterialApp + tema ES"]
+  end
+  subgraph core ["core/"]
+    Env["app_env.dart"]
+    Widgets["widgets compartidos"]
+  end
+  subgraph features ["features/"]
+    Auth["auth"]
+    Feed["feed"]
+    Events["events"]
+    Admin["admin"]
+  end
+  subgraph backend ["Datos"]
+    Supabase["Supabase"]
+    Mock["Mock"]
+    HTTP["HTTP :8080"]
+  end
+  LoopApp --> Auth
+  features --> core
+  features --> Supabase
+  features --> Mock
+  Auth --> HTTP
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 2</span>
+        <h2>Arranque de la aplicación</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+sequenceDiagram
+  participant Main as main.dart
+  participant Env as AppEnv
+  participant SB as Supabase
+  participant App as LoopApp
+  participant Splash as SplashView
+  participant AuthNav as AuthNavigation
+  Main->>Env: useSupabase?
+  alt Supabase activo
+    Main->>SB: initialize
+  end
+  Main->>App: runApp()
+  App->>Splash: home
+  Splash->>AuthNav: navigateFromSplash()
+  alt sin sesion
+    AuthNav->>LoginView: ir a login
+  else sesion valida
+    AuthNav->>AuthNav: navigateAfterAuth
+  end
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 3</span>
+        <h2>Autenticación y registro</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+  Login["LoginView"] --> LC["LoginController"]
+  Register["RegisterView"] --> RC["RegisterController"]
+  LC --> API["AuthApiService"]
+  RC --> API
+  API --> SB["Supabase Auth"]
+  API --> HTTP["HTTP /auth"]
+  LC --> Google["GoogleSignIn"]
+  Google --> API
+  Login --> Nav["AuthNavigation"]
+  Register --> Nav
+  Nav --> Feed["FeedHomeView"]
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 3b</span>
+        <h2>Onboarding (primer uso)</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+  W["WelcomeView"] --> I["InteresesSelectionView"]
+  I --> C["JoinCommunitiesView"]
+  C --> F["FeedHomeView"]
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 4a</span>
+        <h2>Barra inferior — 5 pestañas</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+  Bar["BarraInteractiva"] --> Nav["navigateFromBar()"]
+  Nav --> Inicio["FeedHomeView"]
+  Nav --> Explorar["ExploreView"]
+  Nav --> Crear["CreateHubView"]
+  Nav --> Comunidades["CommunitiesEventsView"]
+  Nav --> Perfil["ProfileView"]
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 4b</span>
+        <h2>Navegación a detalle</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+  O["Cualquier pantalla"] --> D["detail_navigation.dart"]
+  D --> E["EventDetailView"]
+  D --> Co["CommunityDetailView"]
+  D --> P["PostDetailView"]
+  D --> U["ProfileView userId"]
+  D --> N["NotificationsView"]
+  D --> S["ParticipantRequestsView"]
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 4c</span>
+        <h2>Capas del Feed (facade)</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TB
+  V["FeedHomeView"] --> C["FeedController"]
+  C --> F["FeedService"]
+  F -->|OK| S["FeedSupabaseService"]
+  F -->|fallback| M["FeedMockService"]
+  S --> DB["publicaciones"]
+  M --> L["memoria local"]
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 5a</span>
+        <h2>Detalle de evento</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+  D["EventDetailView"] --> S["EventMockService"]
+  D -->|creador privado| R["ParticipantRequestsView"]
+  D -->|editar| E["EditEventView"]
+  D -->|reportar| Rep["ReportContentView"]
+  S --> M["EventModel + EventStatus"]
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 5b</span>
+        <h2>Perfil y avatar</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+  P["ProfileView"] --> Mock["ProfileMockService"]
+  P --> A["LoopUserAvatar"]
+  Feed["FeedHomeView"] --> A
+  Admin["AdminShell"] --> A
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 5c</span>
+        <h2>Panel administrador</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart TB
+  Set["ProfileSettingsView"] --> Dash["AdminDashboardView"]
+  Dash --> Shell["AdminShell"]
+  Shell --> Nav["admin_navigation"]
+  Nav --> U["Usuarios"]
+  Nav --> Ev["Eventos"]
+  Nav --> Mod["Moderacion"]
+  Shell --> Feed["exitAdminToFeed"]
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 6</span>
+        <h2>Backend Supabase (ER)</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+erDiagram
+  usuario ||--o{ publicaciones : publica
+  usuario ||--o{ seguidores : sigue
+  comunidades ||--o{ miembro_comunidad : agrupa
+  evento ||--o{ participantes_evento : inscribe
+  publicaciones ||--o{ comentario : tiene
+        </pre></div>
+      </section>
+
+      <section>
+        <span class="badge">Parte 7</span>
+        <h2>Fases de integración</h2>
+        <div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+  F1["Fase 1\nAuth + usuario"] --> F2["Fase 2\nFeed"]
+  F2 --> F3["Fase 3\nEventos"]
+  F3 --> F4["Fase 4\nComunidades"]
+  F4 --> F5["Fase 5\nAdmin"]
+        </pre></div>
+      </section>
+
+      <section class="center-slide">
+        <h2>Fin</h2>
+        <p class="subtitle">Documento completo: arquitectura-flujos-por-partes.md</p>
+        <p class="hint">Exportar video: Win+G grabar pantalla mientras usas S (auto)</p>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#d8eaf7',
+        primaryTextColor: '#0e3554',
+        primaryBorderColor: '#0682bc',
+        lineColor: '#0682bc',
+        secondaryColor: '#eaf4fc',
+        tertiaryColor: '#f4f9fd'
+      },
+      flowchart: { htmlLabels: true, curve: 'basis' },
+      securityLevel: 'loose'
+    });
+
+    async function renderVisibleMermaid() {
+      const slide = Reveal.getCurrentSlide();
+      if (!slide) return;
+      const nodes = slide.querySelectorAll('pre.mermaid:not([data-processed])');
+      if (nodes.length) {
+        await mermaid.run({ nodes: Array.from(nodes) });
+      }
+    }
+
+    Reveal.initialize({
+      hash: true,
+      transition: 'slide',
+      transitionSpeed: 'default',
+      autoSlide: 0,
+      controls: true,
+      progress: true,
+      center: false
+    }).then(async () => {
+      await renderVisibleMermaid();
+      Reveal.on('slidechanged', renderVisibleMermaid);
+    });
+  </script>
+</body>
+</html>

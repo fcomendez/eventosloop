@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/config/app_env.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/features/auth/controllers/login_controller.dart';
 import 'package:eventosloop/features/auth/controllers/register_controller.dart';
 import 'package:eventosloop/features/auth/models/register_form_model.dart';
 import 'package:eventosloop/features/auth/models/ubicacion_models.dart';
@@ -17,6 +18,7 @@ class RegisterView extends StatefulWidget {
 
 class _RegisterViewState extends State<RegisterView> {
   final RegisterController _controller = RegisterController();
+  final LoginController _loginController = LoginController();
   final UbicacionService _ubicacionService = UbicacionService();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _nombres = TextEditingController();
@@ -39,6 +41,7 @@ class _RegisterViewState extends State<RegisterView> {
   List<RegionOption> _regiones = const <RegionOption>[];
   List<ComunaOption> _comunas = const <ComunaOption>[];
   bool _cargandoUbicacion = true;
+  bool _iniciandoGoogle = false;
   String? _errorUbicacion;
 
   @override
@@ -86,7 +89,38 @@ class _RegisterViewState extends State<RegisterView> {
     _confirmPassword.dispose();
     _emailFocus.dispose();
     _controller.dispose();
+    _loginController.dispose();
     super.dispose();
+  }
+
+  Future<void> _registrarConGoogle() async {
+    setState(() {
+      _iniciandoGoogle = true;
+    });
+    final session = await _loginController.iniciarSesionConGoogle();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _iniciandoGoogle = false;
+    });
+    if (session != null) {
+      await AuthNavigation.navigateAfterAuth(
+        context,
+        email: session.email,
+      );
+      return;
+    }
+    if (_loginController.googleSignInCancelado) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'No se pudo registrar con Google. Revisa configuracion OAuth/API.',
+        ),
+      ),
+    );
   }
 
   Future<void> _submit() async {
@@ -346,7 +380,7 @@ class _RegisterViewState extends State<RegisterView> {
                       _field(
                         controller: _username,
                         label: 'Nombre de Usuario/Alias',
-                        hint: 'username',
+                        hint: 'ej: marcos.loop',
                         validator: (String? v) =>
                             _controller.validarRequerido(v, 'Alias'),
                       ),
@@ -601,6 +635,23 @@ class _RegisterViewState extends State<RegisterView> {
                         title: const Text(
                           'Acepto los Terminos de Servicio y Politica de Privacidad.',
                           style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 46,
+                        child: OutlinedButton(
+                          onPressed:
+                              _iniciandoGoogle ? null : _registrarConGoogle,
+                          child: _iniciandoGoogle
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Continuar con Google'),
                         ),
                       ),
                       const SizedBox(height: 8),

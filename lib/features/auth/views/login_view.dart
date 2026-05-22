@@ -64,6 +64,9 @@ class _LoginViewState extends State<LoginView> {
       await _navegarPostLogin(session.email);
       return;
     }
+    if (_controller.googleSignInCancelado) {
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(

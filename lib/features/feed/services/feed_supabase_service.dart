@@ -126,6 +126,7 @@ class FeedSupabaseService {
           apellidos: apellidos,
           username: usernameRaw,
         ),
+        avatarUrl: usuario?['avatar_url'] as String?,
       ),
       publishedLabel: relativeTimeLabel(publishedAt),
       title: row['titulo'] as String?,

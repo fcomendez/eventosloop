@@ -33,31 +33,12 @@ class _AdminAdConsoleViewState extends State<AdminAdConsoleView> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Consola de anuncios',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Gestiona campanas promocionales, ubicaciones y rendimiento en LOOP.',
-                      style: TextStyle(color: AppColors.textSecondary, height: 1.35),
-                    ),
-                  ],
-                ),
-              ),
+          AdminPageHeader(
+            title: 'Consola de anuncios',
+            subtitle:
+                'Gestiona campanas promocionales, ubicaciones y rendimiento en LOOP.',
+            trailing: <Widget>[
               OutlinedButton(onPressed: () {}, child: const Text('Exportar')),
-              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.add, size: 18),

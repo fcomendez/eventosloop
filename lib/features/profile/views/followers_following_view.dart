@@ -1,4 +1,5 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/profile/models/profile_model.dart';
 import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
 import 'package:flutter/material.dart';
@@ -301,16 +302,10 @@ class _ConnectionCard extends StatelessWidget {
           Stack(
             alignment: Alignment.bottomRight,
             children: <Widget>[
-              CircleAvatar(
+              LoopUserAvatar(
+                avatarUrl: item.avatarUrl,
+                initials: item.avatarInitials,
                 radius: 25,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-                child: Text(
-                  item.avatarInitials,
-                  style: const TextStyle(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
               ),
               if (item.isOnline)
                 Container(

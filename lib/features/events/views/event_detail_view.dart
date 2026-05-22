@@ -2,8 +2,10 @@ import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/content_options_sheet.dart';
 import 'package:eventosloop/core/widgets/loop_event_map.dart';
+import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/create/views/edit_event_view.dart';
 import 'package:eventosloop/features/events/models/event_model.dart';
+import 'package:eventosloop/features/events/models/event_status.dart';
 import 'package:eventosloop/features/events/services/event_mock_service.dart';
 import 'package:eventosloop/features/report/models/report_content_model.dart';
 import 'package:eventosloop/features/report/views/report_content_view.dart';
@@ -41,23 +43,39 @@ class _EventDetailViewState extends State<EventDetailView> {
     });
   }
 
+  Future<void> _openEditEvent(EventModel event) async {
+    final bool? updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => EditEventView(eventId: event.id),
+      ),
+    );
+    if (updated == true) {
+      await _load();
+    }
+  }
+
+  Future<void> _changeStatus(EventStatus status) async {
+    if (_event == null) {
+      return;
+    }
+    await _service.updateEventStatus(eventId: _event!.id, status: status);
+    if (!mounted) {
+      return;
+    }
+    await _load();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Estado actualizado a ${status.label}')),
+    );
+  }
+
   void _openOptions(EventModel event) {
     final List<ContentOptionItem> options = <ContentOptionItem>[
       if (event.isHostedByMe)
         ContentOptionItem(
           icon: Icons.edit_outlined,
           label: 'Editar evento',
-          subtitle: 'Actualiza fecha, lugar, cupo o descripción.',
-          onTap: () async {
-            final bool? updated = await Navigator.of(context).push<bool>(
-              MaterialPageRoute<bool>(
-                builder: (_) => EditEventView(eventId: event.id),
-              ),
-            );
-            if (updated == true) {
-              await _load();
-            }
-          },
+          subtitle: 'Actualiza fecha, lugar, cupo o descripcion.',
+          onTap: () => _openEditEvent(event),
         ),
       ContentOptionItem(
         icon: Icons.flag_outlined,
@@ -111,6 +129,38 @@ class _EventDetailViewState extends State<EventDetailView> {
                             padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
                             children: <Widget>[
                               _EventHeaderCard(event: _event!),
+                              if (_event!.isSuspended && !_event!.isHostedByMe) ...<Widget>[
+                                const SizedBox(height: 14),
+                                const _StatusNotice(
+                                  message:
+                                      'Este evento esta suspendido temporalmente. La inscripcion no esta disponible.',
+                                  color: AppColors.error,
+                                ),
+                              ],
+                              if (_event!.isDeleted) ...<Widget>[
+                                const SizedBox(height: 14),
+                                _StatusNotice(
+                                  message: _event!.isHostedByMe
+                                      ? 'Marcaste este evento como eliminado. Solo tu puedes verlo y reactivarlo.'
+                                      : 'Este evento ya no esta disponible.',
+                                  color: AppColors.textSecondary,
+                                ),
+                              ],
+                              if (_event!.isHostedByMe) ...<Widget>[
+                                const SizedBox(height: 14),
+                                _CreatorManagementCard(
+                                  event: _event!,
+                                  onEdit: () => _openEditEvent(_event!),
+                                  onManageRequests: _event!.isPrivate
+                                      ? () => openParticipantRequests(
+                                            context,
+                                            eventId: _event!.id,
+                                            eventTitle: _event!.title,
+                                          )
+                                      : null,
+                                  onStatusChanged: _changeStatus,
+                                ),
+                              ],
                               const SizedBox(height: 14),
                               _CapacityCard(event: _event!),
                               const SizedBox(height: 14),
@@ -127,20 +177,10 @@ class _EventDetailViewState extends State<EventDetailView> {
                                 const SizedBox(height: 14),
                                 _WhatsAppSection(link: _event!.whatsappLink!),
                               ],
-                              if (_event!.isPrivate) ...<Widget>[
-                                const SizedBox(height: 14),
-                                _PrivateEventActions(
-                                  eventId: _event!.id,
-                                  eventTitle: _event!.title,
-                                ),
-                              ],
                             ],
                           ),
                         ),
-                        _BottomAction(
-                          onTap: () {},
-                          isPrivate: _event!.isPrivate,
-                        ),
+                        _BottomAction(event: _event!),
                       ],
                     ),
         ),
@@ -261,18 +301,13 @@ class _EventHeaderCard extends StatelessWidget {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    CircleAvatar(
+                    LoopUserAvatar(
+                      avatarUrl: event.hostAvatarUrl,
+                      initials: event.hostName.isNotEmpty
+                          ? event.hostName.substring(0, 1).toUpperCase()
+                          : '?',
                       radius: 16,
-                      backgroundColor:
-                          AppColors.primary.withValues(alpha: 0.16),
-                      child: Text(
-                        event.hostName.substring(0, 1),
-                        style: const TextStyle(
-                          color: AppColors.primaryDark,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                        ),
-                      ),
+                      fontSize: 12,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -296,7 +331,7 @@ class _EventHeaderCard extends StatelessWidget {
                     height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -304,6 +339,8 @@ class _EventHeaderCard extends StatelessWidget {
                     _Chip(label: event.category),
                     if (event.subCategory != null)
                       _Chip(label: event.subCategory!),
+                    _StatusChip(status: event.status),
+                    if (event.isPrivate) const _Chip(label: 'Privado'),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -335,6 +372,52 @@ class _EventHeaderCard extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.child,
+    this.title,
+  });
+
+  final Widget child;
+  final String? title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (title != null) ...<Widget>[
+            Text(
+              title!,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          child,
         ],
       ),
     );
@@ -434,38 +517,139 @@ class _WhatsAppSection extends StatelessWidget {
   }
 }
 
-class _PrivateEventActions extends StatelessWidget {
-  const _PrivateEventActions({
-    required this.eventId,
-    required this.eventTitle,
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+
+  final EventStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = switch (status) {
+      EventStatus.active => const Color(0xFF2E9E6A),
+      EventStatus.suspended => const Color(0xFFE08A3A),
+      EventStatus.deleted => AppColors.error,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        status.label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusNotice extends StatelessWidget {
+  const _StatusNotice({
+    required this.message,
+    required this.color,
   });
 
-  final int eventId;
-  final String eventTitle;
+  final String message;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          height: 1.35,
+        ),
+      ),
+    );
+  }
+}
+
+class _CreatorManagementCard extends StatelessWidget {
+  const _CreatorManagementCard({
+    required this.event,
+    required this.onEdit,
+    required this.onStatusChanged,
+    this.onManageRequests,
+  });
+
+  final EventModel event;
+  final VoidCallback onEdit;
+  final ValueChanged<EventStatus> onStatusChanged;
+  final VoidCallback? onManageRequests;
 
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: 'Evento privado',
+      title: 'Gestion del evento',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           const Text(
-            'Este evento requiere aprobacion de participantes antes de confirmar la inscripcion.',
+            'Eres el creador de este evento. Puedes editarlo, cambiar su estado o revisar solicitudes.',
             style: TextStyle(
               color: AppColors.textSecondary,
               height: 1.35,
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => openParticipantRequests(
-                context,
-                eventId: eventId,
-                eventTitle: eventTitle,
+          const SizedBox(height: 14),
+          const Text(
+            'Estado del evento',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: EventStatus.values.map((EventStatus status) {
+              final bool selected = event.status == status;
+              return ChoiceChip(
+                label: Text(status.label),
+                selected: selected,
+                onSelected: (_) => onStatusChanged(status),
+                selectedColor: AppColors.primary.withValues(alpha: 0.16),
+                labelStyle: TextStyle(
+                  color: selected ? AppColors.primaryDark : AppColors.textSecondary,
+                  fontWeight: FontWeight.w800,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 14),
+          OutlinedButton.icon(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            label: const Text('Editar evento'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.divider),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
               ),
+            ),
+          ),
+          if (onManageRequests != null) ...<Widget>[
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: onManageRequests,
+              icon: const Icon(Icons.group_add_outlined, size: 18),
+              label: const Text('Gestionar solicitudes'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.white,
@@ -473,55 +657,8 @@ class _PrivateEventActions extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
               ),
-              child: const Text('Gestionar solicitudes'),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.child,
-    this.title,
-  });
-
-  final Widget child;
-  final String? title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (title != null) ...<Widget>[
-            Text(
-              title!,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 12),
           ],
-          child,
         ],
       ),
     );
@@ -599,32 +736,56 @@ class _Chip extends StatelessWidget {
 }
 
 class _BottomAction extends StatelessWidget {
-  const _BottomAction({
-    required this.onTap,
-    required this.isPrivate,
-  });
+  const _BottomAction({required this.event});
 
-  final VoidCallback onTap;
-  final bool isPrivate;
+  final EventModel event;
 
   @override
   Widget build(BuildContext context) {
+    if (event.isHostedByMe) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: const Text(
+            'Estas viendo tu propio evento como creador.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final bool canJoin = event.isJoinableByParticipants;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: SizedBox(
         width: double.infinity,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: <Color>[AppColors.primaryDark, AppColors.primary],
-            ),
+            gradient: canJoin
+                ? const LinearGradient(
+                    colors: <Color>[AppColors.primaryDark, AppColors.primary],
+                  )
+                : null,
+            color: canJoin ? null : AppColors.divider.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(22),
           ),
           child: ElevatedButton(
-            onPressed: onTap,
+            onPressed: canJoin ? () {} : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
+              disabledBackgroundColor: Colors.transparent,
               foregroundColor: AppColors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -632,7 +793,11 @@ class _BottomAction extends StatelessWidget {
               ),
             ),
             child: Text(
-              isPrivate ? 'Solicitar participacion' : 'Participar',
+              canJoin
+                  ? (event.isPrivate
+                      ? 'Solicitar participacion'
+                      : 'Participar')
+                  : 'Inscripcion no disponible',
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:eventosloop/features/events/models/event_model.dart';
+import 'package:eventosloop/features/events/models/event_status.dart';
 
 class EventMockService {
   static final List<EventModel> _events = <EventModel>[
@@ -25,6 +26,9 @@ class EventMockService {
       isHighlighted: true,
       isPrivate: true,
       whatsappLink: 'https://chat.whatsapp.com/loop-ux-mastery',
+      isHostedByMe: true,
+      hostAvatarUrl:
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=160&h=160&fit=crop',
     ),
     const EventModel(
       id: 2,
@@ -181,6 +185,46 @@ class EventMockService {
       isPrivate: current.isPrivate,
       whatsappLink: current.whatsappLink,
       isHostedByMe: current.isHostedByMe,
+      status: current.status,
+      hostAvatarUrl: current.hostAvatarUrl,
+    );
+  }
+
+  Future<void> updateEventStatus({
+    required int eventId,
+    required EventStatus status,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    final int index = _events.indexWhere((EventModel e) => e.id == eventId);
+    if (index == -1) {
+      return;
+    }
+    final EventModel current = _events[index];
+    _events[index] = EventModel(
+      id: current.id,
+      title: current.title,
+      description: current.description,
+      category: current.category,
+      subCategory: current.subCategory,
+      hostName: current.hostName,
+      dateLabel: current.dateLabel,
+      timeLabel: current.timeLabel,
+      address: current.address,
+      locationName: current.locationName,
+      comuna: current.comuna,
+      latitude: current.latitude,
+      longitude: current.longitude,
+      capacity: current.capacity,
+      joinedCount: current.joinedCount,
+      coverColorHex: current.coverColorHex,
+      communityId: current.communityId,
+      isFlash: current.isFlash,
+      isHighlighted: current.isHighlighted,
+      isPrivate: current.isPrivate,
+      whatsappLink: current.whatsappLink,
+      isHostedByMe: current.isHostedByMe,
+      status: status,
+      hostAvatarUrl: current.hostAvatarUrl,
     );
   }
 

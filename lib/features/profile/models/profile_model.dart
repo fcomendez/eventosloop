@@ -15,6 +15,7 @@ class ProfileModel {
     required this.communities,
     this.userId,
     this.isFollowing = false,
+    this.avatarUrl,
   });
 
   final int? userId;
@@ -22,6 +23,7 @@ class ProfileModel {
   final String fullName;
   final String username;
   final String avatarInitials;
+  final String? avatarUrl;
   final int postsCount;
   final int followersCount;
   final int followingCount;
@@ -104,6 +106,7 @@ class ProfileConnectionModel {
     required this.name,
     required this.username,
     required this.avatarInitials,
+    this.avatarUrl,
     required this.isFollowing,
     this.isOnline = false,
   });
@@ -112,6 +115,7 @@ class ProfileConnectionModel {
   final String name;
   final String username;
   final String avatarInitials;
+  final String? avatarUrl;
   final bool isFollowing;
   final bool isOnline;
 }

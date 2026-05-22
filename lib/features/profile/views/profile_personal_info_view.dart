@@ -1,4 +1,7 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
+import 'package:eventosloop/features/profile/models/profile_model.dart';
+import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePersonalInfoView extends StatefulWidget {
@@ -9,12 +12,28 @@ class ProfilePersonalInfoView extends StatefulWidget {
 }
 
 class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
+  final ProfileMockService _profileService = ProfileMockService();
+  ProfileModel? _profile;
   final TextEditingController _emailController =
       TextEditingController(text: 'usuario@ejemplo.com');
   final TextEditingController _phoneController =
       TextEditingController(text: '+56 9 6000 0000');
   String _gender = 'Hombre';
   String _nationality = 'Chileno';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final ProfileModel profile = await _profileService.fetchProfile();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _profile = profile);
+  }
 
   @override
   void dispose() {
@@ -140,28 +159,12 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
                         Stack(
                           alignment: Alignment.bottomRight,
                           children: <Widget>[
-                            Container(
-                              width: 68,
-                              height: 68,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: const LinearGradient(
-                                  colors: <Color>[
-                                    Color(0xFF0E3554),
-                                    Color(0xFF35B7D6),
-                                  ],
-                                ),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'AC',
-                                  style: TextStyle(
-                                    color: AppColors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
+                            LoopUserAvatar(
+                              avatarUrl: _profile?.avatarUrl,
+                              initials: _profile?.avatarInitials ?? 'AC',
+                              radius: 34,
+                              fontSize: 22,
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             Container(
                               width: 24,

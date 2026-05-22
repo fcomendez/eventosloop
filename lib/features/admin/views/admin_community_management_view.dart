@@ -42,34 +42,14 @@ class _AdminCommunityManagementViewState
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Gestion de comunidades',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Curacion y monitoreo de comunidades globales',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
+          AdminPageHeader(
+            title: 'Gestion de comunidades',
+            subtitle: 'Curacion y monitoreo de comunidades globales',
+            trailing: <Widget>[
               OutlinedButton(
                 onPressed: () {},
                 child: const Text('Ajustes de filtros'),
               ),
-              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.add, size: 18),

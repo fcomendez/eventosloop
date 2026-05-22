@@ -31,31 +31,14 @@ class _AdminSystemStatusViewState extends State<AdminSystemStatusView> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Estado del sistema',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Monitorea salud de infraestructura, latencia e incidentes recientes en los servicios LOOP.',
-                      style: TextStyle(color: AppColors.textSecondary, height: 1.35),
-                    ),
-                  ],
-                ),
-              ),
+          AdminPageHeader(
+            title: 'Estado del sistema',
+            subtitle:
+                'Monitorea salud de infraestructura, latencia e incidentes recientes en los servicios LOOP.',
+            trailing: <Widget>[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF2E9E6A).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),

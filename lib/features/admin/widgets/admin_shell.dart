@@ -1,5 +1,9 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
+import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
+import 'package:eventosloop/features/profile/models/profile_model.dart';
+import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
 import 'package:flutter/material.dart';
 
 class AdminShell extends StatelessWidget {
@@ -10,7 +14,6 @@ class AdminShell extends StatelessWidget {
     required this.body,
     this.onTopTabChanged,
     this.onSidebarChanged,
-    this.showBackToApp = true,
   });
 
   final AdminTopTab selectedTopTab;
@@ -18,7 +21,6 @@ class AdminShell extends StatelessWidget {
   final Widget body;
   final ValueChanged<AdminTopTab>? onTopTabChanged;
   final ValueChanged<AdminSidebarItem>? onSidebarChanged;
-  final bool showBackToApp;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +50,6 @@ class AdminShell extends StatelessWidget {
                   children: <Widget>[
                     _TopBar(
                       wide: wide,
-                      showBackToApp: showBackToApp,
                       onMenuTap: wide
                           ? null
                           : () => Scaffold.of(scaffoldContext).openDrawer(),
@@ -93,12 +94,10 @@ class AdminShell extends StatelessWidget {
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.wide,
-    required this.showBackToApp,
     this.onMenuTap,
   });
 
   final bool wide;
-  final bool showBackToApp;
   final VoidCallback? onMenuTap;
 
   @override
@@ -118,13 +117,6 @@ class _TopBar extends StatelessWidget {
               onPressed: onMenuTap,
               icon: const Icon(Icons.menu),
               color: AppColors.primaryDark,
-            ),
-          if (showBackToApp)
-            IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back),
-              color: AppColors.primaryDark,
-              tooltip: 'Volver a la app',
             ),
           const Expanded(
             child: Text(
@@ -166,13 +158,69 @@ class _TopBar extends StatelessWidget {
               icon: const Icon(Icons.help_outline),
               color: AppColors.textSecondary,
             ),
-          const CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.inputBackground,
-            child: Icon(Icons.person, size: 18, color: AppColors.primary),
-          ),
+          const _AdminUserAvatar(),
         ],
       ),
+    );
+  }
+}
+
+class _AdminUserAvatar extends StatefulWidget {
+  const _AdminUserAvatar();
+
+  @override
+  State<_AdminUserAvatar> createState() => _AdminUserAvatarState();
+}
+
+class _AdminUserAvatarState extends State<_AdminUserAvatar> {
+  final ProfileMockService _profileService = ProfileMockService();
+  ProfileModel? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final ProfileModel profile = await _profileService.fetchProfile();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _profile = profile);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_profile == null) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => exitAdminToFeed(context),
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[Color(0xFF0E3554), Color(0xFFB8DFF6)],
+              ),
+            ),
+            child: const Icon(Icons.person, size: 16, color: AppColors.white),
+          ),
+        ),
+      );
+    }
+
+    return LoopUserAvatar(
+      avatarUrl: _profile!.avatarUrl,
+      initials: _profile!.avatarInitials,
+      radius: 16,
+      fontSize: 11,
+      onTap: () => exitAdminToFeed(context),
     );
   }
 }
@@ -375,6 +423,95 @@ class _SidebarPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class AdminPageHeader extends StatelessWidget {
+  const AdminPageHeader({
+    super.key,
+    required this.title,
+    this.eyebrow,
+    this.subtitle,
+    this.trailing = const <Widget>[],
+  });
+
+  final String? eyebrow;
+  final String title;
+  final String? subtitle;
+  final List<Widget> trailing;
+
+  static const double _narrowBreakpoint = 560;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget titleSection = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        if (eyebrow != null)
+          Text(
+            eyebrow!,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        if (eyebrow != null) const SizedBox(height: 4),
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        if (subtitle != null) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            subtitle!,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ],
+    );
+
+    if (trailing.isEmpty) {
+      return titleSection;
+    }
+
+    final Widget trailingSection = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: trailing,
+    );
+
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        if (constraints.maxWidth < _narrowBreakpoint) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              titleSection,
+              const SizedBox(height: 12),
+              trailingSection,
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(child: titleSection),
+            trailingSection,
+          ],
+        );
+      },
     );
   }
 }

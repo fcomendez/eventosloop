@@ -9,11 +9,13 @@ class FeedAuthorModel {
     required this.name,
     required this.username,
     required this.avatarInitials,
+    this.avatarUrl,
   });
 
   final String name;
   final String username;
   final String avatarInitials;
+  final String? avatarUrl;
 }
 
 class FeedItemModel {

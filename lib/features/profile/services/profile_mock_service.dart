@@ -109,6 +109,8 @@ class ProfileMockService {
       fullName: 'Alex Chen',
       username: '@alex_loop_24',
       avatarInitials: 'AC',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=320&h=320&fit=crop',
       postsCount: 128,
       followersCount: 1200,
       followingCount: 482,
@@ -247,6 +249,8 @@ class ProfileMockService {
         name: 'Marcus Chen',
         username: '@marcus_arc',
         avatarInitials: 'MC',
+        avatarUrl:
+            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200',
         isFollowing: true,
         isOnline: true,
       ),
