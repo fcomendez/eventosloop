@@ -1,8 +1,7 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
+import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
 import 'package:eventosloop/features/admin/services/admin_mock_service.dart';
-import 'package:eventosloop/features/admin/views/admin_dashboard_view.dart';
-import 'package:eventosloop/features/admin/views/admin_moderation_review_view.dart';
 import 'package:eventosloop/features/admin/widgets/admin_shell.dart';
 import 'package:flutter/material.dart';
 
@@ -17,35 +16,6 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
   final AdminMockService _service = AdminMockService();
   String _rankingPeriod = 'Weekly';
 
-  void _handleSidebar(AdminSidebarItem item) {
-    if (item == AdminSidebarItem.moderation) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const AdminModerationReviewView(),
-        ),
-      );
-      return;
-    }
-    if (item == AdminSidebarItem.contentFeed) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item.name} — proximamente')),
-    );
-  }
-
-  void _handleTopTab(AdminTopTab tab) {
-    if (tab == AdminTopTab.dashboard) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const AdminDashboardView()),
-      );
-    } else if (tab == AdminTopTab.community) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Community admin — proximamente')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final List<AdminInterestRanking> rankings = _service.fetchInterestRankings();
@@ -53,8 +23,10 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
     return AdminShell(
       selectedTopTab: AdminTopTab.analytics,
       selectedSidebar: AdminSidebarItem.contentFeed,
-      onTopTabChanged: _handleTopTab,
-      onSidebarChanged: _handleSidebar,
+      onTopTabChanged: (AdminTopTab tab) =>
+          handleAdminTopTabNavigation(context, tab),
+      onSidebarChanged: (AdminSidebarItem item) =>
+          handleAdminSidebarNavigation(context, item, replace: true),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -72,40 +44,22 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
             style: TextStyle(color: AppColors.textSecondary, height: 1.35),
           ),
           const SizedBox(height: 18),
-          LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final bool wide = constraints.maxWidth >= 700;
-              final Widget cards = Column(
-                children: <Widget>[
-                  _MetricHighlightCard(
-                    title: 'Digital Art',
-                    value: '+24.5% Growth this week',
-                    icon: Icons.show_chart_outlined,
-                  ),
-                  const SizedBox(height: 12),
-                  _MetricHighlightCard(
-                    title: '1.2M',
-                    value: 'Total Active Participants',
-                    icon: Icons.groups_outlined,
-                  ),
-                  const SizedBox(height: 12),
-                  _MetricHighlightCard(
-                    title: '18.4 min',
-                    value: 'Avg. session per interest',
-                    icon: Icons.timer_outlined,
-                  ),
-                ],
-              );
-              if (!wide) {
-                return cards;
-              }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(child: cards),
-                ],
-              );
-            },
+          const _MetricHighlightCard(
+            title: 'Digital Art',
+            value: '+24.5% Growth this week',
+            icon: Icons.show_chart_outlined,
+          ),
+          const SizedBox(height: 12),
+          const _MetricHighlightCard(
+            title: '1.2M',
+            value: 'Total Active Participants',
+            icon: Icons.groups_outlined,
+          ),
+          const SizedBox(height: 12),
+          const _MetricHighlightCard(
+            title: '18.4 min',
+            value: 'Avg. session per interest',
+            icon: Icons.timer_outlined,
           ),
           const SizedBox(height: 18),
           AdminSectionCard(

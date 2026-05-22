@@ -1,13 +1,14 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
+import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
 import 'package:eventosloop/features/admin/services/admin_mock_service.dart';
-import 'package:eventosloop/features/admin/views/admin_analytics_view.dart';
-import 'package:eventosloop/features/admin/views/admin_dashboard_view.dart';
 import 'package:eventosloop/features/admin/widgets/admin_shell.dart';
 import 'package:flutter/material.dart';
 
 class AdminModerationReviewView extends StatefulWidget {
-  const AdminModerationReviewView({super.key});
+  const AdminModerationReviewView({super.key, this.reportId});
+
+  final String? reportId;
 
   @override
   State<AdminModerationReviewView> createState() =>
@@ -26,24 +27,7 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
   }
 
   void _handleSidebar(AdminSidebarItem item) {
-    if (item == AdminSidebarItem.contentFeed) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const AdminAnalyticsView()),
-      );
-      return;
-    }
-    if (item == AdminSidebarItem.userManagement) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const AdminDashboardView()),
-      );
-      return;
-    }
-    if (item == AdminSidebarItem.moderation) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item.name} — proximamente')),
-    );
+    handleAdminSidebarNavigation(context, item, replace: true);
   }
 
   void _confirmAction() {
@@ -60,7 +44,9 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
 
   @override
   Widget build(BuildContext context) {
-    final AdminModerationIncident incident = _service.fetchSampleIncident();
+    final AdminModerationIncident incident = _service.fetchSampleIncident(
+      reportId: widget.reportId ?? '849201',
+    );
 
     return AdminShell(
       selectedTopTab: AdminTopTab.dashboard,

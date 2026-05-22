@@ -1,5 +1,5 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
-import 'package:eventosloop/features/admin/views/admin_dashboard_view.dart';
+import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
 import 'package:eventosloop/features/profile/views/profile_interests_settings_view.dart';
 import 'package:eventosloop/features/profile/views/profile_personal_info_view.dart';
 import 'package:flutter/material.dart';

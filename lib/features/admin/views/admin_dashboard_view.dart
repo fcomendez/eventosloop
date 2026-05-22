@@ -1,16 +1,9 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
+import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
 import 'package:eventosloop/features/admin/services/admin_mock_service.dart';
-import 'package:eventosloop/features/admin/views/admin_analytics_view.dart';
-import 'package:eventosloop/features/admin/views/admin_moderation_review_view.dart';
 import 'package:eventosloop/features/admin/widgets/admin_shell.dart';
 import 'package:flutter/material.dart';
-
-void openAdminDashboard(BuildContext context) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => const AdminDashboardView()),
-  );
-}
 
 class AdminDashboardView extends StatefulWidget {
   const AdminDashboardView({super.key});
@@ -23,38 +16,6 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   final AdminMockService _service = AdminMockService();
   bool _monthlyGrowth = true;
 
-  void _handleSidebar(AdminSidebarItem item) {
-    if (item == AdminSidebarItem.moderation) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const AdminModerationReviewView(),
-        ),
-      );
-      return;
-    }
-    if (item == AdminSidebarItem.contentFeed) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const AdminAnalyticsView()),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item.name} — proximamente')),
-    );
-  }
-
-  void _handleTopTab(AdminTopTab tab) {
-    if (tab == AdminTopTab.analytics) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const AdminAnalyticsView()),
-      );
-    } else if (tab == AdminTopTab.community) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Community admin — proximamente')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final List<AdminKpiMetric> kpis = _service.fetchDashboardKpis();
@@ -65,8 +26,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     return AdminShell(
       selectedTopTab: AdminTopTab.dashboard,
       selectedSidebar: AdminSidebarItem.userManagement,
-      onTopTabChanged: _handleTopTab,
-      onSidebarChanged: _handleSidebar,
+      onTopTabChanged: (AdminTopTab tab) =>
+          handleAdminTopTabNavigation(context, tab),
+      onSidebarChanged: (AdminSidebarItem item) =>
+          handleAdminSidebarNavigation(context, item, replace: true),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
