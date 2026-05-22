@@ -60,11 +60,11 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
             runSpacing: 4,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
-              _BreadcrumbChip('Moderation'),
+              _BreadcrumbChip('Moderacion'),
               const Icon(Icons.chevron_right, size: 16, color: AppColors.textSecondary),
-              _BreadcrumbChip('Flagged Content'),
+              _BreadcrumbChip('Contenido reportado'),
               const Icon(Icons.chevron_right, size: 16, color: AppColors.textSecondary),
-              _BreadcrumbChip('Report #${incident.reportId}'),
+              _BreadcrumbChip('Reporte #${incident.reportId}'),
             ],
           ),
           const SizedBox(height: 12),
@@ -72,7 +72,7 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
             children: <Widget>[
               const Expanded(
                 child: Text(
-                  'Review Incident',
+                  'Revisar incidente',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 28,
@@ -80,9 +80,9 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                   ),
                 ),
               ),
-              OutlinedButton(onPressed: () {}, child: const Text('Skip Case')),
+              OutlinedButton(onPressed: () {}, child: const Text('Omitir caso')),
               const SizedBox(width: 8),
-              OutlinedButton(onPressed: () {}, child: const Text('Escalate')),
+              OutlinedButton(onPressed: () {}, child: const Text('Escalar')),
             ],
           ),
           const SizedBox(height: 18),
@@ -94,18 +94,18 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                   _ReportedPostCard(incident: incident),
                   const SizedBox(height: 12),
                   _InfoCard(
-                    title: 'Account Stats',
+                    title: 'Estadisticas de cuenta',
                     rows: <(String, String)>[
-                      ('Joined', incident.joinedLabel),
-                      ('Status', incident.statusLabel),
-                      ('Followers', incident.followersLabel),
-                      ('Reports', incident.pendingReportsLabel),
+                      ('Registro', incident.joinedLabel),
+                      ('Estado', incident.statusLabel),
+                      ('Seguidores', incident.followersLabel),
+                      ('Reportes', incident.pendingReportsLabel),
                     ],
                     highlightLast: true,
                   ),
                   const SizedBox(height: 12),
                   _InfoCard(
-                    title: 'Previous Actions',
+                    title: 'Acciones previas',
                     bullets: incident.previousActions,
                   ),
                 ],
@@ -127,7 +127,7 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const Text(
-                          'Resolution Note (Internal)',
+                          'Nota de resolucion (interna)',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             color: AppColors.textPrimary,
@@ -138,7 +138,7 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                           controller: _noteController,
                           maxLines: 4,
                           decoration: const InputDecoration(
-                            hintText: 'Describe the reason for your decision...',
+                            hintText: 'Describe el motivo de tu decision...',
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -148,7 +148,7 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                           child: ElevatedButton.icon(
                             onPressed: _confirmAction,
                             icon: const Icon(Icons.check_circle_outline),
-                            label: const Text('Confirm Moderation Action'),
+                            label: const Text('Confirmar accion de moderacion'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: AppColors.white,
@@ -425,7 +425,7 @@ class _ReportingDetailsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Text(
-            'Reporting Details',
+            'Detalles del reporte',
             style: TextStyle(
               fontWeight: FontWeight.w900,
               color: AppColors.textPrimary,
@@ -453,7 +453,7 @@ class _ReportingDetailsCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Reporter Comments',
+            'Comentarios del reportante',
             style: TextStyle(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
@@ -491,7 +491,7 @@ class _ActionSelectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Text(
-            'Select Action',
+            'Seleccionar accion',
             style: TextStyle(
               fontWeight: FontWeight.w900,
               color: AppColors.textPrimary,
@@ -499,20 +499,20 @@ class _ActionSelectionCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _ActionTile(
-            title: 'Warn User',
-            subtitle: 'Send warning notification',
+            title: 'Advertir usuario',
+            subtitle: 'Enviar notificacion de advertencia',
             selected: selected == AdminModerationAction.warnUser,
             onTap: () => onSelected(AdminModerationAction.warnUser),
           ),
           _ActionTile(
-            title: 'Delete Content',
-            subtitle: 'Remove post and all comments',
+            title: 'Eliminar contenido',
+            subtitle: 'Quitar publicacion y todos los comentarios',
             selected: selected == AdminModerationAction.deleteContent,
             onTap: () => onSelected(AdminModerationAction.deleteContent),
           ),
           _ActionTile(
-            title: 'Permanent Ban',
-            subtitle: 'Revoke all access immediately',
+            title: 'Baneo permanente',
+            subtitle: 'Revocar todo acceso de inmediato',
             danger: true,
             selected: selected == AdminModerationAction.permanentBan,
             onTap: () => onSelected(AdminModerationAction.permanentBan),

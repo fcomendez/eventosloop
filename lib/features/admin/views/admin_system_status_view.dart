@@ -39,7 +39,7 @@ class _AdminSystemStatusViewState extends State<AdminSystemStatusView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'System Status',
+                      'Estado del sistema',
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 28,
@@ -48,7 +48,7 @@ class _AdminSystemStatusViewState extends State<AdminSystemStatusView> {
                     ),
                     SizedBox(height: 6),
                     Text(
-                      'Monitor infrastructure health, latency and recent incidents across LOOP services.',
+                      'Monitorea salud de infraestructura, latencia e incidentes recientes en los servicios LOOP.',
                       style: TextStyle(color: AppColors.textSecondary, height: 1.35),
                     ),
                   ],
@@ -66,7 +66,7 @@ class _AdminSystemStatusViewState extends State<AdminSystemStatusView> {
                     Icon(Icons.circle, size: 8, color: Color(0xFF2E9E6A)),
                     SizedBox(width: 6),
                     Text(
-                      'All systems operational',
+                      'Todos los sistemas operativos',
                       style: TextStyle(
                         color: Color(0xFF2E9E6A),
                         fontWeight: FontWeight.w800,
@@ -110,14 +110,14 @@ class _AdminSystemStatusViewState extends State<AdminSystemStatusView> {
                     children: <Widget>[
                       const Expanded(
                         child: Text(
-                          'Recent Incidents',
+                          'Incidentes recientes',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
                         ),
                       ),
-                      OutlinedButton(onPressed: () {}, child: const Text('View adm_log')),
+                      OutlinedButton(onPressed: () {}, child: const Text('Ver adm_log')),
                     ],
                   ),
                 ),
@@ -193,11 +193,11 @@ class _AdminSystemStatusViewState extends State<AdminSystemStatusView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'LOOP Platform V2.1.1',
+                        'Plataforma LOOP V2.1.1',
                         style: TextStyle(fontWeight: FontWeight.w900),
                       ),
                       Text(
-                        'Last deploy: Oct 21, 2025 · Environment: Production · Region: sa-east-1',
+                        'Ultimo deploy: 21 oct 2025 · Entorno: Produccion · Region: sa-east-1',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -224,17 +224,17 @@ class _ServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final (String label, Color color, IconData icon) = switch (service.health) {
       AdminServiceHealth.operational => (
-          'Operational',
+          'Operativo',
           const Color(0xFF2E9E6A),
           Icons.check_circle_outline,
         ),
       AdminServiceHealth.degraded => (
-          'Degraded',
+          'Degradado',
           const Color(0xFFE08A3A),
           Icons.warning_amber_outlined,
         ),
       AdminServiceHealth.down => (
-          'Down',
+          'Caido',
           AppColors.error,
           Icons.error_outline,
         ),

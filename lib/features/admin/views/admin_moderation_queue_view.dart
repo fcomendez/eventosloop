@@ -41,7 +41,7 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Content Moderation',
+                      'Moderacion de contenido',
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 28,
@@ -50,7 +50,7 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                     ),
                     SizedBox(height: 6),
                     Text(
-                      'Prioritizing safety and community standards across the LOOP ecosystem.',
+                      'Priorizamos la seguridad y los estandares comunitarios en todo el ecosistema LOOP.',
                       style: TextStyle(color: AppColors.textSecondary, height: 1.35),
                     ),
                   ],
@@ -63,7 +63,7 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: const Text(
-                  '12 Critical Reports',
+                  '12 reportes criticos',
                   style: TextStyle(
                     color: Color(0xFFD64545),
                     fontWeight: FontWeight.w800,
@@ -143,7 +143,7 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                     children: <Widget>[
                       const Expanded(
                         child: Text(
-                          'Active Report Queue',
+                          'Cola de reportes activa',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
@@ -151,9 +151,9 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                           ),
                         ),
                       ),
-                      OutlinedButton(onPressed: () {}, child: const Text('Filter')),
+                      OutlinedButton(onPressed: () {}, child: const Text('Filtrar')),
                       const SizedBox(width: 8),
-                      OutlinedButton(onPressed: () {}, child: const Text('Export')),
+                      OutlinedButton(onPressed: () {}, child: const Text('Exportar')),
                     ],
                   ),
                 ),
@@ -168,12 +168,12 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                           padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
                           child: Row(
                             children: <Widget>[
-                              SizedBox(width: 110, child: _Head('DATE')),
-                              SizedBox(width: 120, child: _Head('REPORTED BY')),
-                              SizedBox(width: 180, child: _Head('REPORTED OBJECT')),
-                              SizedBox(width: 120, child: _Head('REASON')),
-                              SizedBox(width: 100, child: _Head('STATUS')),
-                              SizedBox(width: 120, child: _Head('ACTIONS')),
+                              SizedBox(width: 110, child: _Head('FECHA')),
+                              SizedBox(width: 120, child: _Head('REPORTADO POR')),
+                              SizedBox(width: 180, child: _Head('OBJETO REPORTADO')),
+                              SizedBox(width: 120, child: _Head('MOTIVO')),
+                              SizedBox(width: 100, child: _Head('ESTADO')),
+                              SizedBox(width: 120, child: _Head('ACCIONES')),
                             ],
                           ),
                         ),
@@ -319,9 +319,9 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                 children: <Widget>[
                   _InfoCard(
                     icon: Icons.shield_outlined,
-                    title: 'Community Guidelines V.8',
+                    title: 'Normas comunitarias V.8',
                     body:
-                        'Cross-reference harassment claims with the latest policy updates before issuing bans.',
+                        'Contrasta denuncias de acoso con las ultimas actualizaciones de politica antes de aplicar sanciones.',
                   ),
                   const SizedBox(height: 12),
                   Stack(
@@ -329,9 +329,9 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                     children: <Widget>[
                       _InfoCard(
                         icon: Icons.auto_awesome_outlined,
-                        title: 'Smart Sorting Enabled',
+                        title: 'Orden inteligente activo',
                         body:
-                            'Queue prioritization uses severity score, report volume and author history.',
+                            'La cola prioriza severidad, volumen de reportes e historial del autor.',
                       ),
                       Positioned(
                         right: 12,
@@ -339,7 +339,7 @@ class _AdminModerationQueueViewState extends State<AdminModerationQueueView> {
                         child: ElevatedButton.icon(
                           onPressed: () {},
                           icon: const Icon(Icons.check_circle_outline, size: 18),
-                          label: const Text('Quick Resolve All'),
+                          label: const Text('Resolver todo rapido'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.white,
@@ -436,7 +436,7 @@ class _StatusDot extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          pending ? 'Pending' : 'Reviewed',
+          pending ? 'Pendiente' : 'Revisado',
           style: TextStyle(
             color: color,
             fontWeight: FontWeight.w800,

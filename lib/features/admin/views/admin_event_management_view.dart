@@ -34,7 +34,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Text(
-            'Event Management',
+            'Gestion de eventos',
             style: TextStyle(
               color: AppColors.textPrimary,
               fontSize: 28,
@@ -43,7 +43,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Oversee community gatherings, audit conversation threads, and manage participation logistics across the LOOP network.',
+            'Supervisa encuentros comunitarios, audita conversaciones y gestiona la participacion en la red LOOP.',
             style: TextStyle(color: AppColors.textSecondary, height: 1.35),
           ),
           const SizedBox(height: 18),
@@ -102,7 +102,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                     children: <Widget>[
                       const Expanded(
                         child: Text(
-                          'Live Event Stream',
+                          'Eventos en vivo',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
@@ -119,7 +119,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
-                          'LIVE NOW',
+                          'EN VIVO',
                           style: TextStyle(
                             color: Color(0xFF2E9E6A),
                             fontSize: 10,
@@ -138,7 +138,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
-                          'AUTO REFRESH',
+                          'AUTOACTUALIZACION',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -147,9 +147,9 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      OutlinedButton(onPressed: () {}, child: const Text('Filter')),
+                      OutlinedButton(onPressed: () {}, child: const Text('Filtrar')),
                       const SizedBox(width: 8),
-                      OutlinedButton(onPressed: () {}, child: const Text('Export CSV')),
+                      OutlinedButton(onPressed: () {}, child: const Text('Exportar CSV')),
                     ],
                   ),
                 ),
@@ -164,12 +164,12 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                           padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
                           child: Row(
                             children: <Widget>[
-                              SizedBox(width: 180, child: _Head('EVENT NAME')),
-                              SizedBox(width: 140, child: _Head('COMMUNITY')),
-                              SizedBox(width: 90, child: _Head('TYPE')),
-                              SizedBox(width: 110, child: _Head('PARTICIPANTS')),
-                              SizedBox(width: 160, child: _Head('CHAT STATUS')),
-                              SizedBox(width: 100, child: _Head('ACTIONS')),
+                              SizedBox(width: 180, child: _Head('EVENTO')),
+                              SizedBox(width: 140, child: _Head('COMUNIDAD')),
+                              SizedBox(width: 90, child: _Head('TIPO')),
+                              SizedBox(width: 110, child: _Head('PARTICIPANTES')),
+                              SizedBox(width: 160, child: _Head('ESTADO CHAT')),
+                              SizedBox(width: 100, child: _Head('ACCIONES')),
                             ],
                           ),
                         ),
@@ -286,7 +286,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                                           ),
                                         ),
                                         child: const Text(
-                                          'Audit Chat',
+                                          'Auditar chat',
                                           style: TextStyle(fontSize: 11),
                                         ),
                                       ),
@@ -308,7 +308,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                   child: Row(
                     children: <Widget>[
                       const Text(
-                        'Showing 4 of 1,284 events',
+                        'Mostrando 4 de 1.284 eventos',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w600,
@@ -387,7 +387,7 @@ class _TypeBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        isPublic ? 'PUBLIC' : 'PRIVATE',
+        isPublic ? 'PUBLICO' : 'PRIVADO',
         style: TextStyle(
           color: color,
           fontSize: 10,

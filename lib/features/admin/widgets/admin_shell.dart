@@ -144,7 +144,7 @@ class _TopBar extends StatelessWidget {
               height: 38,
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Global search...',
+                  hintText: 'Busqueda global...',
                   hintStyle: TextStyle(
                     color: AppColors.textSecondary.withValues(alpha: 0.8),
                     fontSize: 13,
@@ -198,9 +198,9 @@ class _TopTabs extends StatelessWidget {
           children: AdminTopTab.values.map((AdminTopTab tab) {
             final bool active = tab == selected;
             final String label = switch (tab) {
-              AdminTopTab.dashboard => 'Dashboard',
-              AdminTopTab.analytics => 'Analytics',
-              AdminTopTab.community => 'Community',
+              AdminTopTab.dashboard => 'Panel',
+              AdminTopTab.analytics => 'Analitica',
+              AdminTopTab.community => 'Comunidad',
             };
             return Padding(
               padding: const EdgeInsets.only(right: 8, bottom: 8, top: 4),
@@ -266,14 +266,14 @@ class _SidebarPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Admin Panel',
+                      'Panel de administracion',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     Text(
-                      'GLOBAL CONTROLLER',
+                      'CONTROL GLOBAL',
                       style: TextStyle(
                         fontSize: 10,
                         letterSpacing: 0.6,
@@ -292,23 +292,23 @@ class _SidebarPanel extends StatelessWidget {
             final (IconData icon, String label) = switch (item) {
               AdminSidebarItem.userManagement => (
                   Icons.group_outlined,
-                  'User Management'
+                  'Gestion de usuarios'
                 ),
               AdminSidebarItem.contentFeed => (
                   Icons.article_outlined,
-                  'Content Feed'
+                  'Contenido y eventos'
                 ),
               AdminSidebarItem.moderation => (
                   Icons.gavel_outlined,
-                  'Moderation'
+                  'Moderacion'
                 ),
               AdminSidebarItem.adConsole => (
                   Icons.campaign_outlined,
-                  'Ad Console'
+                  'Consola de anuncios'
                 ),
               AdminSidebarItem.systemStatus => (
                   Icons.monitor_heart_outlined,
-                  'System Status'
+                  'Estado del sistema'
                 ),
             };
             return Padding(
@@ -370,7 +370,7 @@ class _SidebarPanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text('Generate Report'),
+              child: const Text('Generar reporte'),
             ),
           ),
         ],

@@ -15,7 +15,7 @@ class AdminAdConsoleView extends StatefulWidget {
 
 class _AdminAdConsoleViewState extends State<AdminAdConsoleView> {
   final AdminMockService _service = AdminMockService();
-  String _statusFilter = 'All';
+  String _statusFilter = 'Todas';
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class _AdminAdConsoleViewState extends State<AdminAdConsoleView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Ad Console',
+                      'Consola de anuncios',
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 28,
@@ -50,18 +50,18 @@ class _AdminAdConsoleViewState extends State<AdminAdConsoleView> {
                     ),
                     SizedBox(height: 6),
                     Text(
-                      'Manage promotional campaigns, placements and performance across LOOP.',
+                      'Gestiona campanas promocionales, ubicaciones y rendimiento en LOOP.',
                       style: TextStyle(color: AppColors.textSecondary, height: 1.35),
                     ),
                   ],
                 ),
               ),
-              OutlinedButton(onPressed: () {}, child: const Text('Export')),
+              OutlinedButton(onPressed: () {}, child: const Text('Exportar')),
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('New Campaign'),
+                label: const Text('Nueva campana'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
@@ -116,7 +116,7 @@ class _AdminAdConsoleViewState extends State<AdminAdConsoleView> {
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
-            children: <String>['All', 'Running', 'Paused', 'Scheduled'].map(
+            children: <String>['Todas', 'En curso', 'Pausada', 'Programada'].map(
               (String filter) {
                 final bool active = filter == _statusFilter;
                 return FilterChip(
@@ -145,13 +145,13 @@ class _AdminAdConsoleViewState extends State<AdminAdConsoleView> {
                   padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
                   child: Row(
                     children: <Widget>[
-                      Expanded(flex: 3, child: _Head('CAMPAIGN')),
-                      Expanded(flex: 2, child: _Head('PLACEMENT')),
-                      Expanded(flex: 2, child: _Head('BUDGET')),
-                      Expanded(flex: 2, child: _Head('IMPRESSIONS')),
+                      Expanded(flex: 3, child: _Head('CAMPANA')),
+                      Expanded(flex: 2, child: _Head('UBICACION')),
+                      Expanded(flex: 2, child: _Head('PRESUPUESTO')),
+                      Expanded(flex: 2, child: _Head('IMPRESIONES')),
                       Expanded(flex: 1, child: _Head('CTR')),
-                      Expanded(flex: 2, child: _Head('STATUS')),
-                      SizedBox(width: 72, child: _Head('ACTIONS')),
+                      Expanded(flex: 2, child: _Head('ESTADO')),
+                      SizedBox(width: 72, child: _Head('ACCIONES')),
                     ],
                   ),
                 ),
@@ -230,11 +230,11 @@ class _AdminAdConsoleViewState extends State<AdminAdConsoleView> {
   }
 
   List<AdminAdCampaignRow> _filteredCampaigns(List<AdminAdCampaignRow> rows) {
-    if (_statusFilter == 'All') return rows;
+    if (_statusFilter == 'Todas') return rows;
     final AdminAdCampaignStatus? status = switch (_statusFilter) {
-      'Running' => AdminAdCampaignStatus.running,
-      'Paused' => AdminAdCampaignStatus.paused,
-      'Scheduled' => AdminAdCampaignStatus.scheduled,
+      'En curso' => AdminAdCampaignStatus.running,
+      'Pausada' => AdminAdCampaignStatus.paused,
+      'Programada' => AdminAdCampaignStatus.scheduled,
       _ => null,
     };
     if (status == null) return rows;
@@ -269,10 +269,10 @@ class _CampaignStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (String label, Color color) = switch (status) {
-      AdminAdCampaignStatus.running => ('Running', const Color(0xFF2E9E6A)),
-      AdminAdCampaignStatus.paused => ('Paused', const Color(0xFFE08A3A)),
-      AdminAdCampaignStatus.scheduled => ('Scheduled', AppColors.primary),
-      AdminAdCampaignStatus.ended => ('Ended', AppColors.textSecondary),
+      AdminAdCampaignStatus.running => ('En curso', const Color(0xFF2E9E6A)),
+      AdminAdCampaignStatus.paused => ('Pausada', const Color(0xFFE08A3A)),
+      AdminAdCampaignStatus.scheduled => ('Programada', AppColors.primary),
+      AdminAdCampaignStatus.ended => ('Finalizada', AppColors.textSecondary),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

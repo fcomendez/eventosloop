@@ -17,15 +17,15 @@ class AdminCommunityManagementView extends StatefulWidget {
 class _AdminCommunityManagementViewState
     extends State<AdminCommunityManagementView> {
   final AdminMockService _service = AdminMockService();
-  String _interestFilter = 'All Interests';
+  String _interestFilter = 'Todos los intereses';
   int _currentPage = 1;
 
   static const List<String> _interestFilters = <String>[
-    'All Interests',
-    'Technology',
-    'Sustainability',
-    'Art & Design',
-    'Wellness',
+    'Todos los intereses',
+    'Tecnologia',
+    'Sostenibilidad',
+    'Arte y diseno',
+    'Bienestar',
   ];
 
   @override
@@ -50,7 +50,7 @@ class _AdminCommunityManagementViewState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Community Management',
+                      'Gestion de comunidades',
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 28,
@@ -59,7 +59,7 @@ class _AdminCommunityManagementViewState
                     ),
                     SizedBox(height: 6),
                     Text(
-                      'Curate and monitor global community nodes',
+                      'Curacion y monitoreo de comunidades globales',
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
@@ -67,13 +67,13 @@ class _AdminCommunityManagementViewState
               ),
               OutlinedButton(
                 onPressed: () {},
-                child: const Text('Filter Settings'),
+                child: const Text('Ajustes de filtros'),
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('New Community'),
+                label: const Text('Nueva comunidad'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
@@ -110,7 +110,7 @@ class _AdminCommunityManagementViewState
                 height: 38,
                 child: TextField(
                   decoration: InputDecoration(
-                    hintText: 'Search communities...',
+                    hintText: 'Buscar comunidades...',
                     hintStyle: const TextStyle(fontSize: 13),
                     prefixIcon: const Icon(Icons.search, size: 18),
                     contentPadding: EdgeInsets.zero,
@@ -128,11 +128,11 @@ class _AdminCommunityManagementViewState
                   padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
                   child: Row(
                     children: <Widget>[
-                      Expanded(flex: 4, child: _TableHead('COMMUNITY DETAILS')),
-                      Expanded(flex: 3, child: _TableHead('LEAD CREATOR')),
+                      Expanded(flex: 4, child: _TableHead('COMUNIDAD')),
+                      Expanded(flex: 3, child: _TableHead('CREADOR LIDER')),
                       Expanded(flex: 2, child: _TableHead('ENGAGEMENT')),
-                      Expanded(flex: 2, child: _TableHead('STATUS')),
-                      Expanded(flex: 2, child: _TableHead('ACTIONS')),
+                      Expanded(flex: 2, child: _TableHead('ESTADO')),
+                      Expanded(flex: 2, child: _TableHead('ACCIONES')),
                     ],
                   ),
                 ),
@@ -271,7 +271,7 @@ class _AdminCommunityManagementViewState
           Row(
             children: <Widget>[
               const Text(
-                'Showing 4 of 126 communities',
+                'Mostrando 4 de 126 comunidades',
                 style: TextStyle(
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w600,
@@ -354,7 +354,7 @@ class _StatusPill extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          active ? 'Active' : 'Banned',
+          active ? 'Activa' : 'Bloqueada',
           style: TextStyle(
             color: color,
             fontWeight: FontWeight.w800,

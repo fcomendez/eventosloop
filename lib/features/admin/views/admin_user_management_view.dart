@@ -40,7 +40,7 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'DIRECTORY',
+                      'DIRECTORIO',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 11,
@@ -50,7 +50,7 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'User Management',
+                      'Gestion de usuarios',
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 28,
@@ -60,12 +60,12 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                   ],
                 ),
               ),
-              OutlinedButton(onPressed: () {}, child: const Text('Filters')),
+              OutlinedButton(onPressed: () {}, child: const Text('Filtros')),
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.person_add_outlined, size: 18),
-                label: const Text('Create User'),
+                label: const Text('Crear usuario'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
@@ -83,7 +83,7 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                       flex: 3,
                       child: TextField(
                         decoration: const InputDecoration(
-                          hintText: 'Advanced username search',
+                          hintText: 'Busqueda avanzada por usuario',
                           prefixIcon: Icon(Icons.search, size: 18),
                         ),
                       ),
@@ -91,14 +91,23 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        initialValue: 'All Roles',
+                        initialValue: 'Todos los roles',
                         decoration: const InputDecoration(
                           contentPadding: EdgeInsets.symmetric(horizontal: 12),
                         ),
                         items: const <DropdownMenuItem<String>>[
-                          DropdownMenuItem(value: 'All Roles', child: Text('All Roles')),
-                          DropdownMenuItem(value: 'ADMIN', child: Text('ADMIN')),
-                          DropdownMenuItem(value: 'USER', child: Text('USER')),
+                          DropdownMenuItem(
+                            value: 'Todos los roles',
+                            child: Text('Todos los roles'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'ADMIN',
+                            child: Text('ADMIN'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'USER',
+                            child: Text('USER'),
+                          ),
                         ],
                         onChanged: (_) {},
                       ),
@@ -106,15 +115,27 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        initialValue: 'Any Status',
+                        initialValue: 'Cualquier estado',
                         decoration: const InputDecoration(
                           contentPadding: EdgeInsets.symmetric(horizontal: 12),
                         ),
                         items: const <DropdownMenuItem<String>>[
-                          DropdownMenuItem(value: 'Any Status', child: Text('Any Status')),
-                          DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
-                          DropdownMenuItem(value: 'PENDING', child: Text('PENDING')),
-                          DropdownMenuItem(value: 'SUSPENDED', child: Text('SUSPENDED')),
+                          DropdownMenuItem(
+                            value: 'Cualquier estado',
+                            child: Text('Cualquier estado'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'ACTIVE',
+                            child: Text('ACTIVO'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'PENDING',
+                            child: Text('PENDIENTE'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'SUSPENDED',
+                            child: Text('SUSPENDIDO'),
+                          ),
                         ],
                         onChanged: (_) {},
                       ),
@@ -133,7 +154,7 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'TOTAL ACTIVE',
+                            'TOTAL ACTIVOS',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -148,7 +169,7 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                             ),
                           ),
                           Text(
-                            '+14% this month',
+                            '+14% este mes',
                             style: TextStyle(
                               fontSize: 11,
                               color: Color(0xFF2E9E6A),
@@ -172,12 +193,12 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
                   padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
                   child: Row(
                     children: <Widget>[
-                      Expanded(flex: 4, child: _Head('USER PROFILE')),
-                      Expanded(flex: 2, child: _Head('ROLE')),
-                      Expanded(flex: 3, child: _Head('INTERESTS')),
-                      Expanded(flex: 2, child: _Head('JOINED DATE')),
-                      Expanded(flex: 2, child: _Head('STATUS')),
-                      SizedBox(width: 40, child: _Head('ACTIONS')),
+                      Expanded(flex: 4, child: _Head('PERFIL')),
+                      Expanded(flex: 2, child: _Head('ROL')),
+                      Expanded(flex: 3, child: _Head('INTERESES')),
+                      Expanded(flex: 2, child: _Head('REGISTRO')),
+                      Expanded(flex: 2, child: _Head('ESTADO')),
+                      SizedBox(width: 40, child: _Head('ACCIONES')),
                     ],
                   ),
                 ),
@@ -277,7 +298,7 @@ class _AdminUserManagementViewState extends State<AdminUserManagementView> {
           Row(
             children: <Widget>[
               const Text(
-                'Showing 1 to 4 of 12,482 users',
+                'Mostrando 1 a 4 de 12.482 usuarios',
                 style: TextStyle(
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w600,
@@ -398,9 +419,9 @@ class _UserStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (String label, Color color) = switch (status) {
-      AdminUserStatus.active => ('ACTIVE', const Color(0xFF2E9E6A)),
-      AdminUserStatus.pending => ('PENDING', const Color(0xFF7B61B5)),
-      AdminUserStatus.suspended => ('SUSPENDED', AppColors.error),
+      AdminUserStatus.active => ('ACTIVO', const Color(0xFF2E9E6A)),
+      AdminUserStatus.pending => ('PENDIENTE', const Color(0xFF7B61B5)),
+      AdminUserStatus.suspended => ('SUSPENDIDO', AppColors.error),
     };
     return Row(
       mainAxisSize: MainAxisSize.min,

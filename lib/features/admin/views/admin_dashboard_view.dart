@@ -34,7 +34,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Text(
-            'Platform Overview',
+            'Resumen de la plataforma',
             style: TextStyle(
               color: AppColors.textPrimary,
               fontSize: 28,
@@ -43,7 +43,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Real-time operational metrics across users, content and communities.',
+            'Metricas operativas en tiempo real de usuarios, contenido y comunidades.',
             style: TextStyle(color: AppColors.textSecondary, height: 1.35),
           ),
           const SizedBox(height: 18),
@@ -78,7 +78,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'User Growth Analytics',
+                            'Analitica de crecimiento de usuarios',
                             style: TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 20,
@@ -87,7 +87,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'Cumulative registration metrics (Last 30 Days)',
+                            'Registros acumulados (ultimos 30 dias)',
                             style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 13,
@@ -97,11 +97,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       ),
                     ),
                     AdminPeriodToggle(
-                      options: const <String>['Daily', 'Monthly'],
-                      selected: _monthlyGrowth ? 'Monthly' : 'Daily',
+                      options: const <String>['Diario', 'Mensual'],
+                      selected: _monthlyGrowth ? 'Mensual' : 'Diario',
                       onChanged: (String value) {
                         setState(() {
-                          _monthlyGrowth = value == 'Monthly';
+                          _monthlyGrowth = value == 'Mensual';
                         });
                       },
                     ),
@@ -115,7 +115,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           const SizedBox(height: 24),
           const Center(
             child: Text(
-              '© 2026 LOOP Global. All rights reserved. System V2.1.1',
+              '© 2026 LOOP Global. Todos los derechos reservados. Sistema V2.1.1',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
             ),
           ),

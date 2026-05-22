@@ -14,7 +14,7 @@ class AdminAnalyticsView extends StatefulWidget {
 
 class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
   final AdminMockService _service = AdminMockService();
-  String _rankingPeriod = 'Weekly';
+  String _rankingPeriod = 'Semanal';
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,7 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Text(
-            'Interest Ecosystem',
+            'Ecosistema de intereses',
             style: TextStyle(
               color: AppColors.textPrimary,
               fontSize: 28,
@@ -40,25 +40,25 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Track engagement velocity and user affinity across 42 categories.',
+            'Seguimiento de engagement y afinidad de usuarios en 42 categorias.',
             style: TextStyle(color: AppColors.textSecondary, height: 1.35),
           ),
           const SizedBox(height: 18),
           const _MetricHighlightCard(
-            title: 'Digital Art',
-            value: '+24.5% Growth this week',
+            title: 'Arte digital',
+            value: '+24.5% de crecimiento esta semana',
             icon: Icons.show_chart_outlined,
           ),
           const SizedBox(height: 12),
           const _MetricHighlightCard(
             title: '1.2M',
-            value: 'Total Active Participants',
+            value: 'Participantes activos totales',
             icon: Icons.groups_outlined,
           ),
           const SizedBox(height: 12),
           const _MetricHighlightCard(
             title: '18.4 min',
-            value: 'Avg. session per interest',
+            value: 'Sesion promedio por interes',
             icon: Icons.timer_outlined,
           ),
           const SizedBox(height: 18),
@@ -70,7 +70,7 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
                   children: <Widget>[
                     const Expanded(
                       child: Text(
-                        'Trending Interest Rankings',
+                        'Ranking de intereses en tendencia',
                         style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 20,
@@ -79,7 +79,7 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
                       ),
                     ),
                     AdminPeriodToggle(
-                      options: const <String>['Daily', 'Weekly', 'Monthly'],
+                      options: const <String>['Diario', 'Semanal', 'Mensual'],
                       selected: _rankingPeriod,
                       onChanged: (String value) {
                         setState(() => _rankingPeriod = value);
@@ -90,10 +90,10 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
                 const SizedBox(height: 14),
                 const Row(
                   children: <Widget>[
-                    Expanded(flex: 1, child: _TableHeader('RANK')),
-                    Expanded(flex: 4, child: _TableHeader('INTEREST NAME')),
-                    Expanded(flex: 3, child: _TableHeader('USERS')),
-                    Expanded(flex: 4, child: _TableHeader('MARKET SHARE')),
+                    Expanded(flex: 1, child: _TableHeader('RANGO')),
+                    Expanded(flex: 4, child: _TableHeader('INTERES')),
+                    Expanded(flex: 3, child: _TableHeader('USUARIOS')),
+                    Expanded(flex: 4, child: _TableHeader('CUOTA DE MERCADO')),
                   ],
                 ),
                 const Divider(height: 20),
@@ -182,7 +182,7 @@ class _AdminAnalyticsViewState extends State<AdminAnalyticsView> {
                 Center(
                   child: TextButton(
                     onPressed: () {},
-                    child: const Text('View Comprehensive List →'),
+                    child: const Text('Ver listado completo →'),
                   ),
                 ),
               ],
