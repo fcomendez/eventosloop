@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/scrollable_picker_sheet.dart';
 import 'package:eventosloop/features/create/data/user_communities_mock.dart';
 import 'package:eventosloop/features/posts/models/post_comment_model.dart';
 import 'package:eventosloop/features/posts/services/post_detail_mock_service.dart';
@@ -53,7 +54,8 @@ class _EditPostViewState extends State<EditPostView> {
     _titleController.text = post.title ?? '';
     _bodyController.text = post.body;
     _existingMediaLabel = post.mediaLabel;
-    _selectedCommunityId = post.communityId ?? UserCommunitiesMock.participando.first.id;
+    _selectedCommunityId =
+        post.communityId ?? UserCommunitiesMock.participando.first.id;
     setState(() => _loading = false);
   }
 
@@ -61,7 +63,8 @@ class _EditPostViewState extends State<EditPostView> {
     if (_selectedCommunityId == null) {
       return null;
     }
-    for (final UserCommunityOption community in UserCommunitiesMock.participando) {
+    for (final UserCommunityOption community
+        in UserCommunitiesMock.participando) {
       if (community.id == _selectedCommunityId) {
         return community;
       }
@@ -84,45 +87,26 @@ class _EditPostViewState extends State<EditPostView> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir la galeria del telefono')),
+        const SnackBar(
+            content: Text('No se pudo abrir la galeria del telefono')),
       );
     }
   }
 
   Future<void> _openCommunityPicker() async {
-    final String? selected = await showModalBottomSheet<String>(
+    final String? selected = await showScrollablePickerSheet<String>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Comunidad de la publicacion',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              ...UserCommunitiesMock.participando.map(
-                (UserCommunityOption community) => ListTile(
-                  leading: const Icon(Icons.groups_outlined, color: AppColors.primary),
-                  title: Text(community.name),
-                  onTap: () => Navigator.of(context).pop(community.id),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
+      title: 'Comunidad de la publicacion',
+      children: UserCommunitiesMock.participando
+          .map(
+            (UserCommunityOption community) => ListTile(
+              leading:
+                  const Icon(Icons.groups_outlined, color: AppColors.primary),
+              title: Text(community.name),
+              onTap: () => Navigator.of(context).pop(community.id),
+            ),
+          )
+          .toList(),
     );
     if (selected == null) {
       return;
@@ -167,7 +151,8 @@ class _EditPostViewState extends State<EditPostView> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: const Text('Eliminar publicacion'),
           content: const Text(
             'Esta accion no se puede deshacer. La publicacion dejara de ser visible para la comunidad.',
@@ -242,7 +227,8 @@ class _EditPostViewState extends State<EditPostView> {
                     const SizedBox(height: 6),
                     const Text(
                       'Actualiza el titulo, el texto o la imagen. Los cambios seran visibles de inmediato para tu comunidad.',
-                      style: TextStyle(color: AppColors.textSecondary, height: 1.35),
+                      style: TextStyle(
+                          color: AppColors.textSecondary, height: 1.35),
                     ),
                     const SizedBox(height: 16),
                     _communitySelector(community),
@@ -273,7 +259,8 @@ class _EditPostViewState extends State<EditPostView> {
                             controller: _bodyController,
                             maxLines: 8,
                             decoration: const InputDecoration(
-                              hintText: 'Escribe el contenido de tu publicacion...',
+                              hintText:
+                                  'Escribe el contenido de tu publicacion...',
                               border: InputBorder.none,
                             ),
                           ),
@@ -297,7 +284,8 @@ class _EditPostViewState extends State<EditPostView> {
                                 ),
                               )
                             : const Icon(Icons.save_outlined, size: 18),
-                        label: Text(_saving ? 'Guardando...' : 'Guardar cambios'),
+                        label:
+                            Text(_saving ? 'Guardando...' : 'Guardar cambios'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.white,
@@ -310,10 +298,13 @@ class _EditPostViewState extends State<EditPostView> {
                     const SizedBox(height: 10),
                     TextButton.icon(
                       onPressed: _confirmDelete,
-                      icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                      icon: const Icon(Icons.delete_outline,
+                          color: AppColors.error),
                       label: const Text(
                         'Eliminar publicacion',
-                        style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w800),
                       ),
                     ),
                   ],
@@ -388,7 +379,8 @@ class _EditPostViewState extends State<EditPostView> {
                 ],
               ),
             ),
-            const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
+            const Icon(Icons.keyboard_arrow_down,
+                color: AppColors.textSecondary),
           ],
         ),
       ),

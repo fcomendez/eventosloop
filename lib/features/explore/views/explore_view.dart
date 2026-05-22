@@ -1,6 +1,10 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
+import 'package:eventosloop/core/widgets/full_bleed_publication_card.dart';
+import 'package:eventosloop/features/explore/models/explore_catalog_models.dart';
+import 'package:eventosloop/features/explore/services/explore_mock_service.dart';
+import 'package:eventosloop/features/explore/views/explore_catalog_list_views.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
 import 'package:flutter/material.dart';
 
@@ -198,58 +202,109 @@ class _FilterChip extends StatelessWidget {
 class _ExploreHome extends StatelessWidget {
   const _ExploreHome();
 
+  static final ExploreMockService _service = ExploreMockService();
+
   @override
   Widget build(BuildContext context) {
+    final List<ExploreNearbyEventItem> nearby = _service.previewNearbyEvents();
+    final List<ExploreRecommendedCommunityItem> communities =
+        _service.previewRecommendedCommunities();
+    final List<ExploreUpcomingEventItem> upcoming =
+        _service.previewUpcomingEvents();
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 22),
+      padding: const EdgeInsets.only(bottom: 22),
       children: <Widget>[
-        const _ExploreSectionTitle(
-          title: 'Eventos cerca de ti',
-          action: 'Ver todo',
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _ExploreSectionTitle(
+                title: 'Eventos cerca de ti',
+                action: 'Ver todo',
+                onAction: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NearbyEventsListView(),
+                    ),
+                  );
+                },
+              ),
+              _NearbyEventsCarousel(items: nearby),
+              const SizedBox(height: 18),
+              _ExploreSectionTitle(
+                title: 'Comunidades recomendadas',
+                action: 'Ver todo',
+                onAction: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const RecommendedCommunitiesListView(),
+                    ),
+                  );
+                },
+              ),
+              _CommunitiesCarousel(items: communities),
+              const SizedBox(height: 18),
+              _ExploreSectionTitle(
+                title: 'Eventos proximos',
+                action: 'Ver todo',
+                onAction: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const UpcomingEventsListView(),
+                    ),
+                  );
+                },
+              ),
+              _UpcomingEventsCarousel(items: upcoming),
+            ],
+          ),
         ),
-        const _NearbyEventsCarousel(),
         const SizedBox(height: 18),
-        const _ExploreSectionTitle(title: 'Comunidades recomendadas'),
-        const _CommunitiesCarousel(),
-        const SizedBox(height: 18),
-        const _ExploreSectionTitle(title: 'Eventos proximos'),
-        const _UpcomingEventsCarousel(),
-        const SizedBox(height: 18),
-        const _ExploreSectionTitle(title: 'Publicaciones destacadas'),
-        _ImagePostCard(
-          postId: 118,
-          user: '@martina.loop',
-          linkedTo: 'Comunidad: Running Santiago',
-          imageLabel: 'Atardecer en el parque',
-          caption:
-              'Gran salida grupal despues del trabajo. Buen ritmo, buena energia y nuevas personas para seguir entrenando.',
-          likes: 42,
-          comments: 11,
-          onOpen: () => openPostDetail(context, 118),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Text(
+            'Publicaciones destacadas',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
-        _TextPostCard(
-          postId: 120,
-          user: '@diego.dev',
-          linkedTo: 'Evento: Workshop UX Editorial',
-          title: 'Que llevarian a una jornada creativa?',
-          body:
-              'Estoy armando mi lista para el proximo encuentro y quiero recomendaciones de materiales, libros o apps utiles.',
-          replies: 18,
-          likes: 31,
-          onOpen: () => openPostDetail(context, 120),
-        ),
-        const SizedBox(height: 12),
-        _ImagePostCard(
-          postId: 115,
-          user: '@camila.foodie',
-          linkedTo: 'Evento: Feria gastronomica',
-          imageLabel: 'Sabores locales',
-          caption:
-              'Probamos cafeterias nuevas y varios stands de comida chilena. Recomendadisimo para ir en grupo.',
-          likes: 76,
-          comments: 24,
-          onOpen: () => openPostDetail(context, 115),
+        FutureBuilder<List<ExploreFeaturedPostItem>>(
+          future: _service.fetchFeaturedPosts(),
+          builder: (
+            BuildContext context,
+            AsyncSnapshot<List<ExploreFeaturedPostItem>> snapshot,
+          ) {
+            if (!snapshot.hasData) {
+              return const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return Column(
+              children: snapshot.data!
+                  .map(
+                    (ExploreFeaturedPostItem post) => FullBleedPublicationCard(
+                      userLabel: post.user,
+                      contextLabel: post.linkedTo,
+                      imageLabel: post.isTextOnly ? null : post.imageLabel,
+                      imageColorHex: post.imageColorHex,
+                      caption: post.caption,
+                      likes: post.likes,
+                      comments: post.comments,
+                      title: post.title,
+                      body: post.body,
+                      replies: post.replies,
+                      onOpen: () => openPostDetail(context, post.postId),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
         ),
       ],
     );
@@ -260,10 +315,12 @@ class _ExploreSectionTitle extends StatelessWidget {
   const _ExploreSectionTitle({
     required this.title,
     this.action,
+    this.onAction,
   });
 
   final String title;
   final String? action;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -282,12 +339,19 @@ class _ExploreSectionTitle extends StatelessWidget {
             ),
           ),
           if (action != null)
-            Text(
-              action!,
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
+            InkWell(
+              onTap: onAction,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Text(
+                  action!,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
             ),
         ],
@@ -297,7 +361,13 @@ class _ExploreSectionTitle extends StatelessWidget {
 }
 
 class _NearbyEventsCarousel extends StatelessWidget {
-  const _NearbyEventsCarousel();
+  const _NearbyEventsCarousel({required this.items});
+
+  final List<ExploreNearbyEventItem> items;
+
+  Color _parseHex(String hex) {
+    return Color(int.parse('FF${hex.replaceFirst('#', '')}', radix: 16));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -305,36 +375,30 @@ class _NearbyEventsCarousel extends StatelessWidget {
       height: 180,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        children: const <Widget>[
-          _EventCompactCard(
-            eventId: 6,
-            title: 'Yoga al amanecer',
-            meta: 'Providencia · 1.8 km',
-            date: 'Hoy 07:30',
-            color: Color(0xFF7BC8B7),
-          ),
-          _EventCompactCard(
-            eventId: 2,
-            title: 'Cafe y lectura',
-            meta: 'Nunoa · 2.4 km',
-            date: 'Hoy 18:00',
-            color: Color(0xFFD9A441),
-          ),
-          _EventCompactCard(
-            eventId: 4,
-            title: 'Running nocturno',
-            meta: 'Las Condes · 3.1 km',
-            date: 'Manana 20:00',
-            color: Color(0xFF0E3554),
-          ),
-        ],
+        children: items
+            .map(
+              (ExploreNearbyEventItem item) => _EventCompactCard(
+                eventId: item.eventId,
+                title: item.title,
+                meta: '${item.comuna} · ${item.distanceLabel}',
+                date: item.dateLabel,
+                color: _parseHex(item.colorHex),
+              ),
+            )
+            .toList(),
       ),
     );
   }
 }
 
 class _CommunitiesCarousel extends StatelessWidget {
-  const _CommunitiesCarousel();
+  const _CommunitiesCarousel({required this.items});
+
+  final List<ExploreRecommendedCommunityItem> items;
+
+  Color _parseHex(String hex) {
+    return Color(int.parse('FF${hex.replaceFirst('#', '')}', radix: 16));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -342,30 +406,32 @@ class _CommunitiesCarousel extends StatelessWidget {
       height: 148,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        children: const <Widget>[
-          _CommunityCard(
-            title: 'Cine Club',
-            members: '840 miembros',
-            color: Color(0xFF111827),
-          ),
-          _CommunityCard(
-            title: 'Outdoor Chile',
-            members: '1.4k miembros',
-            color: Color(0xFF245B4A),
-          ),
-          _CommunityCard(
-            title: 'Foodies LOOP',
-            members: '620 miembros',
-            color: Color(0xFF9A5A00),
-          ),
-        ],
+        children: items
+            .map(
+              (ExploreRecommendedCommunityItem item) => InkWell(
+                onTap: () => openCommunityDetail(context, item.communityId),
+                borderRadius: BorderRadius.circular(16),
+                child: _CommunityCard(
+                  title: item.title,
+                  members: item.membersLabel,
+                  color: _parseHex(item.colorHex),
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
 }
 
 class _UpcomingEventsCarousel extends StatelessWidget {
-  const _UpcomingEventsCarousel();
+  const _UpcomingEventsCarousel({required this.items});
+
+  final List<ExploreUpcomingEventItem> items;
+
+  Color _parseHex(String hex) {
+    return Color(int.parse('FF${hex.replaceFirst('#', '')}', radix: 16));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -373,29 +439,17 @@ class _UpcomingEventsCarousel extends StatelessWidget {
       height: 190,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        children: const <Widget>[
-          _EventCompactCard(
-            eventId: 5,
-            title: 'Festival urbano',
-            meta: 'Santiago Centro',
-            date: 'Sab 25',
-            color: Color(0xFFC94F4F),
-          ),
-          _EventCompactCard(
-            eventId: 1,
-            title: 'Torneo de ajedrez',
-            meta: 'La Reina',
-            date: 'Dom 26',
-            color: Color(0xFF2C3E50),
-          ),
-          _EventCompactCard(
-            eventId: 3,
-            title: 'Taller de ceramica',
-            meta: 'Barrio Italia',
-            date: 'Mar 28',
-            color: Color(0xFFB97955),
-          ),
-        ],
+        children: items
+            .map(
+              (ExploreUpcomingEventItem item) => _EventCompactCard(
+                eventId: item.eventId,
+                title: item.title,
+                meta: item.locationLabel,
+                date: item.dateLabel,
+                color: _parseHex(item.colorHex),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -577,229 +631,6 @@ class _CommunityCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ImagePostCard extends StatelessWidget {
-  const _ImagePostCard({
-    required this.postId,
-    required this.user,
-    required this.linkedTo,
-    required this.imageLabel,
-    required this.caption,
-    required this.likes,
-    required this.comments,
-    required this.onOpen,
-  });
-
-  final int postId;
-  final String user;
-  final String linkedTo;
-  final String imageLabel;
-  final String caption;
-  final int likes;
-  final int comments;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onOpen,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: <Widget>[
-                const CircleAvatar(
-                  radius: 17,
-                  backgroundColor: AppColors.inputBackground,
-                  child: Icon(Icons.person, color: AppColors.primary, size: 19),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        user,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        linkedTo,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            height: 190,
-            width: double.infinity,
-            color: AppColors.inputBackground,
-            child: Center(
-              child: Text(
-                imageLabel,
-                style: const TextStyle(
-                  color: AppColors.primaryDark,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-            child: Row(
-              children: <Widget>[
-                const Icon(Icons.favorite_border, color: AppColors.textSecondary),
-                const SizedBox(width: 5),
-                Text('$likes'),
-                const SizedBox(width: 18),
-                const Icon(
-                  Icons.mode_comment_outlined,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(width: 5),
-                Text('$comments'),
-                const Spacer(),
-                const Icon(Icons.send_outlined, color: AppColors.primary),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  height: 1.32,
-                ),
-                children: <TextSpan>[
-                  TextSpan(
-                    text: '$user ',
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  TextSpan(text: caption),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-    );
-  }
-}
-
-class _TextPostCard extends StatelessWidget {
-  const _TextPostCard({
-    required this.postId,
-    required this.user,
-    required this.linkedTo,
-    required this.title,
-    required this.body,
-    required this.replies,
-    required this.likes,
-    required this.onOpen,
-  });
-
-  final int postId;
-  final String user;
-  final String linkedTo;
-  final String title;
-  final String body;
-  final int replies;
-  final int likes;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onOpen,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            '$user · $linkedTo',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            body,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.textSecondary, height: 1.34),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              const Icon(
-                Icons.mode_comment_outlined,
-                size: 17,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 4),
-              Text('$replies respuestas'),
-              const SizedBox(width: 14),
-              const Icon(
-                Icons.favorite_border,
-                size: 17,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 4),
-              Text('$likes'),
-              const Spacer(),
-              const Text(
-                'Ver mas',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
     );
   }
 }

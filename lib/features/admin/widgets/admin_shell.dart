@@ -53,31 +53,32 @@ class AdminShell extends StatelessWidget {
                           ? null
                           : () => Scaffold.of(scaffoldContext).openDrawer(),
                     ),
-                _TopTabs(
-                  selected: selectedTopTab,
-                  onChanged: onTopTabChanged,
-                ),
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      if (wide)
-                        SizedBox(
-                          width: 230,
-                          child: _SidebarPanel(
-                            selected: selectedSidebar,
-                            onSelected: onSidebarChanged,
+                    _TopTabs(
+                      selected: selectedTopTab,
+                      onChanged: onTopTabChanged,
+                    ),
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          if (wide)
+                            SizedBox(
+                              width: 230,
+                              child: _SidebarPanel(
+                                selected: selectedSidebar,
+                                onSelected: onSidebarChanged,
+                              ),
+                            ),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                              child: body,
+                            ),
                           ),
-                        ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                          child: body,
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
                   ],
                 ),
               );
@@ -125,16 +126,18 @@ class _TopBar extends StatelessWidget {
               color: AppColors.primaryDark,
               tooltip: 'Volver a la app',
             ),
-          const Text(
-            'LOOP',
-            style: TextStyle(
-              color: AppColors.primaryDark,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
+          const Expanded(
+            child: Text(
+              'LOOP',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.primaryDark,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
-          const Spacer(),
           if (wide)
             SizedBox(
               width: 220,
@@ -157,11 +160,12 @@ class _TopBar extends StatelessWidget {
             icon: const Icon(Icons.notifications_none),
             color: AppColors.textSecondary,
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.help_outline),
-            color: AppColors.textSecondary,
-          ),
+          if (wide)
+            IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.help_outline),
+              color: AppColors.textSecondary,
+            ),
           const CircleAvatar(
             radius: 16,
             backgroundColor: AppColors.inputBackground,
@@ -239,7 +243,8 @@ class _SidebarPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.white,
-      padding: EdgeInsets.fromLTRB(compact ? 12 : 16, 16, compact ? 12 : 16, 16),
+      padding:
+          EdgeInsets.fromLTRB(compact ? 12 : 16, 16, compact ? 12 : 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -285,15 +290,26 @@ class _SidebarPanel extends StatelessWidget {
           ...AdminSidebarItem.values.map((AdminSidebarItem item) {
             final bool active = item == selected;
             final (IconData icon, String label) = switch (item) {
-              AdminSidebarItem.userManagement =>
-                (Icons.group_outlined, 'User Management'),
-              AdminSidebarItem.contentFeed =>
-                (Icons.article_outlined, 'Content Feed'),
-              AdminSidebarItem.moderation =>
-                (Icons.gavel_outlined, 'Moderation'),
-              AdminSidebarItem.adConsole => (Icons.campaign_outlined, 'Ad Console'),
-              AdminSidebarItem.systemStatus =>
-                (Icons.monitor_heart_outlined, 'System Status'),
+              AdminSidebarItem.userManagement => (
+                  Icons.group_outlined,
+                  'User Management'
+                ),
+              AdminSidebarItem.contentFeed => (
+                  Icons.article_outlined,
+                  'Content Feed'
+                ),
+              AdminSidebarItem.moderation => (
+                  Icons.gavel_outlined,
+                  'Moderation'
+                ),
+              AdminSidebarItem.adConsole => (
+                  Icons.campaign_outlined,
+                  'Ad Console'
+                ),
+              AdminSidebarItem.systemStatus => (
+                  Icons.monitor_heart_outlined,
+                  'System Status'
+                ),
             };
             return Padding(
               padding: const EdgeInsets.only(bottom: 6),
@@ -306,13 +322,16 @@ class _SidebarPanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   onTap: onSelected == null ? null : () => onSelected!(item),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                     child: Row(
                       children: <Widget>[
                         Icon(
                           icon,
                           size: 18,
-                          color: active ? AppColors.primary : AppColors.textSecondary,
+                          color: active
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
                         ),
                         const SizedBox(width: 10),
                         Expanded(

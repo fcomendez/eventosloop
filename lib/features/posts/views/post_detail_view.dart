@@ -120,35 +120,39 @@ class _PostDetailViewState extends State<PostDetailView> {
                         ),
                         Expanded(
                           child: ListView(
-                            padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+                            padding: const EdgeInsets.only(bottom: 12),
                             children: <Widget>[
-                              _AuthorHeader(post: _post!),
-                              const SizedBox(height: 12),
-                              _ContentCard(post: _post!, parseHex: _parseHex),
-                              const SizedBox(height: 14),
-                              _ActionsBar(
+                              _UnifiedPostCard(
+                                post: _post!,
                                 liked: _liked,
-                                likesCount: _post!.likesCount,
-                                commentsCount: _post!.commentsCount,
+                                parseHex: _parseHex,
                                 onLike: () {
                                   setState(() {
                                     _liked = !_liked;
                                   });
                                 },
                               ),
-                              const SizedBox(height: 14),
-                              const Text(
-                                'Comentarios',
-                                style: TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(18, 14, 18, 10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    const Text(
+                                      'Comentarios',
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    ..._post!.comments.map(
+                                      (PostCommentModel comment) =>
+                                          _CommentTile(comment: comment),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 10),
-                              ..._post!.comments.map(
-                                (PostCommentModel comment) =>
-                                    _CommentTile(comment: comment),
                               ),
                             ],
                           ),
@@ -201,239 +205,187 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _AuthorHeader extends StatelessWidget {
-  const _AuthorHeader({required this.post});
-
-  final PostDetailModel post;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: <Widget>[
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-            child: Text(
-              post.authorInitials,
-              style: const TextStyle(
-                color: AppColors.primaryDark,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  post.authorName,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  post.publishedLabel,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (post.isActive)
-            Row(
-              children: <Widget>[
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Text(
-                  'Activo',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ContentCard extends StatelessWidget {
-  const _ContentCard({
+class _UnifiedPostCard extends StatelessWidget {
+  const _UnifiedPostCard({
     required this.post,
-    required this.parseHex,
-  });
-
-  final PostDetailModel post;
-  final Color Function(String?) parseHex;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (post.title != null) ...<Widget>[
-            Text(
-              post.title!,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Text(
-            post.body,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              height: 1.4,
-            ),
-          ),
-          if (post.hashtags.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: post.hashtags
-                  .map(
-                    (String tag) => Text(
-                      tag,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-          if (post.mediaLabel != null) ...<Widget>[
-            const SizedBox(height: 14),
-            Container(
-              height: 210,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <Color>[
-                    parseHex(post.mediaColorHex),
-                    AppColors.primaryDark.withValues(alpha: 0.92),
-                  ],
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  post.mediaLabel!,
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionsBar extends StatelessWidget {
-  const _ActionsBar({
     required this.liked,
-    required this.likesCount,
-    required this.commentsCount,
+    required this.parseHex,
     required this.onLike,
   });
 
+  final PostDetailModel post;
   final bool liked;
-  final int likesCount;
-  final int commentsCount;
+  final Color Function(String?) parseHex;
   final VoidCallback onLike;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
+    final bool hasMedia = post.mediaLabel != null;
+
+    return ColoredBox(
+      color: AppColors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          TextButton.icon(
-            onPressed: onLike,
-            icon: Icon(
-              liked ? Icons.favorite : Icons.favorite_border,
-              color: liked ? AppColors.error : AppColors.textSecondary,
-              size: 18,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child: Row(
+              children: <Widget>[
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.16),
+                  child: Text(
+                    post.authorInitials,
+                    style: const TextStyle(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        post.authorName,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        post.publishedLabel,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (post.isActive)
+                  const Row(
+                    children: <Widget>[
+                      Icon(Icons.circle, size: 8, color: Colors.green),
+                      SizedBox(width: 4),
+                      Text(
+                        'Activo',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
-            label: Text(
-              '$likesCount',
-              style: TextStyle(
-                color: liked ? AppColors.error : AppColors.textSecondary,
-                fontWeight: FontWeight.w700,
+          ),
+          if (hasMedia)
+            SizedBox(
+              width: double.infinity,
+              height: 280,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: <Color>[
+                      parseHex(post.mediaColorHex),
+                      AppColors.primaryDark.withValues(alpha: 0.92),
+                    ],
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    post.mediaLabel!,
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-          TextButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.mode_comment_outlined, size: 18),
-            label: Text(
-              '$commentsCount',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w700,
-              ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(14, hasMedia ? 12 : 0, 14, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (post.title != null) ...<Widget>[
+                  Text(
+                    post.title!,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                Text(
+                  post.body,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+                if (post.hashtags.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: post.hashtags
+                        .map(
+                          (String tag) => Text(
+                            tag,
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ],
             ),
           ),
-          const Spacer(),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.bookmark_border),
-            color: AppColors.primary,
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.share_outlined),
-            color: AppColors.primary,
+          const Divider(height: 1, thickness: 1, color: Color(0xFFE8EEF4)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 8, 8),
+            child: Row(
+              children: <Widget>[
+                TextButton.icon(
+                  onPressed: onLike,
+                  icon: Icon(
+                    liked ? Icons.favorite : Icons.favorite_border,
+                    color: liked ? AppColors.error : AppColors.textSecondary,
+                    size: 18,
+                  ),
+                  label: Text(
+                    '${post.likesCount}',
+                    style: TextStyle(
+                      color: liked ? AppColors.error : AppColors.textSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.mode_comment_outlined, size: 18),
+                  label: Text(
+                    '${post.commentsCount}',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

@@ -85,7 +85,8 @@ class _FeedHomeViewState extends State<FeedHomeView> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    if (_controller.error != null && _controller.items.isEmpty) {
+                    if (_controller.error != null &&
+                        _controller.items.isEmpty) {
                       return _FeedErrorState(
                         message: _controller.error!,
                         onRetry: _controller.loadInitial,
@@ -109,7 +110,7 @@ class _FeedHomeViewState extends State<FeedHomeView> {
                       onRefresh: _controller.loadInitial,
                       child: ListView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                        padding: const EdgeInsets.only(bottom: 12),
                         itemCount: _controller.items.length + 1,
                         itemBuilder: (BuildContext context, int index) {
                           if (index == _controller.items.length) {
@@ -155,7 +156,8 @@ class _FeedTopBar extends StatefulWidget {
 }
 
 class _FeedTopBarState extends State<_FeedTopBar> {
-  final NotificationMockService _notificationService = NotificationMockService();
+  final NotificationMockService _notificationService =
+      NotificationMockService();
 
   @override
   Widget build(BuildContext context) {
@@ -234,136 +236,122 @@ class _FeedPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onOpen,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
-            child: Row(
-              children: <Widget>[
-                CircleAvatar(
-                  radius: 19,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-                  child: Text(
-                    item.author.avatarInitials,
-                    style: const TextStyle(
-                      color: AppColors.primaryDark,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+    final bool hasMedia = item.mediaLabel != null;
+
+    return Material(
+      color: AppColors.white,
+      child: InkWell(
+        onTap: onOpen,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+              child: Row(
+                children: <Widget>[
+                  CircleAvatar(
+                    radius: 19,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.16),
+                    child: Text(
+                      item.author.avatarInitials,
+                      style: const TextStyle(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        item.author.name,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w800,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          item.author.name,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${item.author.username} · ${item.publishedLabel}',
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
+                        Text(
+                          '${item.author.username} · ${item.publishedLabel}',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                  _TypeChip(label: item.typeLabel),
+                ],
+              ),
+            ),
+            if (hasMedia) _MockMediaBlock(item: item),
+            if (item.contextLabel != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(12, hasMedia ? 10 : 0, 12, 6),
+                child: Text(
+                  item.contextLabel!,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                _TypeChip(label: item.typeLabel),
-              ],
-            ),
-          ),
-          if (item.contextLabel != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-              child: Text(
-                item.contextLabel!,
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+              ),
+            if (item.title != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                child: Text(
+                  item.title!,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
-          if (item.title != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
-              child: Text(
-                item.title!,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
+            if (item.body.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  12,
+                  hasMedia && item.title == null ? 10 : 0,
+                  12,
+                  8,
+                ),
+                child: Text(
+                  item.body,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    height: 1.35,
+                  ),
                 ),
               ),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-            child: Text(
-              item.body,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                height: 1.35,
+            const Divider(height: 1, thickness: 1, color: Color(0xFFE8EEF4)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 0, 8, 6),
+              child: Row(
+                children: <Widget>[
+                  _ActionButton(
+                    icon:
+                        item.likedByMe ? Icons.favorite : Icons.favorite_border,
+                    label: '${item.likesCount}',
+                    active: item.likedByMe,
+                    onTap: onLike,
+                  ),
+                  _ActionButton(
+                    icon: Icons.mode_comment_outlined,
+                    label: '${item.commentsCount}',
+                    onTap: onOpen,
+                  ),
+                ],
               ),
             ),
-          ),
-          if (item.mediaLabel != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: _MockMediaBlock(item: item),
-            ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            child: Row(
-              children: <Widget>[
-                _ActionButton(
-                  icon: item.likedByMe
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  label: '${item.likesCount}',
-                  active: item.likedByMe,
-                  onTap: onLike,
-                ),
-                _ActionButton(
-                  icon: Icons.mode_comment_outlined,
-                  label: '${item.commentsCount}',
-                  onTap: onOpen,
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.send_outlined),
-                  color: AppColors.primary,
-                ),
-              ],
-            ),
-          ),
-        ],
+            const Divider(height: 1, thickness: 6, color: Color(0xFFEAF4FC)),
+          ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -376,43 +364,44 @@ class _MockMediaBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color baseColor = _parseHex(item.mediaColorHex);
-    return Container(
-      height: 190,
+    return SizedBox(
       width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[
-            baseColor,
-            AppColors.primaryDark.withValues(alpha: 0.92),
-          ],
-        ),
-      ),
-      child: Stack(
-        children: <Widget>[
-          Positioned(
-            right: -18,
-            top: -18,
-            child: Icon(
-              Icons.blur_on,
-              color: AppColors.white.withValues(alpha: 0.16),
-              size: 120,
-            ),
+      height: 190,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[
+              baseColor,
+              AppColors.primaryDark.withValues(alpha: 0.92),
+            ],
           ),
-          Center(
-            child: Text(
-              item.mediaLabel!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
+        ),
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              right: -18,
+              top: -18,
+              child: Icon(
+                Icons.blur_on,
+                color: AppColors.white.withValues(alpha: 0.16),
+                size: 120,
               ),
             ),
-          ),
-        ],
+            Center(
+              child: Text(
+                item.mediaLabel!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

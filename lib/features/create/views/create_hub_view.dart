@@ -102,32 +102,17 @@ class _CreateTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        children: <Widget>[
-          IconButton(
-            onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              }
-            },
-            icon: const Icon(Icons.close),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Center(
+        child: Text(
+          'LOOP',
+          style: TextStyle(
             color: AppColors.primaryDark,
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
           ),
-          const Expanded(
-            child: Text(
-              'LOOP',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.primaryDark,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(width: 48),
-        ],
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
+import 'package:eventosloop/core/widgets/edge_to_edge_image_grid.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
 import 'package:eventosloop/features/profile/controllers/profile_controller.dart';
 import 'package:eventosloop/features/profile/models/profile_model.dart';
@@ -62,47 +63,61 @@ class _ProfileViewState extends State<ProfileView> {
                     final ProfileModel? profile = _controller.profile;
                     if (profile == null) {
                       return _ErrorState(
-                        message: _controller.error ?? 'No se pudo cargar el perfil',
+                        message:
+                            _controller.error ?? 'No se pudo cargar el perfil',
                         onRetry: _controller.loadProfile,
                       );
                     }
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          _ProfileHeader(
-                            profile: profile,
-                            isOwnProfile: widget.isOwnProfile,
-                            isFollowing: _controller.isFollowing,
-                            onFollowTap: _controller.toggleFollow,
-                            onFollowersTap: () => _openConnections(
-                              initialTab: 0,
-                              profile: profile,
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: <Widget>[
+                                _ProfileHeader(
+                                  profile: profile,
+                                  isOwnProfile: widget.isOwnProfile,
+                                  isFollowing: _controller.isFollowing,
+                                  onFollowTap: _controller.toggleFollow,
+                                  onFollowersTap: () => _openConnections(
+                                    initialTab: 0,
+                                    profile: profile,
+                                  ),
+                                  onFollowingTap: () => _openConnections(
+                                    initialTab: 1,
+                                    profile: profile,
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                _SectionSelector(
+                                  selected: _selectedSection,
+                                  onChanged: (int value) {
+                                    setState(() {
+                                      _selectedSection = value;
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
-                            onFollowingTap: () => _openConnections(
-                              initialTab: 1,
-                              profile: profile,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          _SectionSelector(
-                            selected: _selectedSection,
-                            onChanged: (int value) {
-                              setState(() {
-                                _selectedSection = value;
-                              });
-                            },
                           ),
                           const SizedBox(height: 16),
-                          if (_selectedSection == 0)
-                            _ImageGrid(posts: profile.imagePosts)
-                          else if (_selectedSection == 1)
-                            _WrittenPosts(posts: profile.writtenPosts)
-                          else
-                            _StatsSection(
-                              profile: profile,
-                              allPastEvents: _controller.allPastEvents,
+                          if (_selectedSection == 0) ...<Widget>[
+                            _ImageGrid(posts: profile.imagePosts),
+                            const SizedBox(height: 18),
+                          ] else
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                              child: _selectedSection == 1
+                                  ? _WrittenPosts(
+                                      posts: profile.writtenPosts,
+                                    )
+                                  : _StatsSection(
+                                      profile: profile,
+                                      allPastEvents: _controller.allPastEvents,
+                                    ),
                             ),
                         ],
                       ),
@@ -444,49 +459,18 @@ class _ImageGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-      ),
-      itemCount: posts.length,
-      itemBuilder: (BuildContext context, int index) {
-        final ProfileImagePostModel post = posts[index];
-        return InkWell(
-          onTap: () => openPostDetail(context, post.id),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: <Color>[
-                _parseHex(post.colorHex),
-                AppColors.primaryDark.withValues(alpha: 0.85),
-              ],
+    return EdgeToEdgeImageGrid(
+      items: posts
+          .map(
+            (ProfileImagePostModel post) => EdgeToEdgeGridItem(
+              id: post.id,
+              label: post.label,
+              colorHex: post.colorHex,
+              onTap: () => openPostDetail(context, post.id),
             ),
-          ),
-          child: Center(
-            child: Text(
-              post.label,
-              style: const TextStyle(
-                color: AppColors.white,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          ),
-        );
-      },
+          )
+          .toList(),
     );
-  }
-
-  Color _parseHex(String hex) {
-    return Color(int.parse('FF${hex.replaceFirst('#', '')}', radix: 16));
   }
 }
 
@@ -503,60 +487,64 @@ class _WrittenPosts extends StatelessWidget {
           onTap: () => openPostDetail(context, post.id),
           borderRadius: BorderRadius.circular(14),
           child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  const CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.divider,
-                    child: Icon(Icons.person, size: 16, color: AppColors.primary),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    post.authorName,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const CircleAvatar(
+                      radius: 14,
+                      backgroundColor: AppColors.divider,
+                      child: Icon(Icons.person,
+                          size: 16, color: AppColors.primary),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '· ${post.publishedLabel}',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
+                    const SizedBox(width: 8),
+                    Text(
+                      post.authorName,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                post.body,
-                style: const TextStyle(color: AppColors.textPrimary, height: 1.35),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: <Widget>[
-                  const Icon(Icons.favorite_border, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text('${post.likesCount}'),
-                  const SizedBox(width: 14),
-                  const Icon(Icons.mode_comment_outlined, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text('${post.commentsCount}'),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 6),
+                    Text(
+                      '· ${post.publishedLabel}',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  post.body,
+                  style: const TextStyle(
+                      color: AppColors.textPrimary, height: 1.35),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: <Widget>[
+                    const Icon(Icons.favorite_border,
+                        size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text('${post.likesCount}'),
+                    const SizedBox(width: 14),
+                    const Icon(Icons.mode_comment_outlined,
+                        size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text('${post.commentsCount}'),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
         );
       }).toList(),
     );
@@ -698,56 +686,56 @@ class _ActivityCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.inputBackground,
-              borderRadius: BorderRadius.circular(10),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.primaryDark),
             ),
-            child: Icon(icon, color: AppColors.primaryDark),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
+            Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 }

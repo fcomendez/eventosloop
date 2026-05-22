@@ -1,7 +1,9 @@
 import 'package:eventosloop/core/data/chile_comunas.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/scrollable_picker_sheet.dart';
 import 'package:eventosloop/features/create/data/user_communities_mock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CreateEventView extends StatefulWidget {
   const CreateEventView({super.key});
@@ -16,20 +18,29 @@ class _CreateEventViewState extends State<CreateEventView> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _capacityController =
+      TextEditingController(text: '20');
 
   String? _selectedCommunityId;
+  String? _selectedRegion;
   String? _selectedComuna;
-  String _selectedCapacity = '20';
+  bool _isPrivate = false;
 
-  static const List<String> _capacityOptions = <String>[
+  static const List<String> _capacitySuggestions = <String>[
     '5',
     '10',
     '20',
     '50',
     '100',
     '200',
-    'sin_limite',
   ];
+
+  List<String> get _comunasDisponibles {
+    if (_selectedRegion == null) {
+      return const <String>[];
+    }
+    return ChileComunas.comunasPorRegion(_selectedRegion!);
+  }
 
   @override
   void dispose() {
@@ -38,14 +49,117 @@ class _CreateEventViewState extends State<CreateEventView> {
     _dateController.dispose();
     _timeController.dispose();
     _addressController.dispose();
+    _capacityController.dispose();
     super.dispose();
   }
 
-  String _capacityLabel(String value) {
-    if (value == 'sin_limite') {
-      return 'Sin limite';
+  Future<void> _pickCommunity() async {
+    final String? selected = await showScrollablePickerSheet<String>(
+      context: context,
+      title: 'Comunidad del evento',
+      children: UserCommunitiesMock.participando
+          .map(
+            (UserCommunityOption community) => ListTile(
+              leading:
+                  const Icon(Icons.groups_outlined, color: AppColors.primary),
+              title: Text(community.name),
+              onTap: () => Navigator.of(context).pop(community.id),
+            ),
+          )
+          .toList(),
+    );
+    if (selected == null) {
+      return;
     }
-    return '$value personas';
+    setState(() => _selectedCommunityId = selected);
+  }
+
+  Future<void> _pickRegion() async {
+    final String? selected = await showScrollablePickerSheet<String>(
+      context: context,
+      title: 'Region',
+      children: ChileComunas.regiones
+          .map(
+            (String region) => ListTile(
+              leading:
+                  const Icon(Icons.public_outlined, color: AppColors.primary),
+              title: Text(region),
+              onTap: () => Navigator.of(context).pop(region),
+            ),
+          )
+          .toList(),
+    );
+    if (selected == null) {
+      return;
+    }
+    setState(() {
+      _selectedRegion = selected;
+      _selectedComuna = null;
+    });
+  }
+
+  Future<void> _pickComuna() async {
+    if (_selectedRegion == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona una region primero')),
+      );
+      return;
+    }
+    final List<String> comunas = _comunasDisponibles;
+    if (comunas.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay comunas para esta region')),
+      );
+      return;
+    }
+    final String? selected = await showScrollablePickerSheet<String>(
+      context: context,
+      title: 'Comuna',
+      children: comunas
+          .map(
+            (String comuna) => ListTile(
+              leading: const Icon(Icons.map_outlined, color: AppColors.primary),
+              title: Text(comuna),
+              onTap: () => Navigator.of(context).pop(comuna),
+            ),
+          )
+          .toList(),
+    );
+    if (selected == null) {
+      return;
+    }
+    setState(() => _selectedComuna = selected);
+  }
+
+  String? _communityLabel() {
+    if (_selectedCommunityId == null) {
+      return null;
+    }
+    for (final UserCommunityOption community
+        in UserCommunitiesMock.participando) {
+      if (community.id == _selectedCommunityId) {
+        return community.name;
+      }
+    }
+    return null;
+  }
+
+  String? _validateCapacity(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Ingresa un cupo maximo';
+    }
+    if (value.trim().toLowerCase() == 'sin limite' ||
+        value.trim().toLowerCase() == 'sin_limite') {
+      return null;
+    }
+    final int? parsed = int.tryParse(value.trim());
+    if (parsed == null || parsed < 1) {
+      return 'Ingresa un numero valido (minimo 1)';
+    }
+    if (parsed > 10000) {
+      return 'El cupo maximo es 10000';
+    }
+    return null;
   }
 
   @override
@@ -87,7 +201,13 @@ class _CreateEventViewState extends State<CreateEventView> {
                     const SizedBox(height: 18),
                     _imageBox(),
                     const SizedBox(height: 16),
-                    _communityField(),
+                    _pickerField(
+                      label: 'Comunidad',
+                      value: _communityLabel(),
+                      hint: 'Selecciona una comunidad',
+                      icon: Icons.groups_outlined,
+                      onTap: _pickCommunity,
+                    ),
                     _input(
                       label: 'Titulo del evento',
                       hint: 'Escribe un nombre vibrante',
@@ -124,17 +244,44 @@ class _CreateEventViewState extends State<CreateEventView> {
                       icon: Icons.location_on_outlined,
                       controller: _addressController,
                     ),
-                    _comunaField(),
+                    _pickerField(
+                      label: 'Region',
+                      value: _selectedRegion,
+                      hint: 'Selecciona una region',
+                      icon: Icons.public_outlined,
+                      onTap: _pickRegion,
+                    ),
+                    _pickerField(
+                      label: 'Comuna',
+                      value: _selectedComuna,
+                      hint: _selectedRegion == null
+                          ? 'Primero selecciona una region'
+                          : 'Selecciona una comuna',
+                      icon: Icons.map_outlined,
+                      onTap: _pickComuna,
+                    ),
                     _capacityField(),
+                    _privacyField(),
                     const SizedBox(height: 10),
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
+                          final String? capacityError =
+                              _validateCapacity(_capacityController.text);
+                          if (capacityError != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(capacityError)),
+                            );
+                            return;
+                          }
+                          final String privacy =
+                              _isPrivate ? 'privado' : 'publico';
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Evento guardado localmente por ahora'),
+                            SnackBar(
+                              content: Text(
+                                'Evento $privacy guardado localmente (region: ${_selectedRegion ?? '-'}, cupo: ${_capacityController.text.trim()})',
+                              ),
                             ),
                           );
                         },
@@ -194,7 +341,8 @@ class _CreateEventViewState extends State<CreateEventView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(Icons.add_a_photo_outlined, color: AppColors.primary, size: 30),
+            Icon(Icons.add_a_photo_outlined,
+                color: AppColors.primary, size: 30),
             SizedBox(height: 8),
             Text(
               'Cargar imagen del evento',
@@ -214,80 +362,46 @@ class _CreateEventViewState extends State<CreateEventView> {
     );
   }
 
-  Widget _communityField() {
+  Widget _pickerField({
+    required String label,
+    required String? value,
+    required String hint,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
-            'Comunidad',
-            style: TextStyle(
+          Text(
+            label,
+            style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCommunityId,
-            decoration: const InputDecoration(
-              hintText: 'Selecciona una comunidad',
-              prefixIcon: Icon(Icons.groups_outlined, size: 19),
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                hintText: hint,
+                prefixIcon: Icon(icon, size: 19),
+                suffixIcon: const Icon(Icons.keyboard_arrow_down, size: 20),
+              ),
+              child: Text(
+                value ?? hint,
+                style: TextStyle(
+                  color: value == null
+                      ? AppColors.textSecondary
+                      : AppColors.textPrimary,
+                  fontWeight: value == null ? FontWeight.w500 : FontWeight.w700,
+                ),
+              ),
             ),
-            items: UserCommunitiesMock.participando
-                .map(
-                  (UserCommunityOption community) => DropdownMenuItem<String>(
-                    value: community.id,
-                    child: Text(community.name),
-                  ),
-                )
-                .toList(),
-            onChanged: (String? value) {
-              setState(() {
-                _selectedCommunityId = value;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _comunaField() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Text(
-            'Comuna',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedComuna,
-            decoration: const InputDecoration(
-              hintText: 'Selecciona una comuna',
-              prefixIcon: Icon(Icons.map_outlined, size: 19),
-            ),
-            items: ChileComunas.todas
-                .map(
-                  (String comuna) => DropdownMenuItem<String>(
-                    value: comuna,
-                    child: Text(comuna),
-                  ),
-                )
-                .toList(),
-            onChanged: (String? value) {
-              setState(() {
-                _selectedComuna = value;
-              });
-            },
           ),
         ],
       ),
@@ -309,29 +423,95 @@ class _CreateEventViewState extends State<CreateEventView> {
             ),
           ),
           const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCapacity,
+          TextField(
+            controller: _capacityController,
+            keyboardType: TextInputType.number,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
             decoration: const InputDecoration(
+              hintText: 'Escribe un numero o usa una sugerencia',
               prefixIcon: Icon(Icons.people_outline, size: 19),
             ),
-            items: _capacityOptions
-                .map(
-                  (String value) => DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(_capacityLabel(value)),
-                  ),
-                )
-                .toList(),
-            onChanged: (String? value) {
-              if (value == null) {
-                return;
-              }
-              setState(() {
-                _selectedCapacity = value;
-              });
-            },
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              ..._capacitySuggestions.map(
+                (String value) => ActionChip(
+                  label: Text('$value personas'),
+                  onPressed: () {
+                    _capacityController.text = value;
+                  },
+                ),
+              ),
+              ActionChip(
+                label: const Text('Sin limite'),
+                onPressed: () {
+                  _capacityController.text = 'sin limite';
+                },
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _privacyField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(
+              'Visibilidad del evento',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Los eventos privados requieren aprobacion antes de confirmar la inscripcion.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: _PrivacyOption(
+                    label: 'Publico',
+                    subtitle: 'Inscripcion directa',
+                    selected: !_isPrivate,
+                    onTap: () => setState(() => _isPrivate = false),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _PrivacyOption(
+                    label: 'Privado',
+                    subtitle: 'Requiere aprobacion',
+                    selected: _isPrivate,
+                    onTap: () => setState(() => _isPrivate = true),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -366,6 +546,60 @@ class _CreateEventViewState extends State<CreateEventView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PrivacyOption extends StatelessWidget {
+  const _PrivacyOption({
+    required this.label,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.12)
+              : AppColors.inputBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.divider,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? AppColors.primaryDark : AppColors.textPrimary,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -40,15 +40,13 @@ class _NotificationsViewState extends State<NotificationsView> {
     return _items.where((NotificationModel item) {
       return switch (_filter) {
         NotificationFilter.all => true,
-        NotificationFilter.eventos =>
-          item.type == NotificationType.evento ||
-              item.type == NotificationType.recordatorio ||
-              item.type == NotificationType.solicitud,
+        NotificationFilter.eventos => item.type == NotificationType.evento ||
+            item.type == NotificationType.recordatorio ||
+            item.type == NotificationType.solicitud,
         NotificationFilter.comunidades =>
           item.type == NotificationType.comunidad,
-        NotificationFilter.menciones =>
-          item.type == NotificationType.mencion ||
-              item.type == NotificationType.comentario,
+        NotificationFilter.menciones => item.type == NotificationType.mencion ||
+            item.type == NotificationType.comentario,
       };
     }).toList();
   }
@@ -174,23 +172,6 @@ class _NotificationsViewState extends State<NotificationsView> {
       );
       widgets.add(const SizedBox(height: 10));
     }
-    widgets.add(
-      OutlinedButton(
-        onPressed: () {},
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.divider),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-        ),
-        child: const Text(
-          'Ver notificaciones anteriores',
-          style: TextStyle(fontWeight: FontWeight.w900),
-        ),
-      ),
-    );
     return widgets;
   }
 }
@@ -222,11 +203,7 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.search),
-            color: AppColors.primaryDark,
-          ),
+          const SizedBox(width: 48),
         ],
       ),
     );

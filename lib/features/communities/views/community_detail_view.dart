@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/full_bleed_publication_card.dart';
 import 'package:eventosloop/features/communities/models/community_model.dart';
 import 'package:eventosloop/features/communities/services/community_detail_mock_service.dart';
 import 'package:eventosloop/features/events/models/event_model.dart';
@@ -79,51 +80,91 @@ class _CommunityDetailViewState extends State<CommunityDetailView> {
                         ),
                         Expanded(
                           child: ListView(
-                            padding: const EdgeInsets.fromLTRB(18, 8, 18, 22),
+                            padding: EdgeInsets.zero,
                             children: <Widget>[
-                              _HeroSection(
-                                color: _parseHex(_community!.coverColorHex),
-                                name: _community!.name,
-                                tags: _community!.tags,
-                                isActive: _community!.isActive,
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(18, 8, 18, 0),
+                                child: Column(
+                                  children: <Widget>[
+                                    _CommunityHeader(
+                                      color:
+                                          _parseHex(_community!.coverColorHex),
+                                      name: _community!.name,
+                                      tags: _community!.tags,
+                                      isActive: _community!.isActive,
+                                      description: _community!.description,
+                                      activityLabel:
+                                          _community!.activityLabel,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _ContentTabs(
+                                      selectedTab: _selectedTab,
+                                      onChanged: (int value) {
+                                        setState(() {
+                                          _selectedTab = value;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 14),
-                              _AboutCard(
-                                description: _community!.description,
-                                activityLabel: _community!.activityLabel,
-                              ),
-                              const SizedBox(height: 16),
-                              _ContentTabs(
-                                selectedTab: _selectedTab,
-                                onChanged: (int value) {
-                                  setState(() {
-                                    _selectedTab = value;
-                                  });
-                                },
-                              ),
-                              const SizedBox(height: 14),
-                              if (_selectedTab == 0)
+                              if (_selectedTab == 0) ...<Widget>[
                                 ..._posts.map(
-                                  (CommunityPostModel post) => _CommunityPostTile(
-                                    post: post,
-                                    onTap: () => openPostDetail(context, post.id),
+                                  (CommunityPostModel post) =>
+                                      FullBleedPublicationCard(
+                                    userLabel: post.authorName,
+                                    contextLabel:
+                                        '${post.publishedLabel} · ${post.linkedTo}',
+                                    title: post.title,
+                                    body: post.body,
+                                    imageLabel: post.mediaLabel,
+                                    imageColorHex: post.mediaColorHex,
+                                    likes: post.likesCount,
+                                    comments: post.commentsCount,
+                                    onOpen: () =>
+                                        openPostDetail(context, post.id),
                                   ),
-                                )
-                              else
-                                ..._events.map(
-                                  (EventModel event) => _CommunityEventTile(
-                                    event: event,
-                                    onTap: () =>
-                                        openEventDetail(context, event.id),
+                                ),
+                              ] else
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    18,
+                                    0,
+                                    18,
+                                    22,
+                                  ),
+                                  child: Column(
+                                    children: _events
+                                        .map(
+                                          (EventModel event) =>
+                                              _CommunityEventTile(
+                                            event: event,
+                                            onTap: () => openEventDetail(
+                                              context,
+                                              event.id,
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
                                   ),
                                 ),
                               if (_selectedTab == 0 && _posts.isEmpty)
-                                const _EmptyState(
-                                  message: 'Aun no hay publicaciones en esta comunidad.',
+                                const Padding(
+                                  padding: EdgeInsets.all(18),
+                                  child: _EmptyState(
+                                    message:
+                                        'Aun no hay publicaciones en esta comunidad.',
+                                  ),
                                 ),
                               if (_selectedTab == 1 && _events.isEmpty)
-                                const _EmptyState(
-                                  message: 'No hay eventos vinculados por ahora.',
+                                const Padding(
+                                  padding: EdgeInsets.all(18),
+                                  child: _EmptyState(
+                                    message:
+                                        'No hay eventos vinculados por ahora.',
+                                  ),
                                 ),
                             ],
                           ),
@@ -166,29 +207,29 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.share_outlined),
-            color: AppColors.primaryDark,
-          ),
+          const SizedBox(width: 48),
         ],
       ),
     );
   }
 }
 
-class _HeroSection extends StatelessWidget {
-  const _HeroSection({
+class _CommunityHeader extends StatelessWidget {
+  const _CommunityHeader({
     required this.color,
     required this.name,
     required this.tags,
     required this.isActive,
+    required this.description,
+    required this.activityLabel,
   });
 
   final Color color;
   final String name;
   final List<String> tags;
   final bool isActive;
+  final String description;
+  final String activityLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -204,17 +245,13 @@ class _HeroSection extends StatelessWidget {
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Container(
             height: 150,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(18),
-              ),
-            ),
+            color: color,
             child: Stack(
               children: <Widget>[
                 Center(
@@ -293,64 +330,48 @@ class _HeroSection extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AboutCard extends StatelessWidget {
-  const _AboutCard({
-    required this.description,
-    required this.activityLabel,
-  });
-
-  final String description;
-  final String activityLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Text(
-            'Sobre nuestra comunidad',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              const Icon(Icons.people_outline, color: AppColors.primary, size: 18),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  activityLabel,
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            color: AppColors.cardBackground,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  'Sobre nuestra comunidad',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    const Icon(Icons.people_outline,
+                        color: AppColors.primary, size: 18),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        activityLabel,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -405,132 +426,6 @@ class _ContentTabs extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CommunityPostTile extends StatelessWidget {
-  const _CommunityPostTile({
-    required this.post,
-    required this.onTap,
-  });
-
-  final CommunityPostModel post;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: AppColors.primaryDark.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-                  child: Text(
-                    post.authorInitials,
-                    style: const TextStyle(
-                      color: AppColors.primaryDark,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        post.authorName,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        '${post.publishedLabel} · ${post.linkedTo}',
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (post.isLinked)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'Vinculado',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              post.title,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              post.body,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: <Widget>[
-                const Icon(Icons.favorite_border,
-                    size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 4),
-                Text('${post.likesCount}'),
-                const SizedBox(width: 12),
-                const Icon(Icons.mode_comment_outlined,
-                    size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 4),
-                Text('${post.commentsCount}'),
-              ],
-            ),
-          ],
         ),
       ),
     );

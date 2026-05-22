@@ -84,11 +84,6 @@ class _EventDetailViewState extends State<EventDetailView> {
     );
   }
 
-  Color _parseHex(String value) {
-    final String clean = value.replaceFirst('#', '');
-    return Color(int.parse('FF$clean', radix: 16));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,12 +110,7 @@ class _EventDetailViewState extends State<EventDetailView> {
                           child: ListView(
                             padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
                             children: <Widget>[
-                              _HeroImage(
-                                color: _parseHex(_event!.coverColorHex),
-                                isFlash: _event!.isFlash,
-                              ),
-                              const SizedBox(height: 14),
-                              _InfoCard(event: _event!),
+                              _EventHeaderCard(event: _event!),
                               const SizedBox(height: 14),
                               _CapacityCard(event: _event!),
                               const SizedBox(height: 14),
@@ -198,136 +188,151 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _HeroImage extends StatelessWidget {
-  const _HeroImage({required this.color, required this.isFlash});
+class _EventHeaderCard extends StatelessWidget {
+  const _EventHeaderCard({required this.event});
 
-  final Color color;
-  final bool isFlash;
+  final EventModel event;
+
+  Color _parseHex(String value) {
+    final String clean = value.replaceFirst('#', '');
+    return Color(int.parse('FF$clean', radix: 16));
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 190,
       decoration: BoxDecoration(
-        color: color,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(18),
-      ),
-      child: Stack(
-        children: <Widget>[
-          Center(
-            child: Icon(
-              Icons.confirmation_number_outlined,
-              size: 64,
-              color: AppColors.white.withValues(alpha: 0.9),
-            ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
-          if (isFlash)
-            Positioned(
-              left: 12,
-              top: 12,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  'EVENTO FLASH',
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.event});
-
-  final EventModel event;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionCard(
+      clipBehavior: Clip.antiAlias,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-                child: Text(
-                  event.hostName.substring(0, 1),
-                  style: const TextStyle(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12,
+          Container(
+            height: 190,
+            color: _parseHex(event.coverColorHex),
+            child: Stack(
+              children: <Widget>[
+                Center(
+                  child: Icon(
+                    Icons.confirmation_number_outlined,
+                    size: 64,
+                    color: AppColors.white.withValues(alpha: 0.9),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Organizado por ${event.hostName}',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
+                if (event.isFlash)
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text(
+                        'EVENTO FLASH',
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            event.title,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              height: 1.2,
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              _Chip(label: event.category),
-              if (event.subCategory != null) _Chip(label: event.subCategory!),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _DetailRow(
-            icon: Icons.calendar_month_outlined,
-            label: 'FECHA',
-            value: event.dateLabel,
-          ),
-          const SizedBox(height: 8),
-          _DetailRow(
-            icon: Icons.access_time,
-            label: 'HORA',
-            value: event.timeLabel,
-          ),
-          const SizedBox(height: 8),
-          _DetailRow(
-            icon: Icons.location_on_outlined,
-            label: 'DIRECCION',
-            value: '${event.address}, ${event.comuna}',
-          ),
-          const SizedBox(height: 12),
-          Text(
-            event.description,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              height: 1.4,
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor:
+                          AppColors.primary.withValues(alpha: 0.16),
+                      child: Text(
+                        event.hostName.substring(0, 1),
+                        style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Organizado por ${event.hostName}',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  event.title,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    _Chip(label: event.category),
+                    if (event.subCategory != null)
+                      _Chip(label: event.subCategory!),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _DetailRow(
+                  icon: Icons.calendar_month_outlined,
+                  label: 'FECHA',
+                  value: event.dateLabel,
+                ),
+                const SizedBox(height: 8),
+                _DetailRow(
+                  icon: Icons.access_time,
+                  label: 'HORA',
+                  value: event.timeLabel,
+                ),
+                const SizedBox(height: 8),
+                _DetailRow(
+                  icon: Icons.location_on_outlined,
+                  label: 'DIRECCION',
+                  value: '${event.address}, ${event.comuna}',
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  event.description,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

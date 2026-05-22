@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/scrollable_picker_sheet.dart';
 import 'package:eventosloop/features/create/data/user_communities_mock.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,11 +28,20 @@ class _CreatePostViewState extends State<CreatePostView> {
     super.dispose();
   }
 
+  static const String _personalCommunityId = 'personal';
+
   UserCommunityOption? get _selectedCommunity {
     if (_selectedCommunityId == null) {
       return null;
     }
-    for (final UserCommunityOption community in UserCommunitiesMock.participando) {
+    if (_selectedCommunityId == _personalCommunityId) {
+      return const UserCommunityOption(
+        id: _personalCommunityId,
+        name: 'Sin comunidad (publicacion personal)',
+      );
+    }
+    for (final UserCommunityOption community
+        in UserCommunitiesMock.participando) {
       if (community.id == _selectedCommunityId) {
         return community;
       }
@@ -64,39 +74,24 @@ class _CreatePostViewState extends State<CreatePostView> {
   }
 
   Future<void> _openCommunityPicker() async {
-    final String? selected = await showModalBottomSheet<String>(
+    final String? selected = await showScrollablePickerSheet<String>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Tus comunidades',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              ...UserCommunitiesMock.participando.map(
-                (UserCommunityOption community) => ListTile(
-                  leading: const Icon(Icons.groups_outlined, color: AppColors.primary),
-                  title: Text(community.name),
-                  onTap: () => Navigator.of(context).pop(community.id),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
+      title: 'Publicar en comunidad',
+      children: <Widget>[
+        ListTile(
+          leading: const Icon(Icons.person_outline, color: AppColors.primary),
+          title: const Text('Sin comunidad (publicacion personal)'),
+          onTap: () => Navigator.of(context).pop(_personalCommunityId),
+        ),
+        ...UserCommunitiesMock.participando.map(
+          (UserCommunityOption community) => ListTile(
+            leading:
+                const Icon(Icons.groups_outlined, color: AppColors.primary),
+            title: Text(community.name),
+            onTap: () => Navigator.of(context).pop(community.id),
           ),
-        );
-      },
+        ),
+      ],
     );
 
     if (selected == null) {
@@ -263,7 +258,8 @@ class _CreatePostViewState extends State<CreatePostView> {
                 ],
               ),
             ),
-            const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
+            const Icon(Icons.keyboard_arrow_down,
+                color: AppColors.textSecondary),
           ],
         ),
       ),
