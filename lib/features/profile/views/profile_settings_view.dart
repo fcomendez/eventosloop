@@ -177,13 +177,6 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                               );
                             },
                           ),
-                          const Divider(height: 18),
-                          _settingsAction(
-                            icon: Icons.group_outlined,
-                            title: 'Seguidores y seguidos',
-                            subtitle: 'Administra conexiones del perfil.',
-                            onTap: () {},
-                          ),
                         ],
                       ),
                     ),
