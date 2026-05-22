@@ -1,6 +1,7 @@
 import 'package:eventosloop/features/admin/models/admin_models.dart';
 import 'package:eventosloop/features/admin/models/admin_community_models.dart';
 import 'package:eventosloop/features/admin/models/admin_directory_models.dart';
+import 'package:eventosloop/features/admin/models/admin_ops_models.dart';
 import 'package:flutter/material.dart';
 
 class AdminMockService {
@@ -355,6 +356,119 @@ class AdminMockService {
         chatDetail: 'Active (12 msg/min)',
         iconColor: 0xFF0682BC,
         needsModeration: false,
+      ),
+    ];
+  }
+
+  List<AdminAdStat> fetchAdStats() {
+    return const <AdminAdStat>[
+      AdminAdStat(label: 'Active Campaigns', value: '18'),
+      AdminAdStat(label: 'Total Impressions', value: '2.4M'),
+      AdminAdStat(label: 'Avg CTR', value: '3.8%'),
+      AdminAdStat(label: 'Ad Revenue (MTD)', value: '\$12.4K'),
+    ];
+  }
+
+  List<AdminAdCampaignRow> fetchAdCampaigns() {
+    return const <AdminAdCampaignRow>[
+      AdminAdCampaignRow(
+        name: 'LOOP Premium Launch',
+        placement: 'Feed Banner',
+        budgetLabel: '\$2,500',
+        impressionsLabel: '842K',
+        ctrLabel: '4.2%',
+        status: AdminAdCampaignStatus.running,
+        accentColor: 0xFF0682BC,
+      ),
+      AdminAdCampaignRow(
+        name: 'Running Santiago Promo',
+        placement: 'Explore Carousel',
+        budgetLabel: '\$800',
+        impressionsLabel: '312K',
+        ctrLabel: '3.1%',
+        status: AdminAdCampaignStatus.running,
+        accentColor: 0xFF2E9E6A,
+      ),
+      AdminAdCampaignRow(
+        name: 'Wellness Week',
+        placement: 'Community Header',
+        budgetLabel: '\$1,200',
+        impressionsLabel: '0',
+        ctrLabel: '—',
+        status: AdminAdCampaignStatus.scheduled,
+        accentColor: 0xFF7B61B5,
+      ),
+      AdminAdCampaignRow(
+        name: 'Flash Events Q4',
+        placement: 'Event Detail',
+        budgetLabel: '\$600',
+        impressionsLabel: '98K',
+        ctrLabel: '2.4%',
+        status: AdminAdCampaignStatus.paused,
+        accentColor: 0xFFE08A3A,
+      ),
+    ];
+  }
+
+  List<AdminServiceStatusRow> fetchServiceStatuses() {
+    return const <AdminServiceStatusRow>[
+      AdminServiceStatusRow(
+        name: 'Supabase API',
+        description: 'REST + PostgREST layer',
+        health: AdminServiceHealth.operational,
+        latencyLabel: '42 ms',
+        uptimeLabel: '99.98%',
+      ),
+      AdminServiceStatusRow(
+        name: 'Auth Service',
+        description: 'Login, OTP, OAuth',
+        health: AdminServiceHealth.operational,
+        latencyLabel: '68 ms',
+        uptimeLabel: '99.95%',
+      ),
+      AdminServiceStatusRow(
+        name: 'Storage',
+        description: 'Media uploads (posts/events)',
+        health: AdminServiceHealth.degraded,
+        latencyLabel: '210 ms',
+        uptimeLabel: '99.12%',
+      ),
+      AdminServiceStatusRow(
+        name: 'Realtime',
+        description: 'Notifications + live updates',
+        health: AdminServiceHealth.operational,
+        latencyLabel: '55 ms',
+        uptimeLabel: '99.90%',
+      ),
+      AdminServiceStatusRow(
+        name: 'Edge Functions',
+        description: 'RPC + background jobs',
+        health: AdminServiceHealth.operational,
+        latencyLabel: '91 ms',
+        uptimeLabel: '99.87%',
+      ),
+    ];
+  }
+
+  List<AdminSystemIncidentRow> fetchSystemIncidents() {
+    return const <AdminSystemIncidentRow>[
+      AdminSystemIncidentRow(
+        timeLabel: 'Today 09:14',
+        service: 'Storage',
+        message: 'Elevated latency on media bucket (region sa-east-1)',
+        severityColor: 0xFFE08A3A,
+      ),
+      AdminSystemIncidentRow(
+        timeLabel: 'Yesterday 22:03',
+        service: 'Auth Service',
+        message: 'OTP delivery delay resolved (email provider)',
+        severityColor: 0xFF2E9E6A,
+      ),
+      AdminSystemIncidentRow(
+        timeLabel: 'Oct 19 16:40',
+        service: 'Supabase API',
+        message: 'Brief timeout spike during peak traffic',
+        severityColor: 0xFFD64545,
       ),
     ];
   }

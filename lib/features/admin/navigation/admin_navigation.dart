@@ -1,10 +1,12 @@
 import 'package:eventosloop/features/admin/models/admin_models.dart';
+import 'package:eventosloop/features/admin/views/admin_ad_console_view.dart';
 import 'package:eventosloop/features/admin/views/admin_analytics_view.dart';
 import 'package:eventosloop/features/admin/views/admin_community_management_view.dart';
 import 'package:eventosloop/features/admin/views/admin_dashboard_view.dart';
 import 'package:eventosloop/features/admin/views/admin_event_management_view.dart';
 import 'package:eventosloop/features/admin/views/admin_moderation_queue_view.dart';
 import 'package:eventosloop/features/admin/views/admin_moderation_review_view.dart';
+import 'package:eventosloop/features/admin/views/admin_system_status_view.dart';
 import 'package:eventosloop/features/admin/views/admin_user_management_view.dart';
 import 'package:flutter/material.dart';
 
@@ -31,19 +33,13 @@ void handleAdminSidebarNavigation(
   AdminSidebarItem item, {
   bool replace = false,
 }) {
-  final Widget? target = switch (item) {
+  final Widget target = switch (item) {
     AdminSidebarItem.userManagement => const AdminUserManagementView(),
     AdminSidebarItem.contentFeed => const AdminEventManagementView(),
     AdminSidebarItem.moderation => const AdminModerationQueueView(),
-    AdminSidebarItem.adConsole || AdminSidebarItem.systemStatus => null,
+    AdminSidebarItem.adConsole => const AdminAdConsoleView(),
+    AdminSidebarItem.systemStatus => const AdminSystemStatusView(),
   };
-
-  if (target == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item.name} — proximamente')),
-    );
-    return;
-  }
 
   final Route<void> route = MaterialPageRoute<void>(builder: (_) => target);
   if (replace) {
