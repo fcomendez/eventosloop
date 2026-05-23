@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
+import 'package:eventosloop/features/auth/navigation/auth_navigation.dart';
 import 'package:eventosloop/features/profile/models/profile_model.dart';
 import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
 import 'package:flutter/material.dart';
@@ -133,6 +134,38 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
         return const _PasswordChangeSheet();
       },
     );
+  }
+
+  Future<void> _confirmarCerrarSesion() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: const Text('Cerrar sesion'),
+          content: const Text(
+            'Saldras de tu cuenta en este dispositivo. Podras volver a iniciar sesion cuando quieras.',
+            style: TextStyle(height: 1.35),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Cerrar sesion'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    await AuthNavigation.cerrarSesion(context);
   }
 
   @override
@@ -314,6 +347,19 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
                         onPressed: _openPasswordSheet,
                         icon: const Icon(Icons.lock_reset),
                         label: const Text('Cambiar contrasena'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 46,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryDark,
+                          side: const BorderSide(color: AppColors.divider),
+                        ),
+                        onPressed: _confirmarCerrarSesion,
+                        icon: const Icon(Icons.logout),
+                        label: const Text('Cerrar sesion'),
                       ),
                     ),
                     const SizedBox(height: 20),

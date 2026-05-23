@@ -17,7 +17,7 @@ class OtpVerificationController {
     return null;
   }
 
-  Future<String?> verificarCodigo({
+  Future<OtpVerifyResult> verificarCodigo({
     required String email,
     required String otp,
   }) {

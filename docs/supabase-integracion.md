@@ -1,55 +1,54 @@
 # Integracion Supabase (LOOP)
 
-Guia para conectar el proyecto Flutter con Supabase sin romper la arquitectura actual.
+Guia para conectar el proyecto Flutter con Supabase local (Docker).
 
-## 1) Variables requeridas
+## 0) Backend local (Docker)
 
-Usa `--dart-define` para no hardcodear llaves:
+```powershell
+copy .env.example .env
+docker compose up -d
+```
+
+Ver `README.md` y `docs/ambiente-pruebas.md` para contenedores, puertos y backup.
+
+- API: `http://127.0.0.1:54321`
+- Emulador Android: `http://10.0.2.2:54321`
+- Anon key demo: ver `.env.example`
+
+## 1) Variables Flutter
+
+Opcional si usas los defaults de `app_env.dart` (Supabase local):
 
 ```bash
---dart-define=SUPABASE_URL=TU_SUPABASE_URL
---dart-define=SUPABASE_ANON_KEY=TU_SUPABASE_ANON_KEY
+--dart-define=SUPABASE_URL=http://10.0.2.2:54321
+--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
 ```
 
 En Android Studio (Run Configuration Flutter), agregalas en **Additional run args**.
 
 ## 2) Inicializacion
 
-`lib/main.dart` inicializa Supabase solo si detecta ambas variables.
+`lib/main.dart` inicializa Supabase si detecta URL y anon key.
 
 ## 3) Flujo auth implementado
 
 - Login correo/password -> `supabase.auth.signInWithPassword`
-- Login Google -> `supabase.auth.signInWithIdToken`
+- Registro -> `supabase.auth.signUp` + upsert `usuario`
 - Recuperacion correo -> `supabase.auth.resetPasswordForEmail`
 - OTP recovery -> `supabase.auth.verifyOTP(type: recovery)`
 - Cambio password -> `supabase.auth.updateUser(password: ...)`
 
-## 4) Tabla de negocio recomendada (MER + Supabase)
+## 4) Esquema de BD
 
-Ejecuta en SQL Editor de Supabase:
+El esquema completo se aplica al crear el volumen Docker desde:
 
-```sql
-create table if not exists public.usuario (
-  id_usuario bigint generated always as identity primary key,
-  auth_user_id uuid unique references auth.users(id) on delete cascade,
-  email text unique not null,
-  username text,
-  nombres text,
-  apellidos text,
-  fecha_nacimiento date,
-  genero text,
-  avatar_url text,
-  estado_cuenta text default 'ACTIVO',
-  rol_user text default 'USER',
-  comuna_id_comuna bigint,
-  fecha_registro timestamptz default now()
-);
-```
+- `docker/db/init/migrations/100-loop-schema.sql` (fuente: `docs/sql/schema_completo.sql`)
 
-> Nota: `estado_cuenta` y `rol_user` deben manejarse de forma interna, no desde el formulario.
+Scripts adicionales por tabla en `docs/sql/`.
 
 ## 5) RLS base sugerida
+
+Incluida en `schema_completo.sql`. Ejemplo minimo para `usuario`:
 
 ```sql
 alter table public.usuario enable row level security;
@@ -59,41 +58,14 @@ on public.usuario
 for select
 to authenticated
 using (auth_user_id = auth.uid());
-
-create policy "usuario_update_own"
-on public.usuario
-for update
-to authenticated
-using (auth_user_id = auth.uid());
-
-create policy "usuario_insert_own"
-on public.usuario
-for insert
-to authenticated
-with check (auth_user_id = auth.uid());
 ```
 
-## 6) Flujo Git recomendado
+## 6) Intereses (MER: `intereses` + `usuario_intereses`)
 
-- Rama de trabajo: `Franco`
-- Commits pequenos por tema:
-  - `feat(supabase): init y variables`
-  - `feat(auth): login/register supabase`
-  - `feat(auth): recovery otp`
+Script: `docs/sql/intereses_usuario_intereses.sql` (incluido en schema completo si ya ejecutaste Docker init).
 
-Esto permite avanzar interfaz y backend en paralelo con menor riesgo de conflictos.
+## 7) Verificacion rapida
 
-## 7) Intereses (MER: `intereses` + `usuario_intereses`)
-
-Para respetar la normalizacion de datos del MER (sin texto libre en `usuario`):
-
-1. Abre Supabase -> SQL Editor.
-2. Ejecuta completo el script:
-   - `docs/sql/intereses_usuario_intereses.sql`
-
-Ese script crea:
-- `public.intereses` (catalogo maestro)
-- `public.usuario_intereses` (tabla puente N:N con `auth.users`)
-- indices para lectura rapida
-- politicas RLS para que cada usuario solo manipule sus propios intereses
-- una semilla inicial de ejemplo (luego se reemplaza con tu listado final)
+1. `docker compose ps` — contenedores running
+2. Registro en app — usuario en Auth + tabla `usuario`
+3. Login — sesion activa y navegacion post-auth

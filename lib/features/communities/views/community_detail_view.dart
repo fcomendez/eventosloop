@@ -398,7 +398,7 @@ class _ContentTabs extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          _tab(index: 0, label: 'Posts'),
+          _tab(index: 0, label: 'Publicaciones'),
           _tab(index: 1, label: 'Eventos'),
         ],
       ),

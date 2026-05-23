@@ -33,7 +33,7 @@ class ResetPasswordController {
     return null;
   }
 
-  Future<bool> cambiarContrasena({
+  Future<ServiceResult> cambiarContrasena({
     required String resetToken,
     required String nuevaPassword,
   }) {

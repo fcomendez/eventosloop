@@ -1,9 +1,13 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/auth_feedback.dart';
 import 'package:eventosloop/features/auth/controllers/login_controller.dart';
+import 'package:eventosloop/features/auth/models/auth_field_key.dart';
+import 'package:eventosloop/features/auth/models/auth_login_result.dart';
 import 'package:eventosloop/features/auth/navigation/auth_navigation.dart';
 import 'package:eventosloop/features/auth/views/forgot_password_view.dart';
 import 'package:eventosloop/features/auth/views/register_view.dart';
 import 'package:flutter/material.dart';
+
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
@@ -17,7 +21,9 @@ class _LoginViewState extends State<LoginView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscure = true;
-  bool _iniciandoGoogle = false;
+  bool _iniciandoCorreo = false;
+  String? _errorEmailServidor;
+  String? _errorPasswordServidor;
 
   @override
   void dispose() {
@@ -26,54 +32,79 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
+  void _limpiarErroresServidor() {
+    if (_errorEmailServidor != null || _errorPasswordServidor != null) {
+      setState(() {
+        _errorEmailServidor = null;
+        _errorPasswordServidor = null;
+      });
+    }
+  }
+
+  String? _validarEmail(String? value) {
+    if (_errorEmailServidor != null) {
+      return _errorEmailServidor;
+    }
+    return _controller.validarEmail(value);
+  }
+
+  String? _validarPassword(String? value) {
+    if (_errorPasswordServidor != null) {
+      return _errorPasswordServidor;
+    }
+    return _controller.validarPassword(value);
+  }
+
   Future<void> _navegarPostLogin(String email) async {
     await AuthNavigation.navigateAfterAuth(context, email: email);
   }
+
+  void _aplicarErrorLogin(AuthLoginResult result) {
+    if (result.isCancellation) {
+      return;
+    }
+    final String message =
+        result.message ?? 'No se pudo iniciar sesion. Intenta nuevamente.';
+    if (result.field == AuthFieldKey.email) {
+      setState(() => _errorEmailServidor = message);
+      _formKey.currentState?.validate();
+      return;
+    }
+    if (result.field == AuthFieldKey.password) {
+      setState(() => _errorPasswordServidor = message);
+      _formKey.currentState?.validate();
+      return;
+    }
+    if (result.useDialog) {
+      AuthFeedback.showErrorDialog(
+        context,
+        title: 'Inicio de sesion',
+        message: message,
+      );
+      return;
+    }
+    AuthFeedback.showSnackBar(context, message: message);
+  }
+
   Future<void> _submit() async {
+    _limpiarErroresServidor();
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    final session = await _controller.iniciarSesionConCorreo(
+    setState(() => _iniciandoCorreo = true);
+    final AuthLoginResult result = await _controller.iniciarSesionConCorreo(
       email: _emailController.text,
       password: _passwordController.text,
     );
     if (!mounted) {
       return;
     }
-    if (session != null) {
-      await _navegarPostLogin(session.email);
+    setState(() => _iniciandoCorreo = false);
+    if (result.ok && result.session != null) {
+      await _navegarPostLogin(result.session!.email);
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No se pudo iniciar sesion con backend')),
-    );
-  }
-
-  Future<void> _loginGoogle() async {
-    setState(() {
-      _iniciandoGoogle = true;
-    });
-    final session = await _controller.iniciarSesionConGoogle();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _iniciandoGoogle = false;
-    });
-    if (session != null) {
-      await _navegarPostLogin(session.email);
-      return;
-    }
-    if (_controller.googleSignInCancelado) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'No se pudo iniciar con Google. Revisa configuracion OAuth/API.',
-        ),
-      ),
-    );
+    _aplicarErrorLogin(result);
   }
 
   @override
@@ -136,7 +167,10 @@ class _LoginViewState extends State<LoginView> {
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            validator: _controller.validarEmail,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            validator: _validarEmail,
+                            onChanged: (_) => _limpiarErroresServidor(),
                             decoration: const InputDecoration(
                               hintText: 'nombre@ejemplo.com',
                             ),
@@ -172,7 +206,10 @@ class _LoginViewState extends State<LoginView> {
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _obscure,
-                            validator: _controller.validarPassword,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            validator: _validarPassword,
+                            onChanged: (_) => _limpiarErroresServidor(),
                             decoration: InputDecoration(
                               hintText: '••••••••',
                               suffixIcon: IconButton(
@@ -195,47 +232,18 @@ class _LoginViewState extends State<LoginView> {
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: AppColors.white,
                               ),
-                              onPressed: _submit,
-                              child: const Text('Iniciar sesion'),
+                              onPressed: _iniciandoCorreo ? null : _submit,
+                              child: _iniciandoCorreo
+                                  ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.white,
+                                      ),
+                                    )
+                                  : const Text('Iniciar sesion'),
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          const Center(
-                            child: Text(
-                              'O CONTINUA CON',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.textSecondary,
-                                letterSpacing: 1.1,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed:
-                                      _iniciandoGoogle ? null : _loginGoogle,
-                                  child: _iniciandoGoogle
-                                      ? const SizedBox(
-                                          height: 16,
-                                          width: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : const Text('Continuar con Google'),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () {},
-                                  child: const Text('Continuar con Apple'),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),

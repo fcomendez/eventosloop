@@ -54,8 +54,19 @@ class AuthNavigation {
   }
 
   static void _goLogin(BuildContext context) {
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginView()),
+      (_) => false,
     );
+  }
+
+  static Future<void> cerrarSesion(BuildContext context) async {
+    if (AppEnv.useSupabase) {
+      await Supabase.instance.client.auth.signOut();
+    }
+    if (!context.mounted) {
+      return;
+    }
+    _goLogin(context);
   }
 }

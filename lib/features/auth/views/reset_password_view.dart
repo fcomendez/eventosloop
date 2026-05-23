@@ -1,5 +1,9 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/auth_feedback.dart';
 import 'package:eventosloop/features/auth/controllers/reset_password_controller.dart';
+import 'package:eventosloop/features/auth/models/auth_field_key.dart';
+import 'package:eventosloop/features/auth/services/auth_api_service.dart';
+import 'package:eventosloop/features/auth/utils/auth_form_feedback.dart';
 import 'package:eventosloop/features/auth/views/login_view.dart';
 import 'package:flutter/material.dart';
 
@@ -25,6 +29,20 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _loading = false;
+  String? _errorPasswordServidor;
+
+  String? _validarPassword(String? value) {
+    if (_errorPasswordServidor != null) {
+      return _errorPasswordServidor;
+    }
+    return _controller.validarPassword(value);
+  }
+
+  void _setErrorServidor(AuthFieldKey? field, String? message) {
+    if (field == AuthFieldKey.password) {
+      setState(() => _errorPasswordServidor = message);
+    }
+  }
 
   @override
   void dispose() {
@@ -34,34 +52,33 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
   }
 
   Future<void> _submit() async {
+    setState(() => _errorPasswordServidor = null);
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    setState(() {
-      _loading = true;
-    });
-    final bool ok = await _controller.cambiarContrasena(
+    setState(() => _loading = true);
+    final ServiceResult result = await _controller.cambiarContrasena(
       resetToken: widget.resetToken,
       nuevaPassword: _passwordController.text,
     );
     if (!mounted) {
       return;
     }
-    setState(() {
-      _loading = false;
-    });
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo actualizar la contrasena')),
+    setState(() => _loading = false);
+    if (!result.ok) {
+      AuthFormFeedback.handleServiceResult(
+        context,
+        result: result,
+        formKey: _formKey,
+        setServerError: _setErrorServidor,
+        dialogTitle: 'Nueva contrasena',
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Contrasena actualizada. Sesiones previas deben invalidarse en backend.',
-        ),
-      ),
+    AuthFeedback.showSnackBar(
+      context,
+      message: 'Contrasena actualizada. Ya puedes iniciar sesion.',
+      isError: false,
     );
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginView()),
@@ -114,7 +131,10 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        validator: _controller.validarPassword,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: _validarPassword,
+                        onChanged: (_) =>
+                            setState(() => _errorPasswordServidor = null),
                         decoration: InputDecoration(
                           labelText: 'Nueva contrasena',
                           hintText: 'Ingresa nueva contrasena',

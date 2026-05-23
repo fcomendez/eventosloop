@@ -1,6 +1,9 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/auth_feedback.dart';
 import 'package:eventosloop/features/auth/controllers/forgot_password_controller.dart';
+import 'package:eventosloop/features/auth/models/auth_field_key.dart';
 import 'package:eventosloop/features/auth/services/auth_api_service.dart';
+import 'package:eventosloop/features/auth/utils/auth_form_feedback.dart';
 import 'package:eventosloop/features/auth/views/otp_verification_view.dart';
 import 'package:flutter/material.dart';
 
@@ -16,6 +19,20 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   bool _loading = false;
+  String? _errorEmailServidor;
+
+  String? _validarEmail(String? value) {
+    if (_errorEmailServidor != null) {
+      return _errorEmailServidor;
+    }
+    return _controller.validarEmail(value);
+  }
+
+  void _setErrorServidor(AuthFieldKey? field, String? message) {
+    if (field == AuthFieldKey.email) {
+      setState(() => _errorEmailServidor = message);
+    }
+  }
 
   @override
   void dispose() {
@@ -24,30 +41,32 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
   }
 
   Future<void> _submit() async {
+    setState(() => _errorEmailServidor = null);
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    setState(() {
-      _loading = true;
-    });
+    setState(() => _loading = true);
     final ServiceResult result =
         await _controller.enviarCodigo(_emailController.text);
     if (!mounted) {
       return;
     }
-    setState(() {
-      _loading = false;
-    });
+    setState(() => _loading = false);
     if (!result.ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result.errorMessage ?? 'No se pudo enviar el codigo',
-          ),
-        ),
+      AuthFormFeedback.handleServiceResult(
+        context,
+        result: result,
+        formKey: _formKey,
+        setServerError: _setErrorServidor,
+        dialogTitle: 'Recuperacion de cuenta',
       );
       return;
     }
+    AuthFeedback.showSnackBar(
+      context,
+      message: 'Te enviamos un codigo a ${_emailController.text.trim()}',
+      isError: false,
+    );
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) =>
@@ -109,7 +128,10 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _emailController,
-                        validator: _controller.validarEmail,
+                        validator: _validarEmail,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        onChanged: (_) =>
+                            setState(() => _errorEmailServidor = null),
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
                           hintText: 'nombre@ejemplo.com',

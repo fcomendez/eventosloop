@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/core/widgets/auth_feedback.dart';
 import 'package:eventosloop/features/auth/controllers/otp_verification_controller.dart';
+import 'package:eventosloop/features/auth/models/auth_field_key.dart';
 import 'package:eventosloop/features/auth/services/auth_api_service.dart';
+import 'package:eventosloop/features/auth/utils/auth_form_feedback.dart';
 import 'package:eventosloop/features/auth/views/reset_password_view.dart';
 import 'package:flutter/material.dart';
 
@@ -23,6 +26,20 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   bool _reenviando = false;
   int _segundosRestantes = 0;
   Timer? _cooldownTimer;
+  String? _errorOtpServidor;
+
+  String? _validarOtp(String? value) {
+    if (_errorOtpServidor != null) {
+      return _errorOtpServidor;
+    }
+    return _controller.validarOtp(value);
+  }
+
+  void _setErrorServidor(AuthFieldKey? field, String? message) {
+    if (field == AuthFieldKey.otp) {
+      setState(() => _errorOtpServidor = message);
+    }
+  }
 
   @override
   void dispose() {
@@ -32,26 +49,26 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   }
 
   Future<void> _submit() async {
+    setState(() => _errorOtpServidor = null);
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    setState(() {
-      _loading = true;
-    });
-    final String? resetToken = await _controller.verificarCodigo(
+    setState(() => _loading = true);
+    final OtpVerifyResult result = await _controller.verificarCodigo(
       email: widget.email,
       otp: _otpController.text,
     );
     if (!mounted) {
       return;
     }
-    setState(() {
-      _loading = false;
-    });
+    setState(() => _loading = false);
 
-    if (resetToken == null || resetToken.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Codigo invalido o expirado')),
+    if (!result.ok) {
+      AuthFormFeedback.handleOtpResult(
+        context,
+        result: result,
+        formKey: _formKey,
+        setServerError: _setErrorServidor,
       );
       return;
     }
@@ -59,7 +76,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       MaterialPageRoute<void>(
         builder: (_) => ResetPasswordView(
           email: widget.email,
-          resetToken: resetToken,
+          resetToken: result.resetToken!,
         ),
       ),
     );
@@ -69,29 +86,32 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     if (_reenviando || _segundosRestantes > 0) {
       return;
     }
-    setState(() {
-      _reenviando = true;
-    });
+    setState(() => _reenviando = true);
     final ServiceResult result = await _controller.reenviarCodigo(widget.email);
     if (!mounted) {
       return;
     }
-    setState(() {
-      _reenviando = false;
-    });
+    setState(() => _reenviando = false);
     if (!result.ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result.errorMessage ?? 'No se pudo reenviar el codigo',
-          ),
-        ),
-      );
+      if (result.useDialog) {
+        await AuthFeedback.showErrorDialog(
+          context,
+          title: 'Reenvio de codigo',
+          message: result.errorMessage ?? 'No se pudo reenviar el codigo',
+        );
+      } else {
+        AuthFeedback.showSnackBar(
+          context,
+          message: result.errorMessage ?? 'No se pudo reenviar el codigo',
+        );
+      }
       return;
     }
     _iniciarCooldown();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Te enviamos un nuevo codigo')),
+    AuthFeedback.showSnackBar(
+      context,
+      message: 'Te enviamos un nuevo codigo',
+      isError: false,
     );
   }
 
@@ -171,7 +191,10 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _otpController,
-                        validator: _controller.validarOtp,
+                        validator: _validarOtp,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        onChanged: (_) =>
+                            setState(() => _errorOtpServidor = null),
                         keyboardType: TextInputType.text,
                         maxLength: 16,
                         decoration: const InputDecoration(

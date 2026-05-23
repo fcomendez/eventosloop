@@ -1,53 +1,89 @@
 # LOOP (`eventosloop`)
 
-App de eventos en Flutter. **Targets activos:** Android (móvil) y Web (p. ej. panel administración en navegador).
+App Flutter + backend local con Docker (Supabase self-hosted).
 
 ## Requisitos
 
-- Flutter SDK en el PATH (`flutter doctor`).
-- Android: Android Studio / SDK y, si pide el doctor, **cmdline-tools** y `flutter doctor --android-licenses`.
-- Web: Chrome (u otro navegador compatible).
+Docker Desktop · Flutter SDK · Android Studio
 
-En Cursor/VS Code el proyecto incluye **`.vscode/`**: formato al guardar en Dart y extensión recomendada Dart-Code.
+## Instalación
+
+```powershell
+git clone <URL_DEL_REPO>
+cd eventosloop
+copy .env.example .env
+docker compose up -d
+```
+
+Comprobar: `docker compose ps` → 6 contenedores `loop-*` en **Up**.
+
+**Solo la primera vez** (o tras `docker compose down -v`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\apply-schema.ps1
+powershell -ExecutionPolicy Bypass -File scripts\seed-demo.ps1
+```
+
+| URL | Uso |
+|---|---|
+| http://127.0.0.1:54321 | API (Supabase) |
+| http://127.0.0.1:54323 | Studio (ver BD) |
+
+## Credenciales demo
+
+Creadas por `scripts\seed-demo.ps1` (solo desarrollo local):
+
+| Rol | Email | Contraseña |
+|---|---|---|
+| **Admin** | `admin@loop.cl` | `LoopAdmin1` |
+| **Usuario** | `user@loop.cl` | `LoopUser1` |
+
+**Anon key** (Supabase local):
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+```
+
+## App Flutter
+
+```powershell
+flutter pub get
+```
+
+**Android Studio → Run → Edit Configurations → Additional run args**
+
+Emulador Android:
+
+```
+--dart-define=SUPABASE_URL=http://10.0.2.2:54321 --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+```
+
+Chrome / Web:
+
+```
+--dart-define=SUPABASE_URL=http://127.0.0.1:54321 --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+```
+
+Celular físico (misma WiFi; reemplaza la IP):
+
+```
+--dart-define=SUPABASE_URL=http://192.168.1.50:54321 --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+```
+
+IP de tu PC: `ipconfig` → IPv4.
+
+Luego: Docker en **Running** → Android Studio → **Run** ▶ → login con `admin@loop.cl` o `user@loop.cl`.
+
+## Contenedores (`docker-compose.yml`)
+
+`loop-db` · `loop-auth` · `loop-rest` · `loop-kong` · `loop-meta` · `loop-studio`
 
 ## Comandos útiles
 
-```bash
-cd eventosloop
-flutter pub get
-flutter analyze
+```powershell
+docker compose down
+docker compose down -v && docker compose up -d
+flutter build apk --debug
 ```
 
-- Ejecutar en **Android** (emulador o dispositivo): `flutter run`
-- Ejecutar en **Web**: `flutter run -d chrome`
-- APK de prueba: `flutter build apk --debug`
-
-## Documentación de producto
-
-Especificación de pantallas de la fase de inicio de sesión: `docs/ui-vistas-fase-inicio-sesion.md`.
-Guía de conexión con Supabase: `docs/supabase-integracion.md`.
-
-## Estructura de `lib/` (inicial)
-
-| Ruta | Uso previsto |
-|------|----------------|
-| `lib/app/` | `MaterialApp`, tema, enrutado global. |
-| `lib/core/` | Constantes, utilidades, errores compartidos. |
-| `lib/features/` | Funcionalidades por dominio (auth, eventos, …). |
-
-Recursos estáticos: carpeta `assets/` (ya registrada en `pubspec.yaml`).
-
-## Subir a GitHub
-
-1. Crea el repositorio vacío en GitHub (sin README si ya tienes uno local).
-2. En la carpeta del proyecto:
-
-```bash
-git add .
-git commit -m "Proyecto inicial LOOP (Flutter: Android + Web)"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/TU_REPO.git
-git push -u origin main
-```
-
-`pubspec.lock` está incluido a propósito para que las dependencias coincidan en CI y entre máquinas. No subas claves: usa `.env` (ignorado en `.gitignore`) y opcionalmente un `.env.example` sin valores reales.
+Más detalle: `docs/ambiente-pruebas.md` · `docs/supabase-integracion.md`

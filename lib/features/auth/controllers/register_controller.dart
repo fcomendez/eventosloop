@@ -1,5 +1,4 @@
-import 'dart:async';
-
+import 'package:eventosloop/features/auth/models/auth_field_key.dart';
 import 'package:eventosloop/features/auth/models/register_form_model.dart';
 import 'package:eventosloop/features/auth/services/auth_api_service.dart';
 import 'package:flutter/foundation.dart';
@@ -13,12 +12,10 @@ class RegisterController extends ChangeNotifier {
   bool _checkingEmail = false;
   bool _emailDisponible = true;
   String? _emailMensaje;
-  String? _lastError;
 
   bool get checkingEmail => _checkingEmail;
   bool get emailDisponible => _emailDisponible;
   String? get emailMensaje => _emailMensaje;
-  String? get lastError => _lastError;
 
   static final RegExp _emailRegex = RegExp(
     r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
@@ -26,6 +23,10 @@ class RegisterController extends ChangeNotifier {
 
   static final RegExp _passwordRegex = RegExp(
     r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$',
+  );
+
+  static final RegExp _usernameRegex = RegExp(
+    r'^[A-Za-z0-9._]{3,24}$',
   );
 
   Future<bool> validarCorreoUnico(String email) async {
@@ -43,7 +44,6 @@ class RegisterController extends ChangeNotifier {
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
 
-    // Con Supabase email unique se valida de forma definitiva en signUp.
     _emailDisponible = true;
     _emailMensaje = null;
     _checkingEmail = false;
@@ -54,6 +54,17 @@ class RegisterController extends ChangeNotifier {
   String? validarRequerido(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName es obligatorio';
+    }
+    return null;
+  }
+
+  String? validarUsername(String? value) {
+    final String? requiredError = validarRequerido(value, 'Alias');
+    if (requiredError != null) {
+      return requiredError;
+    }
+    if (!_usernameRegex.hasMatch(value!.trim())) {
+      return 'Usa 3-24 caracteres: letras, numeros, punto o guion bajo';
     }
     return null;
   }
@@ -119,14 +130,15 @@ class RegisterController extends ChangeNotifier {
     return null;
   }
 
-  Future<bool> enviarRegistro(RegisterFormModel model) async {
-    _lastError = null;
+  Future<ServiceResult> enviarRegistro(RegisterFormModel model) async {
     final bool disponible = await validarCorreoUnico(model.email);
     if (!disponible) {
-      return false;
+      return ServiceResult(
+        ok: false,
+        errorMessage: _emailMensaje ?? 'Correo invalido',
+        field: AuthFieldKey.email,
+      );
     }
-    final ServiceResult result = await _service.registrarUsuario(model);
-    _lastError = result.errorMessage;
-    return result.ok;
+    return _service.registrarUsuario(model);
   }
 }

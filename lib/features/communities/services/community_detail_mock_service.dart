@@ -42,6 +42,66 @@ class CommunityDetailMockService {
       activityLabel: '640 miembros activos esta semana',
       coverColorHex: '#D8B46A',
     ),
+    const CommunityModel(
+      id: 5,
+      name: 'Laboratorio de Diseño Urbano',
+      category: 'Arquitectura',
+      description:
+          'Exploramos el futuro de la vida urbana y la arquitectura sostenible. Talleres, visitas y proyectos colaborativos en la ciudad.',
+      tags: <String>['Urbanismo', 'Sostenibilidad', 'Arquitectura'],
+      activityLabel: '12.4k miembros activos esta semana',
+      coverColorHex: '#065A92',
+    ),
+    const CommunityModel(
+      id: 6,
+      name: 'Vecindario FC',
+      category: 'Deportes',
+      description:
+          'Comunidad local de futbol y actividad en el barrio. Partidos amistosos, entrenamientos y eventos deportivos.',
+      tags: <String>['Futbol', 'Comunidad', 'Deporte'],
+      activityLabel: '842 miembros activos esta semana',
+      coverColorHex: '#2E7D32',
+    ),
+    const CommunityModel(
+      id: 7,
+      name: 'Grupo de Estudio',
+      category: 'Educacion',
+      description:
+          'Espacio para organizar sesiones de estudio, compartir material y preparar evaluaciones en grupo.',
+      tags: <String>['Estudio', 'Universidad', 'Apoyo'],
+      activityLabel: '2k miembros activos esta semana',
+      coverColorHex: '#5C6BC0',
+    ),
+    const CommunityModel(
+      id: 8,
+      name: 'Creadores Digitales',
+      category: 'Tecnologia',
+      description:
+          'Red de creadores de contenido, diseno digital y herramientas creativas online.',
+      tags: <String>['Contenido', 'Diseno', 'Redes'],
+      activityLabel: '5.1k miembros activos esta semana',
+      coverColorHex: '#00838F',
+    ),
+    const CommunityModel(
+      id: 9,
+      name: 'Jardineros Urbanos',
+      category: 'Estilo de vida',
+      description:
+          'Huertos urbanos, permacultura y actividades al aire libre en espacios comunitarios.',
+      tags: <String>['Huerto', 'Naturaleza', 'Comunidad'],
+      activityLabel: '1.8k miembros activos esta semana',
+      coverColorHex: '#558B2F',
+    ),
+    const CommunityModel(
+      id: 10,
+      name: 'Mañanas Zen',
+      category: 'Bienestar',
+      description:
+          'Rutinas matinales, meditacion y habitos saludables para empezar el dia con calma.',
+      tags: <String>['Mindfulness', 'Salud', 'Rutinas'],
+      activityLabel: '3.4k miembros activos esta semana',
+      coverColorHex: '#7E57C2',
+    ),
   ];
 
   static final Map<int, List<CommunityPostModel>> _postsByCommunity =
@@ -118,6 +178,22 @@ class CommunityDetailMockService {
         commentsCount: 19,
         mediaLabel: 'Showcase',
         mediaColorHex: '#D8B46A',
+      ),
+    ],
+    5: <CommunityPostModel>[
+      const CommunityPostModel(
+        id: 206,
+        authorName: 'Maria Soto',
+        authorInitials: 'MS',
+        publishedLabel: 'hace 4 h',
+        title: 'Recorrido por barrio sustentable',
+        body:
+            'Este sabado visitamos un proyecto de vivienda colectiva con enfoque ecologico. Cupos limitados.',
+        linkedTo: 'Laboratorio de Diseno Urbano',
+        likesCount: 890,
+        commentsCount: 54,
+        mediaLabel: 'Urbanismo',
+        mediaColorHex: '#065A92',
       ),
     ],
   };

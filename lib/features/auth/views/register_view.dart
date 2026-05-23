@@ -1,11 +1,14 @@
 import 'package:eventosloop/core/config/app_env.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
-import 'package:eventosloop/features/auth/controllers/login_controller.dart';
+import 'package:eventosloop/core/widgets/auth_feedback.dart';
 import 'package:eventosloop/features/auth/controllers/register_controller.dart';
+import 'package:eventosloop/features/auth/models/auth_field_key.dart';
 import 'package:eventosloop/features/auth/models/register_form_model.dart';
 import 'package:eventosloop/features/auth/models/ubicacion_models.dart';
 import 'package:eventosloop/features/auth/navigation/auth_navigation.dart';
+import 'package:eventosloop/features/auth/services/auth_api_service.dart';
 import 'package:eventosloop/features/auth/services/ubicacion_service.dart';
+import 'package:eventosloop/features/auth/utils/auth_form_feedback.dart';
 import 'package:eventosloop/features/onboarding/views/welcome_view.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,7 +21,6 @@ class RegisterView extends StatefulWidget {
 
 class _RegisterViewState extends State<RegisterView> {
   final RegisterController _controller = RegisterController();
-  final LoginController _loginController = LoginController();
   final UbicacionService _ubicacionService = UbicacionService();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _nombres = TextEditingController();
@@ -41,8 +43,12 @@ class _RegisterViewState extends State<RegisterView> {
   List<RegionOption> _regiones = const <RegionOption>[];
   List<ComunaOption> _comunas = const <ComunaOption>[];
   bool _cargandoUbicacion = true;
-  bool _iniciandoGoogle = false;
+  bool _enviandoRegistro = false;
   String? _errorUbicacion;
+  String? _errorEmailServidor;
+  String? _errorUsernameServidor;
+  String? _errorPasswordServidor;
+  String? _errorComunaServidor;
 
   @override
   void initState() {
@@ -72,7 +78,7 @@ class _RegisterViewState extends State<RegisterView> {
       _cargandoUbicacion = false;
       if (AppEnv.useSupabase && (regiones.isEmpty || comunas.isEmpty)) {
         _errorUbicacion =
-            'No se pudieron cargar regiones/comunas. Ejecuta docs/sql/region_comuna_public_read.sql en Supabase.';
+            'No se pudieron cargar regiones/comunas. Levanta Docker (docker compose up -d).';
       }
     });
   }
@@ -89,89 +95,109 @@ class _RegisterViewState extends State<RegisterView> {
     _confirmPassword.dispose();
     _emailFocus.dispose();
     _controller.dispose();
-    _loginController.dispose();
     super.dispose();
   }
 
-  Future<void> _registrarConGoogle() async {
+  void _limpiarErroresServidor() {
+    if (_errorEmailServidor != null ||
+        _errorUsernameServidor != null ||
+        _errorPasswordServidor != null ||
+        _errorComunaServidor != null) {
+      setState(() {
+        _errorEmailServidor = null;
+        _errorUsernameServidor = null;
+        _errorPasswordServidor = null;
+        _errorComunaServidor = null;
+      });
+    }
+  }
+
+  void _setErrorServidor(AuthFieldKey? field, String? message) {
     setState(() {
-      _iniciandoGoogle = true;
+      _errorEmailServidor = null;
+      _errorUsernameServidor = null;
+      _errorPasswordServidor = null;
+      _errorComunaServidor = null;
+      switch (field) {
+        case AuthFieldKey.email:
+          _errorEmailServidor = message;
+        case AuthFieldKey.username:
+          _errorUsernameServidor = message;
+        case AuthFieldKey.password:
+          _errorPasswordServidor = message;
+        case AuthFieldKey.comuna:
+          _errorComunaServidor = message;
+        case AuthFieldKey.confirmPassword:
+        case AuthFieldKey.otp:
+        case AuthFieldKey.region:
+        case AuthFieldKey.generic:
+        case null:
+          break;
+      }
     });
-    final session = await _loginController.iniciarSesionConGoogle();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _iniciandoGoogle = false;
-    });
-    if (session != null) {
-      await AuthNavigation.navigateAfterAuth(
-        context,
-        email: session.email,
-      );
-      return;
-    }
-    if (_loginController.googleSignInCancelado) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'No se pudo registrar con Google. Revisa configuracion OAuth/API.',
-        ),
-      ),
-    );
   }
 
   Future<void> _submit() async {
+    _limpiarErroresServidor();
     if (!(_formKey.currentState?.validate() ?? false)) {
+      AuthFeedback.showSnackBar(
+        context,
+        message: 'Revisa los campos marcados antes de continuar.',
+      );
       return;
     }
     if (!_acceptedTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes aceptar terminos y privacidad')),
+      await AuthFeedback.showInfoDialog(
+        context,
+        title: 'Terminos y privacidad',
+        message: 'Debes aceptar los Terminos de Servicio y la Politica de Privacidad para crear tu cuenta.',
       );
       return;
     }
-
-    if (_comunaId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona una comuna valida')),
-      );
+    if (_fechaNacimientoSeleccionada == null) {
+      _formKey.currentState?.validate();
       return;
     }
-
-    final RegionOption? region = _regionActual;
-    if (region == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona una region valida')),
+    if (_generoSeleccionado == null) {
+      _formKey.currentState?.validate();
+      return;
+    }
+    if (_comunaId == null || _regionActual == null) {
+      AuthFeedback.showSnackBar(
+        context,
+        message: 'Selecciona region y comuna validas.',
       );
       return;
     }
 
     final RegisterFormModel model = RegisterFormModel(
-      nombres: _nombres.text,
-      apellidos: _apellidos.text,
-      username: _username.text,
+      nombres: _nombres.text.trim(),
+      apellidos: _apellidos.text.trim(),
+      username: _username.text.trim(),
       fechaNacimiento: _fechaNacimientoSeleccionada!,
       genero: _generoSeleccionado!,
-      direccion: _direccion.text,
+      direccion: _direccion.text.trim(),
       comunaId: _comunaId!,
-      region: region.nombre,
-      codigoPostal: _postal.text,
-      email: _email.text,
+      region: _regionActual!.nombre,
+      codigoPostal: _postal.text.trim(),
+      email: _email.text.trim(),
       password: _password.text,
     );
 
-    final bool ok = await _controller.enviarRegistro(model);
+    setState(() => _enviandoRegistro = true);
+    final ServiceResult result = await _controller.enviarRegistro(model);
     if (!mounted) {
       return;
     }
-    if (ok) {
+    setState(() => _enviandoRegistro = false);
+
+    if (result.ok) {
       final Session? session = Supabase.instance.client.auth.currentSession;
       if (session != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cuenta creada correctamente')),
+        AuthFeedback.showSnackBar(
+          context,
+          message: 'Cuenta creada correctamente',
+          isError: false,
         );
         await AuthNavigation.navigateAfterAuth(
           context,
@@ -179,25 +205,27 @@ class _RegisterViewState extends State<RegisterView> {
         );
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Cuenta creada. Revisa tu correo para confirmar e inicia sesion.',
-          ),
-        ),
+      await AuthFeedback.showInfoDialog(
+        context,
+        title: 'Cuenta creada',
+        message:
+            'Revisa tu correo para confirmar la cuenta e inicia sesion cuando recibas el enlace.',
       );
+      if (!mounted) {
+        return;
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(builder: (_) => const WelcomeView()),
       );
       return;
     }
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _controller.lastError ?? 'No se pudo crear. Correo ya registrado.',
-        ),
-      ),
+
+    AuthFormFeedback.handleServiceResult(
+      context,
+      result: result,
+      formKey: _formKey,
+      setServerError: _setErrorServidor,
+      dialogTitle: 'No se pudo crear la cuenta',
     );
   }
 
@@ -250,6 +278,7 @@ class _RegisterViewState extends State<RegisterView> {
     bool readOnly = false,
     Widget? suffixIcon,
     FocusNode? focusNode,
+    VoidCallback? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,6 +298,8 @@ class _RegisterViewState extends State<RegisterView> {
           keyboardType: keyboardType,
           obscureText: obscure,
           readOnly: readOnly,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          onChanged: onChanged == null ? null : (_) => onChanged(),
           decoration: InputDecoration(hintText: hint, suffixIcon: suffixIcon),
         ),
       ],
@@ -381,8 +412,13 @@ class _RegisterViewState extends State<RegisterView> {
                         controller: _username,
                         label: 'Nombre de Usuario/Alias',
                         hint: 'ej: marcos.loop',
-                        validator: (String? v) =>
-                            _controller.validarRequerido(v, 'Alias'),
+                        validator: (String? v) {
+                          if (_errorUsernameServidor != null) {
+                            return _errorUsernameServidor;
+                          }
+                          return _controller.validarUsername(v);
+                        },
+                        onChanged: _limpiarErroresServidor,
                       ),
                       const SizedBox(height: 10),
                       _field(
@@ -518,6 +554,7 @@ class _RegisterViewState extends State<RegisterView> {
                             hintText: _regionId == null
                                 ? 'Primero selecciona una region'
                                 : 'Selecciona una comuna',
+                            errorText: _errorComunaServidor,
                           ),
                           items: _comunasFiltradas
                               .map(
@@ -532,6 +569,7 @@ class _RegisterViewState extends State<RegisterView> {
                               : (int? value) {
                                   setState(() {
                                     _comunaId = value;
+                                    _errorComunaServidor = null;
                                   });
                                 },
                           validator: _validarComuna,
@@ -555,7 +593,13 @@ class _RegisterViewState extends State<RegisterView> {
                         keyboardType: TextInputType.emailAddress,
                         label: 'Correo Electronico',
                         hint: 'email@dominio.com',
-                        validator: _controller.validarEmail,
+                        validator: (String? v) {
+                          if (_errorEmailServidor != null) {
+                            return _errorEmailServidor;
+                          }
+                          return _controller.validarEmail(v);
+                        },
+                        onChanged: _limpiarErroresServidor,
                       ),
                       if (_controller.checkingEmail)
                         const Padding(
@@ -584,7 +628,13 @@ class _RegisterViewState extends State<RegisterView> {
                         controller: _password,
                         label: 'Contrasena Alfanumerica',
                         obscure: _obscurePassword,
-                        validator: _controller.validarPassword,
+                        validator: (String? v) {
+                          if (_errorPasswordServidor != null) {
+                            return _errorPasswordServidor;
+                          }
+                          return _controller.validarPassword(v);
+                        },
+                        onChanged: _limpiarErroresServidor,
                         suffixIcon: IconButton(
                           onPressed: () => setState(() {
                             _obscurePassword = !_obscurePassword;
@@ -640,30 +690,22 @@ class _RegisterViewState extends State<RegisterView> {
                       const SizedBox(height: 8),
                       SizedBox(
                         height: 46,
-                        child: OutlinedButton(
-                          onPressed:
-                              _iniciandoGoogle ? null : _registrarConGoogle,
-                          child: _iniciandoGoogle
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Continuar con Google'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 46,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.white,
                           ),
-                          onPressed: _submit,
-                          child: const Text('Crear cuenta'),
+                          onPressed: _enviandoRegistro ? null : _submit,
+                          child: _enviandoRegistro
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.white,
+                                  ),
+                                )
+                              : const Text('Crear cuenta'),
                         ),
                       ),
                     ],
