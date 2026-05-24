@@ -1,10 +1,16 @@
+import 'dart:io';
+
 import 'package:eventosloop/core/data/chile_comunas.dart';
+import 'package:eventosloop/core/services/geocoding_service.dart';
+import 'package:eventosloop/core/services/media_storage_service.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
-import 'package:eventosloop/features/create/data/community_id_mapper.dart';
+import 'package:eventosloop/core/widgets/loop_media_image.dart';
 import 'package:eventosloop/features/create/data/user_communities_mock.dart';
+import 'package:eventosloop/features/create/services/user_communities_service.dart';
 import 'package:eventosloop/features/events/models/event_model.dart';
-import 'package:eventosloop/features/events/services/event_mock_service.dart';
+import 'package:eventosloop/features/events/services/event_service.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EditEventView extends StatefulWidget {
   const EditEventView({super.key, required this.eventId});
@@ -16,7 +22,11 @@ class EditEventView extends StatefulWidget {
 }
 
 class _EditEventViewState extends State<EditEventView> {
-  final EventMockService _service = EventMockService();
+  final EventService _service = EventService();
+  final GeocodingService _geocodingService = GeocodingService();
+  final MediaStorageService _mediaService = MediaStorageService();
+  final ImagePicker _imagePicker = ImagePicker();
+  final UserCommunitiesService _communitiesService = UserCommunitiesService();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
@@ -29,6 +39,9 @@ class _EditEventViewState extends State<EditEventView> {
   bool _loading = true;
   bool _saving = false;
   String? _coverColorHex;
+  String? _existingCoverUrl;
+  XFile? _selectedImage;
+  List<UserCommunityOption> _communities = UserCommunitiesMock.participando;
 
   static const List<String> _capacityOptions = <String>[
     '5',
@@ -43,7 +56,16 @@ class _EditEventViewState extends State<EditEventView> {
   @override
   void initState() {
     super.initState();
+    _loadCommunities();
     _load();
+  }
+
+  Future<void> _loadCommunities() async {
+    final List<UserCommunityOption> items =
+        await _communitiesService.fetchParticipando();
+    if (mounted) {
+      setState(() => _communities = items);
+    }
   }
 
   @override
@@ -72,8 +94,8 @@ class _EditEventViewState extends State<EditEventView> {
     _addressController.text = event.address;
     _selectedComuna = event.comuna;
     _coverColorHex = event.coverColorHex;
-    _selectedCommunityId =
-        CommunityIdMapper.communityIdToOptionId(event.communityId);
+    _existingCoverUrl = event.coverUrl;
+    _selectedCommunityId = '${event.communityId}';
     _selectedCapacity = event.capacity >= 200
         ? '200'
         : _capacityOptions.contains('${event.capacity}')
@@ -87,6 +109,24 @@ class _EditEventViewState extends State<EditEventView> {
       return 'Sin limite';
     }
     return '$value personas';
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (mounted && image != null) {
+        setState(() => _selectedImage = image);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo abrir la galeria')),
+        );
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -105,27 +145,72 @@ class _EditEventViewState extends State<EditEventView> {
       return;
     }
     setState(() => _saving = true);
-    await _service.updateEvent(
-      eventId: widget.eventId,
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-      dateLabel: _dateController.text.trim(),
-      timeLabel: _timeController.text.trim(),
-      address: _addressController.text.trim(),
-      comuna: _selectedComuna,
-      communityId: CommunityIdMapper.optionIdToCommunityId(_selectedCommunityId),
-      capacity: _selectedCapacity == 'sin_limite'
-          ? 999
-          : int.tryParse(_selectedCapacity) ?? 20,
-    );
-    if (!mounted) {
-      return;
+    try {
+      int? comunaId;
+      if (_selectedComuna != null) {
+        comunaId = await _service.resolveComunaId(_selectedComuna!);
+      }
+      int? cupos;
+      if (_selectedCapacity != 'sin_limite') {
+        cupos = int.tryParse(_selectedCapacity);
+      }
+
+      final String? region = _selectedComuna == null
+          ? null
+          : ChileComunas.regionDeComuna(_selectedComuna!);
+      final GeocodingResult? coords =
+          await _geocodingService.geocodeChileAddress(
+        address: _addressController.text.trim(),
+        comuna: _selectedComuna,
+        region: region,
+      );
+      if (coords == null &&
+          (_addressController.text.trim().isNotEmpty ||
+              _selectedComuna != null)) {
+        throw Exception(
+          'No se pudo ubicar la direccion en el mapa. Revisa calle y comuna.',
+        );
+      }
+
+      String? coverUrl = _existingCoverUrl;
+      if (_selectedImage != null) {
+        coverUrl = await _mediaService.uploadImage(
+          file: File(_selectedImage!.path),
+          bucket: MediaBucket.events,
+        );
+      }
+
+      await _service.actualizarEvento(
+        eventId: widget.eventId,
+        titulo: _titleController.text.trim(),
+        descripcion: _descriptionController.text.trim(),
+        comunidadId: int.tryParse(_selectedCommunityId ?? ''),
+        cuposMax: cupos,
+        direccion: _addressController.text.trim(),
+        ubicacionDireccion: _selectedComuna,
+        comunaId: comunaId,
+        latitud: coords?.latitude,
+        longitud: coords?.longitude,
+        coverUrl: coverUrl,
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Evento actualizado correctamente')),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo actualizar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
-    setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Evento actualizado correctamente')),
-    );
-    Navigator.of(context).pop(true);
   }
 
   Future<void> _confirmCancelEvent() async {
@@ -159,7 +244,7 @@ class _EditEventViewState extends State<EditEventView> {
     if (confirmed != true || !mounted) {
       return;
     }
-    await _service.cancelEvent(widget.eventId);
+    await _service.cancelarEvento(widget.eventId);
     if (!mounted) {
       return;
     }
@@ -312,28 +397,52 @@ class _EditEventViewState extends State<EditEventView> {
       final String clean = _coverColorHex!.replaceFirst('#', '');
       color = Color(int.parse('FF$clean', radix: 16));
     }
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(Icons.image_outlined, color: AppColors.white, size: 28),
-            SizedBox(height: 6),
-            Text(
-              'Imagen del evento (proximamente editable)',
-              style: TextStyle(
-                color: AppColors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-            ),
-          ],
+
+    return InkWell(
+      onTap: _pickImage,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 146,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.35),
+          ),
         ),
+        clipBehavior: Clip.antiAlias,
+        child: _selectedImage != null
+            ? Image.file(
+                File(_selectedImage!.path),
+                width: double.infinity,
+                height: 146,
+                fit: BoxFit.cover,
+              )
+            : _existingCoverUrl != null && _existingCoverUrl!.isNotEmpty
+                ? LoopMediaImage(
+                    url: _existingCoverUrl!,
+                    height: 146,
+                    width: double.infinity,
+                    fallbackColorHex: _coverColorHex ?? '#0682BC',
+                  )
+                : const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(Icons.add_a_photo_outlined,
+                            color: AppColors.white, size: 28),
+                        SizedBox(height: 6),
+                        Text(
+                          'Toca para agregar portada',
+                          style: TextStyle(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
       ),
     );
   }
@@ -359,7 +468,7 @@ class _EditEventViewState extends State<EditEventView> {
               hintText: 'Selecciona una comunidad',
               prefixIcon: Icon(Icons.groups_outlined, size: 19),
             ),
-            items: UserCommunitiesMock.participando
+            items: _communities
                 .map(
                   (UserCommunityOption community) => DropdownMenuItem<String>(
                     value: community.id,

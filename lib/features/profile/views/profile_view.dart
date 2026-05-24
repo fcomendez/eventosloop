@@ -196,6 +196,7 @@ class _ProfileViewState extends State<ProfileView> {
           initialTab: initialTab,
           followersCount: profile.followersCount,
           followingCount: profile.followingCount,
+          userId: profile.userId ?? _controller.targetUserId,
         ),
       ),
     );
@@ -272,6 +273,18 @@ class _ProfileHeader extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
+        if (isOwnProfile &&
+            profile.email != null &&
+            profile.email!.trim().isNotEmpty) ...<Widget>[
+          const SizedBox(height: 4),
+          Text(
+            profile.email!,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ],
         const SizedBox(height: 18),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -452,6 +465,7 @@ class _ImageGrid extends StatelessWidget {
               id: post.id,
               label: post.label,
               colorHex: post.colorHex,
+              imageUrl: post.mediaUrl,
               onTap: () => openPostDetail(context, post.id),
             ),
           )

@@ -13,6 +13,6 @@ if (-not $ready) {
   Write-Error "Postgres no respondio. Ejecuta: docker compose up -d"
 }
 
-Write-Host "Aplicando docs/sql/schema_completo.sql (puede tardar 1-2 min)..."
-Get-Content "docs\sql\schema_completo.sql" -Raw | docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1
-Write-Host "Esquema aplicado."
+Write-Host "Aplicando docs/sql/loop_schema.sql (puede tardar 1-2 min)..."
+Get-Content "docs\sql\loop_schema.sql" -Raw | docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1
+Write-Host "Esquema aplicado. Siguiente paso: scripts\seed-catalogo.ps1"

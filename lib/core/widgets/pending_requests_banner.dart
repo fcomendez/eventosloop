@@ -1,16 +1,38 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
-import 'package:eventosloop/features/events/services/participant_request_mock_service.dart';
+import 'package:eventosloop/features/events/services/participant_request_service.dart';
+import 'package:eventosloop/features/events/services/participant_request_supabase_service.dart';
 import 'package:flutter/material.dart';
 
-class PendingRequestsBanner extends StatelessWidget {
+class PendingRequestsBanner extends StatefulWidget {
   const PendingRequestsBanner({super.key});
 
   @override
+  State<PendingRequestsBanner> createState() => _PendingRequestsBannerState();
+}
+
+class _PendingRequestsBannerState extends State<PendingRequestsBanner> {
+  final ParticipantRequestService _service = ParticipantRequestService();
+  ParticipantRequestSummary? _summary;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final ParticipantRequestSummary summary =
+        await _service.fetchPendingSummary();
+    if (mounted) {
+      setState(() => _summary = summary);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final ParticipantRequestMockService service = ParticipantRequestMockService();
-    final int pending = service.pendingCount;
-    if (pending <= 0) {
+    final int pending = _summary?.totalPending ?? 0;
+    if (pending <= 0 || _summary?.firstEventId == null) {
       return const SizedBox.shrink();
     }
 
@@ -21,8 +43,8 @@ class PendingRequestsBanner extends StatelessWidget {
         child: InkWell(
           onTap: () => openParticipantRequests(
             context,
-            eventId: ParticipantRequestMockService.defaultPrivateEventId,
-            eventTitle: ParticipantRequestMockService.defaultPrivateEventTitle,
+            eventId: _summary!.firstEventId!,
+            eventTitle: _summary!.firstEventTitle ?? 'Evento',
           ),
           borderRadius: BorderRadius.circular(16),
           child: Ink(
@@ -70,7 +92,7 @@ class PendingRequestsBanner extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          ParticipantRequestMockService.defaultPrivateEventTitle,
+                          _summary!.firstEventTitle ?? 'Revisar solicitudes',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

@@ -1,7 +1,13 @@
+import 'package:eventosloop/core/config/app_env.dart';
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/pending_requests_banner.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
+import 'package:eventosloop/features/communities/models/community_list_item.dart';
+import 'package:eventosloop/features/communities/services/community_supabase_service.dart';
+import 'package:eventosloop/features/events/models/event_model.dart';
+import 'package:eventosloop/features/events/models/event_participation_status.dart';
+import 'package:eventosloop/features/events/services/event_service.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
 import 'package:flutter/material.dart';
 
@@ -169,51 +175,87 @@ class _SegmentedTabs extends StatelessWidget {
   }
 }
 
-class _CommunitiesList extends StatelessWidget {
+class _CommunitiesList extends StatefulWidget {
   const _CommunitiesList();
 
   @override
+  State<_CommunitiesList> createState() => _CommunitiesListState();
+}
+
+class _CommunitiesListState extends State<_CommunitiesList> {
+  final CommunitySupabaseService _service = CommunitySupabaseService();
+  List<CommunityListItem> _items = <CommunityListItem>[];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (!AppEnv.useSupabase) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+      return;
+    }
+    final List<CommunityListItem> items = await _service.listarMisComunidades();
+    if (mounted) {
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
+    }
+  }
+
+  Color _colorFor(CommunityListItem item) {
+    if (item.interestTags.isEmpty) {
+      return AppColors.primary;
+    }
+    final String hex = item.interestTags.first.colorHex.replaceAll('#', '');
+    if (hex.length != 6) {
+      return AppColors.primary;
+    }
+    return Color(int.parse('FF$hex', radix: 16));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 4, 18, 22),
-      children: const <Widget>[
-        _CommunityMemberCard(
-          id: 1,
-          title: 'Creative Collective',
-          category: 'Arte y diseno',
-          description:
-              'Red para compartir procesos creativos, colaborar y asistir a encuentros locales.',
-          activity: '3.2k miembros',
-          color: Color(0xFFC9D9D1),
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_items.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Aun no te has unido a ninguna comunidad.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
         ),
-        _CommunityMemberCard(
-          id: 2,
-          title: 'Tech Founders Circle',
-          category: 'Emprendimiento',
-          description:
-              'Comunidad para fundadores, networking, sesiones tecnicas y revision de ideas.',
-          activity: '980 miembros',
-          color: Color(0xFF192B3A),
-        ),
-        _CommunityMemberCard(
-          id: 3,
-          title: 'Open Source Explorers',
-          category: 'Tecnologia',
-          description:
-              'Grupo para aprender, crear proyectos y compartir recursos de desarrollo.',
-          activity: '1.2k miembros',
-          color: Color(0xFF0E3554),
-        ),
-        _CommunityMemberCard(
-          id: 4,
-          title: 'Digital Canvas Lab',
-          category: 'Fotografia y arte',
-          description:
-              'Explora herramientas visuales, exposiciones y actividades colaborativas.',
-          activity: '640 miembros',
-          color: Color(0xFFD8B46A),
-        ),
-      ],
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 4, 18, 22),
+        children: _items
+            .map(
+              (CommunityListItem item) => _CommunityMemberCard(
+                id: item.id,
+                title: item.name,
+                category: item.primaryCategory,
+                description: item.description,
+                activity: item.membersLabel,
+                color: _colorFor(item),
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 }
@@ -361,40 +403,82 @@ class _CommunityMemberCard extends StatelessWidget {
   }
 }
 
-class _RegisteredEventsList extends StatelessWidget {
+class _RegisteredEventsList extends StatefulWidget {
   const _RegisteredEventsList();
 
   @override
+  State<_RegisteredEventsList> createState() => _RegisteredEventsListState();
+}
+
+class _RegisteredEventsListState extends State<_RegisteredEventsList> {
+  final EventService _service = EventService();
+  List<EventModel> _events = <EventModel>[];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final List<EventModel> events = await _service.listarMisEventosInscritos();
+    if (mounted) {
+      setState(() {
+        _events = events;
+        _loading = false;
+      });
+    }
+  }
+
+  Color _colorFor(EventModel event) {
+    final String hex = event.coverColorHex.replaceAll('#', '');
+    if (hex.length != 6) {
+      return AppColors.primaryDark;
+    }
+    return Color(int.parse('FF$hex', radix: 16));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 4, 18, 22),
-      children: const <Widget>[
-        _RegisteredEventCard(
-          eventId: 1,
-          title: 'UX/UI Mastery: The Luminous Curator Deep Dive',
-          category: 'Diseno colectivo',
-          date: 'Manana, 24 Oct',
-          time: '6:30 PM - 8:00 PM',
-          color: Color(0xFF0E3554),
-          highlighted: true,
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_events.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'No tienes eventos inscritos todavia.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
         ),
-        _RegisteredEventCard(
-          eventId: 2,
-          title: 'Digital Storytelling in the Age of AI',
-          category: 'LOOP creators',
-          date: 'Sab, 28 Oct',
-          time: '11:00 AM - 12:30 PM',
-          color: Color(0xFF7A4D22),
-        ),
-        _RegisteredEventCard(
-          eventId: 3,
-          title: 'Founder Meetup: Scaling Beyond Zero',
-          category: 'Startup hub',
-          date: 'Mar, 31 Oct',
-          time: '5:00 PM - 7:00 PM',
-          color: Color(0xFF4D6B73),
-        ),
-      ],
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 4, 18, 22),
+        children: _events
+            .map(
+              (EventModel event) => _RegisteredEventCard(
+                eventId: event.id,
+                title: event.title,
+                category: event.category,
+                date: event.dateLabel,
+                time: event.timeLabel,
+                color: _colorFor(event),
+                highlighted: event.participationStatus ==
+                    EventParticipationStatus.pending,
+                statusLabel: event.participationStatus ==
+                        EventParticipationStatus.pending
+                    ? 'PENDIENTE'
+                    : null,
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 }
@@ -408,6 +492,7 @@ class _RegisteredEventCard extends StatelessWidget {
     required this.time,
     required this.color,
     this.highlighted = false,
+    this.statusLabel,
   });
 
   final int eventId;
@@ -417,6 +502,7 @@ class _RegisteredEventCard extends StatelessWidget {
   final String time;
   final Color color;
   final bool highlighted;
+  final String? statusLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -453,7 +539,7 @@ class _RegisteredEventCard extends StatelessWidget {
                     color: AppColors.white.withValues(alpha: 0.9),
                   ),
                 ),
-                if (highlighted)
+                if (highlighted && statusLabel != null)
                   Positioned(
                     left: 12,
                     top: 12,
@@ -466,9 +552,9 @@ class _RegisteredEventCard extends StatelessWidget {
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text(
-                        'EVENTO FLASH',
-                        style: TextStyle(
+                      child: Text(
+                        statusLabel!,
+                        style: const TextStyle(
                           color: AppColors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.w900,

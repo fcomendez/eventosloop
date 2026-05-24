@@ -1,6 +1,6 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/report/models/report_content_model.dart';
-import 'package:eventosloop/features/report/services/report_content_mock_service.dart';
+import 'package:eventosloop/features/report/services/report_content_service.dart';
 import 'package:flutter/material.dart';
 
 class ReportContentView extends StatefulWidget {
@@ -20,7 +20,7 @@ class ReportContentView extends StatefulWidget {
 }
 
 class _ReportContentViewState extends State<ReportContentView> {
-  final ReportContentMockService _service = ReportContentMockService();
+  final ReportContentService _service = ReportContentService();
   final TextEditingController _descriptionController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 

@@ -1,9 +1,15 @@
+import 'dart:io';
+
+import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/services/media_storage_service.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/auth/navigation/auth_navigation.dart';
+import 'package:eventosloop/features/auth/services/auth_api_service.dart';
 import 'package:eventosloop/features/profile/models/profile_model.dart';
-import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
+import 'package:eventosloop/features/profile/services/profile_supabase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilePersonalInfoView extends StatefulWidget {
   const ProfilePersonalInfoView({super.key});
@@ -13,14 +19,17 @@ class ProfilePersonalInfoView extends StatefulWidget {
 }
 
 class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
-  final ProfileMockService _profileService = ProfileMockService();
+  final ProfileSupabaseService _profileService = ProfileSupabaseService();
+  final MediaStorageService _mediaStorage = MediaStorageService();
+  final ImagePicker _imagePicker = ImagePicker();
   ProfileModel? _profile;
-  final TextEditingController _emailController =
-      TextEditingController(text: 'usuario@ejemplo.com');
-  final TextEditingController _phoneController =
-      TextEditingController(text: '+56 9 6000 0000');
-  String _gender = 'Hombre';
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  String _gender = 'Prefiero no decir';
   String _nationality = 'Chileno';
+  bool _loading = true;
+  bool _saving = false;
+  String? _pendingAvatarUrl;
 
   @override
   void initState() {
@@ -29,11 +38,113 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
   }
 
   Future<void> _loadProfile() async {
-    final ProfileModel profile = await _profileService.fetchProfile();
-    if (!mounted) {
+    if (AppEnv.useSupabase) {
+      final ProfilePersonalInfoData? info =
+          await _profileService.fetchPersonalInfo();
+      if (info != null && mounted) {
+        setState(() {
+          _profile = ProfileModel(
+            fullName: info.fullName,
+            username: info.username,
+            avatarInitials: info.avatarInitials,
+            avatarUrl: info.avatarUrl,
+            email: info.email,
+            postsCount: 0,
+            followersCount: 0,
+            followingCount: 0,
+            eventsAttendedCount: 0,
+            communitiesJoinedCount: 0,
+            interests: const <String>[],
+            imagePosts: const <ProfileImagePostModel>[],
+            writtenPosts: const <ProfileWrittenPostModel>[],
+            pastEvents: const <ProfilePastEventModel>[],
+            communities: const <ProfileCommunityModel>[],
+            userId: info.userId,
+          );
+          _emailController.text = info.email;
+          _phoneController.text = info.phone;
+          _gender = _normalizeGender(info.gender);
+          _nationality = info.nationality;
+          _pendingAvatarUrl = info.avatarUrl;
+          _loading = false;
+        });
+        return;
+      }
+    }
+    if (mounted) {
+      setState(() => _loading = false);
+    }
+  }
+
+  String _normalizeGender(String value) {
+    const List<String> allowed = <String>[
+      'Hombre',
+      'Mujer',
+      'Otro',
+      'Prefiero no decir',
+    ];
+    if (allowed.contains(value)) {
+      return value;
+    }
+    return 'Prefiero no decir';
+  }
+
+  Future<void> _pickAvatar() async {
+    final XFile? picked =
+        await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (picked == null) {
       return;
     }
-    setState(() => _profile = profile);
+    final String? url = await _mediaStorage.uploadImage(
+      file: File(picked.path),
+      bucket: MediaBucket.avatars,
+    );
+    if (url == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _pendingAvatarUrl = url;
+      if (_profile != null) {
+        _profile = _profile!.copyWith(avatarUrl: url);
+      }
+    });
+  }
+
+  Future<void> _savePersonalInfo() async {
+    if (!AppEnv.useSupabase) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Supabase no esta configurado')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await _profileService.updatePersonalInfo(
+        telefono: _phoneController.text,
+        nacionalidad: _nationality,
+        genero: _gender,
+        avatarUrl: _pendingAvatarUrl,
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informacion actualizada')),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
   }
 
   @override
@@ -114,14 +225,38 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
         );
       },
     );
+
+    final String password = passwordController.text;
     passwordController.dispose();
 
-    if (accepted == true && mounted) {
+    if (accepted != true || !mounted) {
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await _profileService.eliminarCuenta(password: password);
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Eliminacion pendiente de conexion segura con backend'),
-        ),
+        const SnackBar(content: Text('Cuenta eliminada correctamente')),
       );
+      await AuthNavigation.cerrarSesion(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().replaceFirst('Exception: ', ''),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -170,6 +305,11 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -192,12 +332,15 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
                         Stack(
                           alignment: Alignment.bottomRight,
                           children: <Widget>[
-                            LoopUserAvatar(
-                              avatarUrl: _profile?.avatarUrl,
-                              initials: _profile?.avatarInitials ?? 'AC',
-                              radius: 34,
-                              fontSize: 22,
-                              borderRadius: BorderRadius.circular(16),
+                            GestureDetector(
+                              onTap: _pickAvatar,
+                              child: LoopUserAvatar(
+                                avatarUrl: _pendingAvatarUrl ?? _profile?.avatarUrl,
+                                initials: _profile?.avatarInitials ?? 'AC',
+                                radius: 34,
+                                fontSize: 22,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                             ),
                             Container(
                               width: 24,
@@ -328,16 +471,17 @@ class _ProfilePersonalInfoViewState extends State<ProfilePersonalInfoView> {
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.white,
                         ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Informacion pendiente de conexion con backend',
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text('Actualizar informacion'),
+                        onPressed: _saving ? null : _savePersonalInfo,
+                        child: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.white,
+                                ),
+                              )
+                            : const Text('Actualizar informacion'),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -469,10 +613,12 @@ class _PasswordChangeSheet extends StatefulWidget {
 }
 
 class _PasswordChangeSheetState extends State<_PasswordChangeSheet> {
+  final AuthApiService _authService = AuthApiService();
   final TextEditingController _currentPassword = TextEditingController();
   final TextEditingController _newPassword = TextEditingController();
   final TextEditingController _confirmPassword = TextEditingController();
   bool _showNewPassword = true;
+  bool _saving = false;
 
   bool get _hasLength =>
       _newPassword.text.length >= 8 && _newPassword.text.length <= 16;
@@ -497,6 +643,35 @@ class _PasswordChangeSheetState extends State<_PasswordChangeSheet> {
 
   void _refresh() {
     setState(() {});
+  }
+
+  Future<void> _savePassword() async {
+    if (!_canSave || _saving) {
+      return;
+    }
+    setState(() => _saving = true);
+    final ServiceResult result = await _authService.cambiarPasswordAutenticado(
+      passwordActual: _currentPassword.text,
+      nuevaPassword: _newPassword.text,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() => _saving = false);
+    if (!result.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.errorMessage ?? 'No se pudo cambiar la contrasena',
+          ),
+        ),
+      );
+      return;
+    }
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Contrasena actualizada')),
+    );
   }
 
   @override
@@ -591,19 +766,17 @@ class _PasswordChangeSheetState extends State<_PasswordChangeSheet> {
                         _canSave ? AppColors.primary : AppColors.divider,
                     foregroundColor: AppColors.white,
                   ),
-                  onPressed: _canSave
-                      ? () {
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Cambio de contrasena pendiente de backend',
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
-                  child: const Text('Guardar nueva contrasena'),
+                  onPressed: _canSave && !_saving ? _savePassword : null,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.white,
+                          ),
+                        )
+                      : const Text('Guardar nueva contrasena'),
                 ),
               ),
             ],

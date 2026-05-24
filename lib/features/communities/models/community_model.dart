@@ -7,6 +7,7 @@ class CommunityModel {
     required this.tags,
     required this.activityLabel,
     required this.coverColorHex,
+    this.bannerUrl,
     this.isActive = true,
   });
 
@@ -17,6 +18,7 @@ class CommunityModel {
   final List<String> tags;
   final String activityLabel;
   final String coverColorHex;
+  final String? bannerUrl;
   final bool isActive;
 }
 

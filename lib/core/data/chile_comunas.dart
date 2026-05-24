@@ -1,7 +1,7 @@
 class ChileComunas {
   const ChileComunas._();
 
-  /// Regiones alineadas a `docs/sql/region.sql` (filtros admin y formularios).
+  /// Regiones alineadas a `docs/sql/loop_seed_catalogo.sql` (filtros admin y formularios).
   static const List<String> regiones = <String>[
     'Arica y Parinacota',
     'Tarapaca',
@@ -90,6 +90,10 @@ class ChileComunas {
     return todas
         .where((String comuna) => _regionPorComuna[comuna] == region)
         .toList();
+  }
+
+  static String? regionDeComuna(String comuna) {
+    return _regionPorComuna[comuna];
   }
 
   static const List<String> todas = <String>[

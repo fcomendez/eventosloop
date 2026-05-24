@@ -1,7 +1,7 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/notifications/models/notification_model.dart';
-import 'package:eventosloop/features/notifications/services/notification_mock_service.dart';
+import 'package:eventosloop/features/notifications/services/notification_service.dart';
 import 'package:flutter/material.dart';
 
 enum NotificationFilter { all, eventos, comunidades, menciones }
@@ -14,7 +14,7 @@ class NotificationsView extends StatefulWidget {
 }
 
 class _NotificationsViewState extends State<NotificationsView> {
-  final NotificationMockService _service = NotificationMockService();
+  final NotificationService _service = NotificationService();
   NotificationFilter _filter = NotificationFilter.all;
   List<NotificationModel> _items = <NotificationModel>[];
   bool _loading = true;
@@ -56,6 +56,30 @@ class _NotificationsViewState extends State<NotificationsView> {
       .length;
 
   void _openNotification(NotificationModel item) {
+    if (item.isUnread) {
+      _service.markAsRead(item.id);
+      setState(() {
+        final int index =
+            _items.indexWhere((NotificationModel n) => n.id == item.id);
+        if (index >= 0) {
+          _items[index] = NotificationModel(
+            id: item.id,
+            type: item.type,
+            title: item.title,
+            body: item.body,
+            timeLabel: item.timeLabel,
+            groupLabel: item.groupLabel,
+            isUnread: false,
+            authorInitials: item.authorInitials,
+            quote: item.quote,
+            eventId: item.eventId,
+            communityId: item.communityId,
+            postId: item.postId,
+            userId: item.userId,
+          );
+        }
+      });
+    }
     if (item.type == NotificationType.solicitud && item.eventId != null) {
       openParticipantRequests(
         context,

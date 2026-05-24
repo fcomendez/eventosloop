@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AdminCommunityStatus { active, banned }
+enum AdminCommunityStatus { pending, active, banned }
 
 class AdminCommunityRow {
   const AdminCommunityRow({

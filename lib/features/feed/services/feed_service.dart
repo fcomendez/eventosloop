@@ -28,4 +28,19 @@ class FeedService {
     }
     return _mock.fetchPage(cursor: cursor);
   }
+
+  Future<void> toggleLike({
+    required int postId,
+    required bool currentlyLiked,
+  }) async {
+    final bool canUseSupabase = AppEnv.useSupabase &&
+        Supabase.instance.client.auth.currentSession != null;
+    if (!canUseSupabase) {
+      return;
+    }
+    await _supabase.toggleLike(
+      postId: postId,
+      currentlyLiked: currentlyLiked,
+    );
+  }
 }

@@ -1,8 +1,12 @@
 import 'dart:io';
 
+import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/services/media_storage_service.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/scrollable_picker_sheet.dart';
 import 'package:eventosloop/features/create/data/user_communities_mock.dart';
+import 'package:eventosloop/features/create/services/user_communities_service.dart';
+import 'package:eventosloop/features/posts/services/post_supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -17,9 +21,21 @@ class _CreatePostViewState extends State<CreatePostView> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
+  final PostSupabaseService _postService = PostSupabaseService();
+  final MediaStorageService _mediaService = MediaStorageService();
+  final UserCommunitiesService _communitiesService = UserCommunitiesService();
 
   String? _selectedCommunityId;
   XFile? _selectedImage;
+  List<UserCommunityOption> _communities = UserCommunitiesMock.participando;
+  bool _loadingCommunities = true;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCommunities();
+  }
 
   @override
   void dispose() {
@@ -30,23 +46,26 @@ class _CreatePostViewState extends State<CreatePostView> {
 
   static const String _personalCommunityId = 'personal';
 
-  UserCommunityOption? get _selectedCommunity {
-    if (_selectedCommunityId == null) {
-      return null;
+  Future<void> _loadCommunities() async {
+    final List<UserCommunityOption> items =
+        await _communitiesService.fetchParticipando();
+    if (!mounted) {
+      return;
     }
+    setState(() {
+      _communities = items;
+      _loadingCommunities = false;
+    });
+  }
+
+  UserCommunityOption? get _selectedCommunity {
     if (_selectedCommunityId == _personalCommunityId) {
       return const UserCommunityOption(
         id: _personalCommunityId,
         name: 'Sin comunidad (publicacion personal)',
       );
     }
-    for (final UserCommunityOption community
-        in UserCommunitiesMock.participando) {
-      if (community.id == _selectedCommunityId) {
-        return community;
-      }
-    }
-    return null;
+    return _communitiesService.findById(_communities, _selectedCommunityId);
   }
 
   Future<void> _pickImageFromGallery() async {
@@ -74,6 +93,9 @@ class _CreatePostViewState extends State<CreatePostView> {
   }
 
   Future<void> _openCommunityPicker() async {
+    if (_loadingCommunities) {
+      return;
+    }
     final String? selected = await showScrollablePickerSheet<String>(
       context: context,
       title: 'Publicar en comunidad',
@@ -83,7 +105,7 @@ class _CreatePostViewState extends State<CreatePostView> {
           title: const Text('Sin comunidad (publicacion personal)'),
           onTap: () => Navigator.of(context).pop(_personalCommunityId),
         ),
-        ...UserCommunitiesMock.participando.map(
+        ..._communities.map(
           (UserCommunityOption community) => ListTile(
             leading:
                 const Icon(Icons.groups_outlined, color: AppColors.primary),
@@ -100,6 +122,67 @@ class _CreatePostViewState extends State<CreatePostView> {
     setState(() {
       _selectedCommunityId = selected;
     });
+  }
+
+  Future<void> _publicar() async {
+    if (_bodyController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Escribe algo antes de publicar')),
+      );
+      return;
+    }
+    if (!AppEnv.useSupabase) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Supabase no esta configurado')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final int? comunidadId = _selectedCommunityId == null ||
+              _selectedCommunityId == _personalCommunityId
+          ? null
+          : int.tryParse(_selectedCommunityId!);
+
+      String? urlMedia;
+      if (_selectedImage != null) {
+        urlMedia = await _mediaService.uploadImage(
+          file: File(_selectedImage!.path),
+          bucket: MediaBucket.posts,
+        );
+      }
+
+      await _postService.crearPublicacion(
+        titulo: _titleController.text,
+        contenido: _bodyController.text,
+        comunidadId: comunidadId,
+        urlMedia: urlMedia,
+      );
+
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Publicacion creada. Desliza hacia abajo en el feed para verla.',
+          ),
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo publicar: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
   }
 
   @override
@@ -166,17 +249,20 @@ class _CreatePostViewState extends State<CreatePostView> {
                     SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Publicacion guardada localmente por ahora',
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.send_outlined, size: 18),
-                        label: const Text('Crear publicacion'),
+                        onPressed: _submitting ? null : _publicar,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.white,
+                                ),
+                              )
+                            : const Icon(Icons.send_outlined, size: 18),
+                        label: Text(
+                          _submitting ? 'Publicando...' : 'Crear publicacion',
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.white,
@@ -249,7 +335,9 @@ class _CreatePostViewState extends State<CreatePostView> {
                     ),
                   ),
                   Text(
-                    community?.name ?? 'Selecciona una comunidad',
+                    _loadingCommunities
+                        ? 'Cargando comunidades...'
+                        : (community?.name ?? 'Selecciona una comunidad'),
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.w900,

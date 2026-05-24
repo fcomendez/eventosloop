@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
+import 'package:eventosloop/features/communities/views/create_community_view.dart';
 import 'package:eventosloop/features/create/views/create_event_view.dart';
 import 'package:eventosloop/features/create/views/create_post_view.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
@@ -73,6 +74,22 @@ class CreateHubView extends StatelessWidget {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => const CreateEventView(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _CreateOptionCard(
+                      icon: Icons.groups_outlined,
+                      title: 'Solicitar comunidad',
+                      subtitle:
+                          'Envia una solicitud para crear tu propia comunidad. Un admin debe aprobarla.',
+                      buttonText: 'Solicitar comunidad',
+                      outlined: true,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const CreateCommunityView(),
                           ),
                         );
                       },

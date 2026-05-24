@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:eventosloop/core/services/media_storage_service.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/scrollable_picker_sheet.dart';
 import 'package:eventosloop/features/create/data/user_communities_mock.dart';
+import 'package:eventosloop/features/create/services/user_communities_service.dart';
 import 'package:eventosloop/features/posts/models/post_comment_model.dart';
-import 'package:eventosloop/features/posts/services/post_detail_mock_service.dart';
+import 'package:eventosloop/features/posts/services/post_detail_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -18,7 +20,9 @@ class EditPostView extends StatefulWidget {
 }
 
 class _EditPostViewState extends State<EditPostView> {
-  final PostDetailMockService _service = PostDetailMockService();
+  final PostDetailService _service = PostDetailService();
+  final MediaStorageService _mediaService = MediaStorageService();
+  final UserCommunitiesService _communitiesService = UserCommunitiesService();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
@@ -28,11 +32,21 @@ class _EditPostViewState extends State<EditPostView> {
   bool _loading = true;
   bool _saving = false;
   String? _existingMediaLabel;
+  List<UserCommunityOption> _communities = UserCommunitiesMock.participando;
 
   @override
   void initState() {
     super.initState();
+    _loadCommunities();
     _load();
+  }
+
+  Future<void> _loadCommunities() async {
+    final List<UserCommunityOption> items =
+        await _communitiesService.fetchParticipando();
+    if (mounted) {
+      setState(() => _communities = items);
+    }
   }
 
   @override
@@ -54,23 +68,13 @@ class _EditPostViewState extends State<EditPostView> {
     _titleController.text = post.title ?? '';
     _bodyController.text = post.body;
     _existingMediaLabel = post.mediaLabel;
-    _selectedCommunityId =
-        post.communityId ?? UserCommunitiesMock.participando.first.id;
+    _selectedCommunityId = post.communityId ??
+        (_communities.isNotEmpty ? _communities.first.id : null);
     setState(() => _loading = false);
   }
 
-  UserCommunityOption? get _selectedCommunity {
-    if (_selectedCommunityId == null) {
-      return null;
-    }
-    for (final UserCommunityOption community
-        in UserCommunitiesMock.participando) {
-      if (community.id == _selectedCommunityId) {
-        return community;
-      }
-    }
-    return null;
-  }
+  UserCommunityOption? get _selectedCommunity =>
+      _communitiesService.findById(_communities, _selectedCommunityId);
 
   Future<void> _pickImageFromGallery() async {
     try {
@@ -97,7 +101,7 @@ class _EditPostViewState extends State<EditPostView> {
     final String? selected = await showScrollablePickerSheet<String>(
       context: context,
       title: 'Comunidad de la publicacion',
-      children: UserCommunitiesMock.participando
+      children: _communities
           .map(
             (UserCommunityOption community) => ListTile(
               leading:
@@ -130,20 +134,39 @@ class _EditPostViewState extends State<EditPostView> {
       return;
     }
     setState(() => _saving = true);
-    await _service.updatePost(
-      postId: widget.postId,
-      title: _titleController.text.trim(),
-      body: _bodyController.text.trim(),
-      communityId: _selectedCommunityId,
-    );
-    if (!mounted) {
-      return;
+    try {
+      String? urlMedia;
+      if (_selectedImage != null) {
+        urlMedia = await _mediaService.uploadImage(
+          file: File(_selectedImage!.path),
+          bucket: MediaBucket.posts,
+        );
+      }
+      await _service.updatePost(
+        postId: widget.postId,
+        title: _titleController.text.trim(),
+        body: _bodyController.text.trim(),
+        communityId: _selectedCommunityId,
+        urlMedia: urlMedia,
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Publicacion actualizada correctamente')),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo guardar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
-    setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Publicacion actualizada correctamente')),
-    );
-    Navigator.of(context).pop(true);
   }
 
   Future<void> _confirmDelete() async {

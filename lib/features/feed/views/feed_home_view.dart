@@ -1,10 +1,11 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
+import 'package:eventosloop/core/widgets/loop_media_image.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/feed/controllers/feed_controller.dart';
 import 'package:eventosloop/features/feed/models/feed_item_model.dart';
-import 'package:eventosloop/features/notifications/services/notification_mock_service.dart';
+import 'package:eventosloop/features/notifications/services/notification_service.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
 import 'package:flutter/material.dart';
 
@@ -157,12 +158,24 @@ class _FeedTopBar extends StatefulWidget {
 }
 
 class _FeedTopBarState extends State<_FeedTopBar> {
-  final NotificationMockService _notificationService =
-      NotificationMockService();
+  final NotificationService _notificationService = NotificationService();
+  int _badgeCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBadge();
+  }
+
+  Future<void> _loadBadge() async {
+    final int count = await _notificationService.unreadCount();
+    if (mounted) {
+      setState(() => _badgeCount = count);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final int badgeCount = _notificationService.unreadCount;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -191,7 +204,7 @@ class _FeedTopBarState extends State<_FeedTopBar> {
                 icon: const Icon(Icons.notifications_none),
                 color: AppColors.primaryDark,
               ),
-              if (badgeCount > 0)
+              if (_badgeCount > 0)
                 Positioned(
                   right: 8,
                   top: 8,
@@ -206,7 +219,7 @@ class _FeedTopBarState extends State<_FeedTopBar> {
                       shape: BoxShape.circle,
                     ),
                     child: Text(
-                      badgeCount > 9 ? '9+' : '$badgeCount',
+                      _badgeCount > 9 ? '9+' : '$_badgeCount',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: AppColors.white,
@@ -237,7 +250,7 @@ class _FeedPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasMedia = item.mediaLabel != null;
+    final bool hasMedia = item.mediaUrl != null || item.mediaLabel != null;
 
     return Material(
       color: AppColors.white,
@@ -358,6 +371,15 @@ class _MockMediaBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (item.mediaUrl != null) {
+      return LoopMediaImage(
+        url: item.mediaUrl!,
+        width: double.infinity,
+        height: 190,
+        fallbackColorHex: item.mediaColorHex ?? '#D9EAF5',
+        fallbackLabel: item.mediaLabel,
+      );
+    }
     final Color baseColor = _parseHex(item.mediaColorHex);
     return SizedBox(
       width: double.infinity,

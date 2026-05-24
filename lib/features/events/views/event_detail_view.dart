@@ -2,11 +2,14 @@ import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/content_options_sheet.dart';
 import 'package:eventosloop/core/widgets/loop_event_map.dart';
+import 'package:eventosloop/core/widgets/loop_media_image.dart';
 import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/create/views/edit_event_view.dart';
 import 'package:eventosloop/features/events/models/event_model.dart';
 import 'package:eventosloop/features/events/models/event_status.dart';
-import 'package:eventosloop/features/events/services/event_mock_service.dart';
+import 'package:eventosloop/features/events/models/event_participation_status.dart';
+import 'package:eventosloop/features/events/services/event_participation_service.dart';
+import 'package:eventosloop/features/events/services/event_service.dart';
 import 'package:eventosloop/features/report/models/report_content_model.dart';
 import 'package:eventosloop/features/report/views/report_content_view.dart';
 import 'package:flutter/material.dart';
@@ -22,9 +25,12 @@ class EventDetailView extends StatefulWidget {
 }
 
 class _EventDetailViewState extends State<EventDetailView> {
-  final EventMockService _service = EventMockService();
+  final EventService _service = EventService();
+  final EventParticipationService _participationService =
+      EventParticipationService();
   EventModel? _event;
   bool _loading = true;
+  bool _joining = false;
 
   @override
   void initState() {
@@ -100,6 +106,47 @@ class _EventDetailViewState extends State<EventDetailView> {
       title: 'Opciones del evento',
       options: options,
     );
+  }
+
+  Future<void> _joinEvent(EventModel event) async {
+    if (_joining) {
+      return;
+    }
+    setState(() => _joining = true);
+    try {
+      final EventParticipationStatus status = await _participationService.join(
+        eventId: event.id,
+        esPrivado: event.isPrivate,
+        capacity: event.capacity,
+      );
+      if (!mounted) {
+        return;
+      }
+      await _load();
+      final String message = switch (status) {
+        EventParticipationStatus.pending =>
+          'Solicitud enviada. El organizador la revisara pronto.',
+        EventParticipationStatus.approved =>
+          'Te inscribiste correctamente en el evento.',
+        EventParticipationStatus.rejected =>
+          'Tu solicitud fue rechazada anteriormente.',
+        EventParticipationStatus.none => 'No se pudo completar la inscripcion.',
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _joining = false);
+      }
+    }
   }
 
   @override
@@ -180,7 +227,11 @@ class _EventDetailViewState extends State<EventDetailView> {
                             ],
                           ),
                         ),
-                        _BottomAction(event: _event!),
+                        _BottomAction(
+                          event: _event!,
+                          joining: _joining,
+                          onJoin: () => _joinEvent(_event!),
+                        ),
                       ],
                     ),
         ),
@@ -256,18 +307,29 @@ class _EventHeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Container(
+          SizedBox(
             height: 190,
-            color: _parseHex(event.coverColorHex),
             child: Stack(
+              fit: StackFit.expand,
               children: <Widget>[
-                Center(
-                  child: Icon(
-                    Icons.confirmation_number_outlined,
-                    size: 64,
-                    color: AppColors.white.withValues(alpha: 0.9),
+                if (event.coverUrl != null && event.coverUrl!.trim().isNotEmpty)
+                  LoopMediaImage(
+                    url: event.coverUrl!,
+                    height: 190,
+                    width: double.infinity,
+                    fallbackColorHex: event.coverColorHex,
+                  )
+                else
+                  Container(
+                    color: _parseHex(event.coverColorHex),
+                    child: Center(
+                      child: Icon(
+                        Icons.confirmation_number_outlined,
+                        size: 64,
+                        color: AppColors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
                   ),
-                ),
                 if (event.isFlash)
                   Positioned(
                     left: 12,
@@ -736,9 +798,28 @@ class _Chip extends StatelessWidget {
 }
 
 class _BottomAction extends StatelessWidget {
-  const _BottomAction({required this.event});
+  const _BottomAction({
+    required this.event,
+    required this.joining,
+    required this.onJoin,
+  });
 
   final EventModel event;
+  final bool joining;
+  final VoidCallback onJoin;
+
+  String _buttonLabel() {
+    return switch (event.participationStatus) {
+      EventParticipationStatus.pending => 'Solicitud pendiente',
+      EventParticipationStatus.approved => 'Ya estas inscrito',
+      EventParticipationStatus.rejected => 'Solicitud rechazada',
+      EventParticipationStatus.none =>
+        event.isPrivate ? 'Solicitar participacion' : 'Participar',
+    };
+  }
+
+  bool get _canPress =>
+      event.isJoinableByParticipants && !joining;
 
   @override
   Widget build(BuildContext context) {
@@ -766,22 +847,25 @@ class _BottomAction extends StatelessWidget {
     }
 
     final bool canJoin = event.isJoinableByParticipants;
+    final bool showActive = canJoin ||
+        event.participationStatus == EventParticipationStatus.pending ||
+        event.participationStatus == EventParticipationStatus.approved;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: SizedBox(
         width: double.infinity,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: canJoin
+            gradient: showActive
                 ? const LinearGradient(
                     colors: <Color>[AppColors.primaryDark, AppColors.primary],
                   )
                 : null,
-            color: canJoin ? null : AppColors.divider.withValues(alpha: 0.45),
+            color: showActive ? null : AppColors.divider.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(22),
           ),
           child: ElevatedButton(
-            onPressed: canJoin ? () {} : null,
+            onPressed: _canPress ? onJoin : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
@@ -792,14 +876,27 @@ class _BottomAction extends StatelessWidget {
                 borderRadius: BorderRadius.circular(22),
               ),
             ),
-            child: Text(
-              canJoin
-                  ? (event.isPrivate
-                      ? 'Solicitar participacion'
-                      : 'Participar')
-                  : 'Inscripcion no disponible',
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-            ),
+            child: joining
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.white,
+                    ),
+                  )
+                : Text(
+                    canJoin
+                        ? _buttonLabel()
+                        : event.participationStatus !=
+                                EventParticipationStatus.none
+                            ? _buttonLabel()
+                            : 'Inscripcion no disponible',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
           ),
         ),
       ),

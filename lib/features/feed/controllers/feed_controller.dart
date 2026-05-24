@@ -51,7 +51,8 @@ class FeedController extends ChangeNotifier {
 
     try {
       final FeedPageResult result = await _service.fetchPage(cursor: _cursor);
-      final Set<int> currentIds = _items.map((FeedItemModel item) => item.id).toSet();
+      final Set<int> currentIds =
+          _items.map((FeedItemModel item) => item.id).toSet();
       _items.addAll(
         result.items.where((FeedItemModel item) => !currentIds.contains(item.id)),
       );
@@ -65,12 +66,14 @@ class FeedController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleLike(int id) {
+  Future<void> toggleLike(int id) async {
     final int index = _items.indexWhere((FeedItemModel item) => item.id == id);
     if (index == -1) {
       return;
     }
     final FeedItemModel current = _items[index];
+    final bool wasLiked = current.likedByMe;
+
     _items[index] = FeedItemModel(
       id: current.id,
       type: current.type,
@@ -81,12 +84,22 @@ class FeedController extends ChangeNotifier {
       contextLabel: current.contextLabel,
       mediaLabel: current.mediaLabel,
       mediaColorHex: current.mediaColorHex,
-      likesCount:
-          current.likedByMe ? current.likesCount - 1 : current.likesCount + 1,
+      mediaUrl: current.mediaUrl,
+      likesCount: wasLiked ? current.likesCount - 1 : current.likesCount + 1,
       commentsCount: current.commentsCount,
       sharesCount: current.sharesCount,
-      likedByMe: !current.likedByMe,
+      likedByMe: !wasLiked,
     );
     notifyListeners();
+
+    try {
+      await _service.toggleLike(
+        postId: id,
+        currentlyLiked: wasLiked,
+      );
+    } catch (_) {
+      _items[index] = current;
+      notifyListeners();
+    }
   }
 }

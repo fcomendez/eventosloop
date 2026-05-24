@@ -1,9 +1,17 @@
+import 'dart:io';
+
+import 'package:eventosloop/core/config/app_env.dart';
 import 'package:eventosloop/core/data/chile_comunas.dart';
+import 'package:eventosloop/core/services/geocoding_service.dart';
+import 'package:eventosloop/core/services/media_storage_service.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/scrollable_picker_sheet.dart';
 import 'package:eventosloop/features/create/data/user_communities_mock.dart';
+import 'package:eventosloop/features/create/services/user_communities_service.dart';
+import 'package:eventosloop/features/events/services/event_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CreateEventView extends StatefulWidget {
   const CreateEventView({super.key});
@@ -20,11 +28,20 @@ class _CreateEventViewState extends State<CreateEventView> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _capacityController =
       TextEditingController(text: '20');
+  final UserCommunitiesService _communitiesService = UserCommunitiesService();
+  final EventService _eventService = EventService();
+  final GeocodingService _geocodingService = GeocodingService();
+  final MediaStorageService _mediaService = MediaStorageService();
+  final ImagePicker _imagePicker = ImagePicker();
 
   String? _selectedCommunityId;
   String? _selectedRegion;
   String? _selectedComuna;
   bool _isPrivate = false;
+  bool _submitting = false;
+  XFile? _selectedImage;
+  List<UserCommunityOption> _communities = UserCommunitiesMock.participando;
+  bool _loadingCommunities = true;
 
   static const List<String> _capacitySuggestions = <String>[
     '5',
@@ -43,6 +60,23 @@ class _CreateEventViewState extends State<CreateEventView> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadCommunities();
+  }
+
+  Future<void> _loadCommunities() async {
+    final List<UserCommunityOption> items =
+        await _communitiesService.fetchParticipando();
+    if (mounted) {
+      setState(() {
+        _communities = items;
+        _loadingCommunities = false;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
@@ -54,10 +88,13 @@ class _CreateEventViewState extends State<CreateEventView> {
   }
 
   Future<void> _pickCommunity() async {
+    if (_loadingCommunities) {
+      return;
+    }
     final String? selected = await showScrollablePickerSheet<String>(
       context: context,
       title: 'Comunidad del evento',
-      children: UserCommunitiesMock.participando
+      children: _communities
           .map(
             (UserCommunityOption community) => ListTile(
               leading:
@@ -132,16 +169,9 @@ class _CreateEventViewState extends State<CreateEventView> {
   }
 
   String? _communityLabel() {
-    if (_selectedCommunityId == null) {
-      return null;
-    }
-    for (final UserCommunityOption community
-        in UserCommunitiesMock.participando) {
-      if (community.id == _selectedCommunityId) {
-        return community.name;
-      }
-    }
-    return null;
+    return _communitiesService
+        .findById(_communities, _selectedCommunityId)
+        ?.name;
   }
 
   String? _validateCapacity(String? value) {
@@ -160,6 +190,152 @@ class _CreateEventViewState extends State<CreateEventView> {
       return 'El cupo maximo es 10000';
     }
     return null;
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (mounted && image != null) {
+        setState(() => _selectedImage = image);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo abrir la galeria')),
+        );
+      }
+    }
+  }
+
+  DateTime? _parseDateTime() {
+    final String dateRaw = _dateController.text.trim();
+    final String timeRaw = _timeController.text.trim();
+    if (dateRaw.isEmpty) {
+      return null;
+    }
+    final List<String> parts = dateRaw.split('/');
+    if (parts.length != 3) {
+      return null;
+    }
+    final int? day = int.tryParse(parts[0]);
+    final int? month = int.tryParse(parts[1]);
+    final int? year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) {
+      return null;
+    }
+    int hour = 18;
+    int minute = 0;
+    if (timeRaw.contains(':')) {
+      final List<String> timeParts = timeRaw.split(':');
+      hour = int.tryParse(timeParts[0]) ?? hour;
+      minute = int.tryParse(timeParts[1]) ?? minute;
+    }
+    return DateTime(year, month, day, hour, minute);
+  }
+
+  Future<void> _submitEvent() async {
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Agrega un titulo para el evento')),
+      );
+      return;
+    }
+    if (_selectedCommunityId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona una comunidad')),
+      );
+      return;
+    }
+    final String? capacityError =
+        _validateCapacity(_capacityController.text);
+    if (capacityError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(capacityError)),
+      );
+      return;
+    }
+    if (!AppEnv.useSupabase) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Supabase no esta configurado')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final int comunidadId = int.parse(_selectedCommunityId!);
+      int? cupos;
+      final String capRaw = _capacityController.text.trim().toLowerCase();
+      if (capRaw != 'sin limite' && capRaw != 'sin_limite') {
+        cupos = int.tryParse(capRaw);
+      }
+      int? comunaId;
+      if (_selectedComuna != null) {
+        comunaId = await _eventService.resolveComunaId(_selectedComuna!);
+      }
+
+      final GeocodingResult? coords =
+          await _geocodingService.geocodeChileAddress(
+        address: _addressController.text.trim(),
+        comuna: _selectedComuna,
+        region: _selectedRegion,
+      );
+      if (coords == null &&
+          (_addressController.text.trim().isNotEmpty ||
+              _selectedComuna != null)) {
+        throw Exception(
+          'No se pudo ubicar la direccion en el mapa. Revisa calle, comuna y region.',
+        );
+      }
+
+      String? coverUrl;
+      if (_selectedImage != null) {
+        coverUrl = await _mediaService.uploadImage(
+          file: File(_selectedImage!.path),
+          bucket: MediaBucket.events,
+        );
+      }
+
+      await _eventService.crearEvento(
+        titulo: _titleController.text.trim(),
+        descripcion: _descriptionController.text.trim(),
+        comunidadId: comunidadId,
+        esPrivado: _isPrivate,
+        cuposMax: cupos,
+        direccion: _addressController.text.trim(),
+        ubicacionDireccion: _selectedComuna ?? _selectedRegion,
+        comunaId: comunaId,
+        fechaRealizacion: _parseDateTime(),
+        latitud: coords?.latitude,
+        longitud: coords?.longitude,
+        coverUrl: coverUrl,
+      );
+
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Evento ${_isPrivate ? 'privado' : 'publico'} creado correctamente',
+          ),
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo crear el evento: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
   }
 
   @override
@@ -266,25 +442,7 @@ class _CreateEventViewState extends State<CreateEventView> {
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {
-                          final String? capacityError =
-                              _validateCapacity(_capacityController.text);
-                          if (capacityError != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(capacityError)),
-                            );
-                            return;
-                          }
-                          final String privacy =
-                              _isPrivate ? 'privado' : 'publico';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Evento $privacy guardado localmente (region: ${_selectedRegion ?? '-'}, cupo: ${_capacityController.text.trim()})',
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: _submitting ? null : _submitEvent,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.white,
@@ -292,7 +450,9 @@ class _CreateEventViewState extends State<CreateEventView> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text('Crear evento'),
+                        child: Text(
+                          _submitting ? 'Creando...' : 'Crear evento',
+                        ),
                       ),
                     ),
                   ],
@@ -328,36 +488,49 @@ class _CreateEventViewState extends State<CreateEventView> {
   }
 
   Widget _imageBox() {
-    return Container(
-      height: 146,
-      decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.35),
+    return InkWell(
+      onTap: _pickImage,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 146,
+        decoration: BoxDecoration(
+          color: AppColors.inputBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.35),
+          ),
+          image: _selectedImage == null
+              ? null
+              : DecorationImage(
+                  image: FileImage(File(_selectedImage!.path)),
+                  fit: BoxFit.cover,
+                ),
         ),
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(Icons.add_a_photo_outlined,
-                color: AppColors.primary, size: 30),
-            SizedBox(height: 8),
-            Text(
-              'Cargar imagen del evento',
-              style: TextStyle(
-                color: AppColors.primaryDark,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            SizedBox(height: 3),
-            Text(
-              'Recomendado: 16:9, max 3MB',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
-          ],
-        ),
+        child: _selectedImage == null
+            ? const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(Icons.add_a_photo_outlined,
+                        color: AppColors.primary, size: 30),
+                    SizedBox(height: 8),
+                    Text(
+                      'Cargar imagen del evento',
+                      style: TextStyle(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Recomendado: 16:9, max 3MB',
+                      style:
+                          TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                  ],
+                ),
+              )
+            : null,
       ),
     );
   }

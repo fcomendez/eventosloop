@@ -16,6 +16,7 @@ class ProfileModel {
     this.userId,
     this.isFollowing = false,
     this.avatarUrl,
+    this.email,
   });
 
   final int? userId;
@@ -24,6 +25,7 @@ class ProfileModel {
   final String username;
   final String avatarInitials;
   final String? avatarUrl;
+  final String? email;
   final int postsCount;
   final int followersCount;
   final int followingCount;
@@ -34,6 +36,44 @@ class ProfileModel {
   final List<ProfileWrittenPostModel> writtenPosts;
   final List<ProfilePastEventModel> pastEvents;
   final List<ProfileCommunityModel> communities;
+
+  ProfileModel copyWith({
+    int? userId,
+    String? fullName,
+    String? username,
+    String? avatarInitials,
+    String? avatarUrl,
+    String? email,
+    int? postsCount,
+    int? followersCount,
+    int? followingCount,
+    int? communitiesJoinedCount,
+    bool? isFollowing,
+    List<ProfileImagePostModel>? imagePosts,
+    List<ProfileWrittenPostModel>? writtenPosts,
+    List<ProfileCommunityModel>? communities,
+  }) {
+    return ProfileModel(
+      userId: userId ?? this.userId,
+      isFollowing: isFollowing ?? this.isFollowing,
+      fullName: fullName ?? this.fullName,
+      username: username ?? this.username,
+      avatarInitials: avatarInitials ?? this.avatarInitials,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      email: email ?? this.email,
+      postsCount: postsCount ?? this.postsCount,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+      eventsAttendedCount: eventsAttendedCount,
+      communitiesJoinedCount:
+          communitiesJoinedCount ?? this.communitiesJoinedCount,
+      interests: interests,
+      imagePosts: imagePosts ?? this.imagePosts,
+      writtenPosts: writtenPosts ?? this.writtenPosts,
+      pastEvents: pastEvents,
+      communities: communities ?? this.communities,
+    );
+  }
 }
 
 class ProfileCommunityModel {
@@ -57,11 +97,13 @@ class ProfileImagePostModel {
     required this.id,
     required this.label,
     required this.colorHex,
+    this.mediaUrl,
   });
 
   final int id;
   final String label;
   final String colorHex;
+  final String? mediaUrl;
 }
 
 class ProfileWrittenPostModel {

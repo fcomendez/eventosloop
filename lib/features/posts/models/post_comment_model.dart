@@ -33,6 +33,7 @@ class PostDetailModel {
     this.title,
     this.mediaLabel,
     this.mediaColorHex,
+    this.mediaUrl,
     this.isActive = true,
     this.isOwnedByMe = false,
     this.communityId,
@@ -47,6 +48,7 @@ class PostDetailModel {
   final String body;
   final String? mediaLabel;
   final String? mediaColorHex;
+  final String? mediaUrl;
   final int likesCount;
   final int commentsCount;
   final int sharesCount;

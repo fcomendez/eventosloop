@@ -2,10 +2,14 @@ class UserLocationContext {
   const UserLocationContext({
     required this.region,
     required this.comuna,
+    this.latitude,
+    this.longitude,
   });
 
   final String region;
   final String comuna;
+  final double? latitude;
+  final double? longitude;
 }
 
 class ExploreNearbyEventItem {

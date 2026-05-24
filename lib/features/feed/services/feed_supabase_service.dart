@@ -134,6 +134,7 @@ class FeedSupabaseService {
       contextLabel: hasCommunity ? 'Comunidad: $communityName' : null,
       mediaLabel: row['url_media'] != null ? 'Imagen' : null,
       mediaColorHex: '#D9EAF5',
+      mediaUrl: row['url_media'] as String?,
       likesCount: likesCount,
       commentsCount: commentsCount,
       sharesCount: 0,
@@ -187,5 +188,29 @@ class FeedSupabaseService {
         .map((Map<String, dynamic> row) =>
             (row['publicaciones_id_post'] as num).toInt())
         .toSet();
+  }
+
+  Future<bool> toggleLike({
+    required int postId,
+    required bool currentlyLiked,
+  }) async {
+    final int? userId = await _currentUsuarioId();
+    if (userId == null) {
+      throw Exception('Debes iniciar sesion para reaccionar');
+    }
+    if (currentlyLiked) {
+      await _supabase
+          .from('reacciones_post')
+          .delete()
+          .eq('usuario_id_usuario', userId)
+          .eq('publicaciones_id_post', postId);
+      return false;
+    }
+    await _supabase.from('reacciones_post').insert(<String, dynamic>{
+      'usuario_id_usuario': userId,
+      'publicaciones_id_post': postId,
+      'tipo_reaccion': 'LIKE',
+    });
+    return true;
   }
 }

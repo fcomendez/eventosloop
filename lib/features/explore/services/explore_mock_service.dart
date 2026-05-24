@@ -1,10 +1,37 @@
+import 'dart:math' as math;
+
+import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/services/geocoding_service.dart';
+import 'package:eventosloop/core/services/location_service.dart';
+import 'package:eventosloop/features/communities/models/community_list_item.dart';
+import 'package:eventosloop/features/communities/services/community_supabase_service.dart';
+import 'package:eventosloop/features/events/models/event_model.dart';
+import 'package:eventosloop/features/events/services/event_service.dart';
 import 'package:eventosloop/features/explore/models/explore_catalog_models.dart';
+import 'package:eventosloop/features/posts/services/post_supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ExploreMockService {
-  static const UserLocationContext currentUserLocation = UserLocationContext(
+  ExploreMockService({
+    LocationService? locationService,
+    GeocodingService? geocodingService,
+  })  : _locationService = locationService ?? LocationService(),
+        _geocodingService = geocodingService ?? GeocodingService();
+
+  final LocationService _locationService;
+  final GeocodingService _geocodingService;
+
+  static const UserLocationContext _fallbackLocation = UserLocationContext(
     region: 'Metropolitana de Santiago',
     comuna: 'Providencia',
+    latitude: -33.4372,
+    longitude: -70.6506,
   );
+
+  UserLocationContext? _cachedLocation;
+
+  static const double _fallbackLat = -33.4372;
+  static const double _fallbackLon = -70.6506;
 
   static final List<ExploreNearbyEventItem> _nearbyEvents =
       <ExploreNearbyEventItem>[
@@ -173,13 +200,87 @@ class ExploreMockService {
   ];
 
   Future<UserLocationContext> fetchUserLocation() async {
-    await Future<void>.delayed(const Duration(milliseconds: 80));
-    return currentUserLocation;
+    if (_cachedLocation != null) {
+      return _cachedLocation!;
+    }
+
+    try {
+      final position = await _locationService.getCurrentPosition();
+      final ReverseGeocodingResult? reverse =
+          await _geocodingService.reverseGeocode(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      _cachedLocation = UserLocationContext(
+        region: reverse?.region ?? _fallbackLocation.region,
+        comuna: reverse?.comuna ?? _fallbackLocation.comuna,
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+    } catch (_) {
+      _cachedLocation = _fallbackLocation;
+    }
+
+    return _cachedLocation!;
   }
 
+  UserLocationContext get currentUserLocation =>
+      _cachedLocation ?? _fallbackLocation;
+
   Future<List<ExploreNearbyEventItem>> fetchNearbyEvents() async {
+    final UserLocationContext location = await fetchUserLocation();
+    final double userLat = location.latitude ?? _fallbackLat;
+    final double userLon = location.longitude ?? _fallbackLon;
+
+    if (AppEnv.useSupabase &&
+        Supabase.instance.client.auth.currentSession != null) {
+      try {
+        final EventService eventService = EventService();
+        final List<EventModel> events =
+            await eventService.listarProximos(limit: 20);
+        if (events.isNotEmpty) {
+          final List<_ScoredEvent> scored = events
+              .map(
+                (EventModel event) => _ScoredEvent(
+                  event: event,
+                  distanceKm: _distanceKm(
+                    userLat,
+                    userLon,
+                    event.latitude,
+                    event.longitude,
+                  ),
+                ),
+              )
+              .toList()
+            ..sort((_ScoredEvent a, _ScoredEvent b) {
+              if (a.event.comuna == location.comuna &&
+                  b.event.comuna != location.comuna) {
+                return -1;
+              }
+              if (b.event.comuna == location.comuna &&
+                  a.event.comuna != location.comuna) {
+                return 1;
+              }
+              return a.distanceKm.compareTo(b.distanceKm);
+            });
+          return scored
+              .map(
+                (_ScoredEvent item) => ExploreNearbyEventItem(
+                  eventId: item.event.id,
+                  title: item.event.title,
+                  comuna: item.event.comuna,
+                  region: location.region,
+                  distanceLabel: '${item.distanceKm.toStringAsFixed(1)} km',
+                  dateLabel:
+                      '${item.event.dateLabel} ${item.event.timeLabel}'.trim(),
+                  colorHex: item.event.coverColorHex,
+                ),
+              )
+              .toList();
+        }
+      } catch (_) {}
+    }
     await Future<void>.delayed(const Duration(milliseconds: 120));
-    final UserLocationContext location = currentUserLocation;
     return _nearbyEvents
         .where(
           (ExploreNearbyEventItem event) =>
@@ -199,21 +300,94 @@ class ExploreMockService {
 
   Future<List<ExploreRecommendedCommunityItem>>
       fetchRecommendedCommunities() async {
+    final UserLocationContext location = await fetchUserLocation();
+    if (AppEnv.useSupabase) {
+      try {
+        final CommunitySupabaseService service = CommunitySupabaseService();
+        final List<CommunityListItem> items = await service.listarExplorables();
+        if (items.isNotEmpty) {
+          return items
+              .map((CommunityListItem item) => _mapCommunityListItem(item, location))
+              .toList();
+        }
+      } catch (_) {
+        // Fallback al mock si Supabase falla.
+      }
+    }
     await Future<void>.delayed(const Duration(milliseconds: 120));
     return _recommendedCommunities
         .where(
           (ExploreRecommendedCommunityItem item) =>
-              item.region == currentUserLocation.region,
+              item.region == location.region,
         )
         .toList();
   }
 
+  ExploreRecommendedCommunityItem _mapCommunityListItem(
+    CommunityListItem item,
+    UserLocationContext location,
+  ) {
+    final CommunityInterestTag? firstTag =
+        item.interestTags.isNotEmpty ? item.interestTags.first : null;
+    return ExploreRecommendedCommunityItem(
+      communityId: item.id,
+      title: item.name,
+      membersLabel: item.membersLabel,
+      colorHex: firstTag?.colorHex ?? '#0682BC',
+      region: location.region,
+      matchLabel: firstTag != null
+          ? 'Interes: ${firstTag.name}'
+          : 'Comunidad recomendada',
+    );
+  }
+
   Future<List<ExploreUpcomingEventItem>> fetchUpcomingEvents() async {
+    final UserLocationContext location = await fetchUserLocation();
+    if (AppEnv.useSupabase) {
+      try {
+        final EventService eventService = EventService();
+        final List<EventModel> events =
+            await eventService.listarProximos(limit: 12);
+        if (events.isNotEmpty) {
+          return events
+              .map((EventModel event) => _mapUpcomingEvent(event, location))
+              .toList();
+        }
+      } catch (_) {
+        // Fallback al mock.
+      }
+    }
     await Future<void>.delayed(const Duration(milliseconds: 120));
     return List<ExploreUpcomingEventItem>.from(_upcomingEvents);
   }
 
+  ExploreUpcomingEventItem _mapUpcomingEvent(
+    EventModel event,
+    UserLocationContext location,
+  ) {
+    return ExploreUpcomingEventItem(
+      eventId: event.id,
+      title: event.title,
+      locationLabel: event.locationName,
+      region: location.region,
+      comuna: event.comuna,
+      dateLabel: event.dateLabel,
+      colorHex: event.coverColorHex,
+    );
+  }
+
   Future<List<ExploreFeaturedPostItem>> fetchFeaturedPosts() async {
+    if (AppEnv.useSupabase &&
+        Supabase.instance.client.auth.currentSession != null) {
+      try {
+        final PostSupabaseService service = PostSupabaseService();
+        final List<ExploreFeaturedPostItem> items =
+            await service.fetchFeatured(limit: 6);
+        if (items.isNotEmpty) {
+          return items;
+        }
+      } catch (_) {}
+    }
     await Future<void>.delayed(const Duration(milliseconds: 80));
     return List<ExploreFeaturedPostItem>.from(_featuredPosts);
   }
@@ -230,4 +404,31 @@ class ExploreMockService {
   List<ExploreUpcomingEventItem> previewUpcomingEvents({int limit = 3}) {
     return _upcomingEvents.take(limit).toList();
   }
+
+  double _distanceKm(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadius = 6371;
+    final double dLat = _toRadians(lat2 - lat1);
+    final double dLon = _toRadians(lon2 - lon1);
+    final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_toRadians(lat1)) *
+            math.cos(_toRadians(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    final double c = 2 * math.asin(math.sqrt(a));
+    return earthRadius * c;
+  }
+
+  double _toRadians(double deg) => deg * 3.141592653589793 / 180;
+}
+
+class _ScoredEvent {
+  const _ScoredEvent({required this.event, required this.distanceKm});
+
+  final EventModel event;
+  final double distanceKm;
 }

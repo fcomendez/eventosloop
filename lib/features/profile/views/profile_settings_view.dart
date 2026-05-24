@@ -1,5 +1,7 @@
+import 'package:eventosloop/core/config/app_env.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
+import 'package:eventosloop/features/profile/services/profile_supabase_service.dart';
 import 'package:eventosloop/features/profile/views/profile_interests_settings_view.dart';
 import 'package:eventosloop/features/profile/views/profile_personal_info_view.dart';
 import 'package:flutter/material.dart';
@@ -12,12 +14,93 @@ class ProfileSettingsView extends StatefulWidget {
 }
 
 class _ProfileSettingsViewState extends State<ProfileSettingsView> {
+  final ProfileSupabaseService _profileService = ProfileSupabaseService();
   RangeValues _ageRange = const RangeValues(18, 35);
   bool _notifyRecommendedEvents = true;
   bool _showProfileStats = true;
+  bool _loading = true;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    if (!AppEnv.useSupabase) {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+      return;
+    }
+    final ProfileSettingsData? settings =
+        await _profileService.fetchProfileSettings();
+    if (settings != null && mounted) {
+      setState(() {
+        _ageRange = RangeValues(
+          settings.ageMin.toDouble(),
+          settings.ageMax.toDouble(),
+        );
+        _notifyRecommendedEvents = settings.notifyRecommendedEvents;
+        _showProfileStats = settings.showProfileStats;
+        _loading = false;
+      });
+      return;
+    }
+    if (mounted) {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _saveSettings() async {
+    if (!AppEnv.useSupabase) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Supabase no esta configurado')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await _profileService.saveProfileSettings(
+        ProfileSettingsData(
+          ageMin: _ageRange.start.round(),
+          ageMax: _ageRange.end.round(),
+          notifyRecommendedEvents: _notifyRecommendedEvents,
+          showProfileStats: _showProfileStats,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Configuracion guardada')),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -199,14 +282,17 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Configuracion guardada localmente'),
-                            ),
-                          );
-                        },
-                        child: const Text('Guardar configuracion'),
+                        onPressed: _saving ? null : _saveSettings,
+                        child: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.white,
+                                ),
+                              )
+                            : const Text('Guardar configuracion'),
                       ),
                     ),
                   ],

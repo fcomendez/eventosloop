@@ -331,6 +331,65 @@ class AuthApiService {
     }
   }
 
+  Future<ServiceResult> cambiarPasswordAutenticado({
+    required String passwordActual,
+    required String nuevaPassword,
+  }) async {
+    if (!AppEnv.useSupabase) {
+      return ServiceResult(
+        ok: false,
+        errorMessage: 'Supabase no esta configurado',
+      );
+    }
+    final String? email = _supabase.auth.currentUser?.email;
+    if (email == null || email.isEmpty) {
+      return ServiceResult(
+        ok: false,
+        errorMessage: 'No hay sesion activa',
+        useDialog: true,
+      );
+    }
+    try {
+      final AuthResponse reauth = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: passwordActual,
+      );
+      if (reauth.session == null) {
+        return ServiceResult(
+          ok: false,
+          errorMessage: 'Contrasena actual incorrecta',
+          field: AuthFieldKey.password,
+        );
+      }
+      final UserResponse response = await _supabase.auth.updateUser(
+        UserAttributes(password: nuevaPassword),
+      );
+      if (response.user == null) {
+        return ServiceResult(
+          ok: false,
+          errorMessage: 'No se pudo actualizar la contrasena',
+          field: AuthFieldKey.password,
+        );
+      }
+      return ServiceResult(ok: true);
+    } on AuthException catch (e) {
+      final MappedAuthError mapped = AuthErrorMapper.fromAuthException(e);
+      return ServiceResult(
+        ok: false,
+        errorMessage: mapped.message,
+        field: mapped.field ?? AuthFieldKey.password,
+        useDialog: mapped.useDialog,
+      );
+    } catch (e) {
+      final MappedAuthError mapped = AuthErrorMapper.fromNetwork(e);
+      return ServiceResult(
+        ok: false,
+        errorMessage: mapped.message,
+        useDialog: mapped.useDialog,
+      );
+    }
+  }
+
   Future<ServiceResult> registrarUsuario(RegisterFormModel model) async {
     if (!AppEnv.useSupabase) {
       return ServiceResult(ok: true);

@@ -145,6 +145,11 @@ class EventMockService {
         .toList();
   }
 
+  Future<List<EventModel>> fetchAll() async {
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    return List<EventModel>.from(_events);
+  }
+
   Future<void> updateEvent({
     required int eventId,
     required String title,

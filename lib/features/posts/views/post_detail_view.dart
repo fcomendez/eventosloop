@@ -1,8 +1,9 @@
+import 'package:eventosloop/core/widgets/loop_media_image.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/content_options_sheet.dart';
 import 'package:eventosloop/features/create/views/edit_post_view.dart';
 import 'package:eventosloop/features/posts/models/post_comment_model.dart';
-import 'package:eventosloop/features/posts/services/post_detail_mock_service.dart';
+import 'package:eventosloop/features/posts/services/post_detail_service.dart';
 import 'package:eventosloop/features/report/models/report_content_model.dart';
 import 'package:eventosloop/features/report/views/report_content_view.dart';
 import 'package:flutter/material.dart';
@@ -17,12 +18,14 @@ class PostDetailView extends StatefulWidget {
 }
 
 class _PostDetailViewState extends State<PostDetailView> {
-  final PostDetailMockService _service = PostDetailMockService();
+  final PostDetailService _service = PostDetailService();
   final TextEditingController _commentController = TextEditingController();
 
   PostDetailModel? _post;
   bool _loading = true;
   bool _liked = false;
+  bool _submittingComment = false;
+  bool _togglingLike = false;
 
   @override
   void initState() {
@@ -46,6 +49,47 @@ class _PostDetailViewState extends State<PostDetailView> {
       _liked = post?.likedByMe ?? false;
       _loading = false;
     });
+  }
+
+  Future<void> _submitComment() async {
+    final String text = _commentController.text.trim();
+    if (text.isEmpty || _post == null) {
+      return;
+    }
+    setState(() => _submittingComment = true);
+    try {
+      await _service.addComment(postId: _post!.id, text: text);
+      _commentController.clear();
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo comentar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _submittingComment = false);
+      }
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    if (_post == null || _togglingLike) {
+      return;
+    }
+    setState(() => _togglingLike = true);
+    try {
+      await _service.toggleLike(
+        postId: _post!.id,
+        currentlyLiked: _liked,
+      );
+      await _load();
+    } finally {
+      if (mounted) {
+        setState(() => _togglingLike = false);
+      }
+    }
   }
 
   void _openOptions(PostDetailModel post) {
@@ -126,11 +170,7 @@ class _PostDetailViewState extends State<PostDetailView> {
                                 post: _post!,
                                 liked: _liked,
                                 parseHex: _parseHex,
-                                onLike: () {
-                                  setState(() {
-                                    _liked = !_liked;
-                                  });
-                                },
+                                onLike: _togglingLike ? () {} : _toggleLike,
                               ),
                               Padding(
                                 padding:
@@ -157,7 +197,10 @@ class _PostDetailViewState extends State<PostDetailView> {
                             ],
                           ),
                         ),
-                        _CommentInput(controller: _commentController),
+                        _CommentInput(
+                          controller: _commentController,
+                          onSubmit: _submittingComment ? null : _submitComment,
+                        ),
                       ],
                     ),
         ),
@@ -220,7 +263,8 @@ class _UnifiedPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasMedia = post.mediaLabel != null;
+    final bool hasMedia =
+        post.mediaUrl != null || post.mediaLabel != null;
 
     return ColoredBox(
       color: AppColors.white,
@@ -286,28 +330,36 @@ class _UnifiedPostCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 280,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: <Color>[
-                      parseHex(post.mediaColorHex),
-                      AppColors.primaryDark.withValues(alpha: 0.92),
-                    ],
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    post.mediaLabel!,
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
+              child: post.mediaUrl != null
+                  ? LoopMediaImage(
+                      url: post.mediaUrl!,
+                      height: 280,
+                      width: double.infinity,
+                      fallbackColorHex: post.mediaColorHex ?? '#D9EAF5',
+                      fallbackLabel: post.mediaLabel,
+                    )
+                  : DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: <Color>[
+                            parseHex(post.mediaColorHex),
+                            AppColors.primaryDark.withValues(alpha: 0.92),
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          post.mediaLabel!,
+                          style: const TextStyle(
+                            color: AppColors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
             ),
           Padding(
             padding: EdgeInsets.fromLTRB(14, hasMedia ? 12 : 0, 14, 10),
@@ -476,9 +528,13 @@ class _CommentTile extends StatelessWidget {
 }
 
 class _CommentInput extends StatelessWidget {
-  const _CommentInput({required this.controller});
+  const _CommentInput({
+    required this.controller,
+    this.onSubmit,
+  });
 
   final TextEditingController controller;
+  final VoidCallback? onSubmit;
 
   @override
   Widget build(BuildContext context) {
@@ -510,7 +566,7 @@ class _CommentInput extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           TextButton(
-            onPressed: () {},
+            onPressed: onSubmit,
             child: const Text(
               'Publicar',
               style: TextStyle(fontWeight: FontWeight.w900),

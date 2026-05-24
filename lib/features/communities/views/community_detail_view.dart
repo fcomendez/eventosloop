@@ -1,10 +1,12 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/full_bleed_publication_card.dart';
+import 'package:eventosloop/core/widgets/loop_media_image.dart';
+import 'package:eventosloop/features/communities/models/community_list_item.dart';
 import 'package:eventosloop/features/communities/models/community_model.dart';
-import 'package:eventosloop/features/communities/services/community_detail_mock_service.dart';
+import 'package:eventosloop/features/communities/services/community_detail_service.dart';
 import 'package:eventosloop/features/events/models/event_model.dart';
-import 'package:eventosloop/features/events/services/event_mock_service.dart';
+import 'package:eventosloop/features/events/services/event_service.dart';
 import 'package:flutter/material.dart';
 
 class CommunityDetailView extends StatefulWidget {
@@ -17,11 +19,11 @@ class CommunityDetailView extends StatefulWidget {
 }
 
 class _CommunityDetailViewState extends State<CommunityDetailView> {
-  final CommunityDetailMockService _communityService =
-      CommunityDetailMockService();
-  final EventMockService _eventService = EventMockService();
+  final CommunityDetailService _communityService = CommunityDetailService();
+  final EventService _eventService = EventService();
 
   CommunityModel? _community;
+  List<CommunityMemberItem> _members = <CommunityMemberItem>[];
   List<CommunityPostModel> _posts = <CommunityPostModel>[];
   List<EventModel> _events = <EventModel>[];
   int _selectedTab = 0;
@@ -34,26 +36,20 @@ class _CommunityDetailViewState extends State<CommunityDetailView> {
   }
 
   Future<void> _load() async {
-    final CommunityModel? community =
-        await _communityService.fetchById(widget.communityId);
-    final List<CommunityPostModel> posts =
-        await _communityService.fetchPosts(widget.communityId);
+    final CommunityDetailData? detail =
+        await _communityService.fetchDetail(widget.communityId);
     final List<EventModel> events =
         await _eventService.fetchByCommunityId(widget.communityId);
     if (!mounted) {
       return;
     }
     setState(() {
-      _community = community;
-      _posts = posts;
+      _community = detail?.community;
+      _members = detail?.members ?? <CommunityMemberItem>[];
+      _posts = detail?.posts ?? <CommunityPostModel>[];
       _events = events;
       _loading = false;
     });
-  }
-
-  Color _parseHex(String value) {
-    final String clean = value.replaceFirst('#', '');
-    return Color(int.parse('FF$clean', radix: 16));
   }
 
   @override
@@ -88,14 +84,15 @@ class _CommunityDetailViewState extends State<CommunityDetailView> {
                                 child: Column(
                                   children: <Widget>[
                                     _CommunityHeader(
-                                      color:
-                                          _parseHex(_community!.coverColorHex),
+                                      coverColorHex: _community!.coverColorHex,
+                                      bannerUrl: _community!.bannerUrl,
                                       name: _community!.name,
                                       tags: _community!.tags,
                                       isActive: _community!.isActive,
                                       description: _community!.description,
                                       activityLabel:
                                           _community!.activityLabel,
+                                      members: _members,
                                     ),
                                     const SizedBox(height: 16),
                                     _ContentTabs(
@@ -216,20 +213,29 @@ class _TopBar extends StatelessWidget {
 
 class _CommunityHeader extends StatelessWidget {
   const _CommunityHeader({
-    required this.color,
+    required this.coverColorHex,
+    this.bannerUrl,
     required this.name,
     required this.tags,
     required this.isActive,
     required this.description,
     required this.activityLabel,
+    required this.members,
   });
 
-  final Color color;
+  final String coverColorHex;
+  final String? bannerUrl;
   final String name;
   final List<String> tags;
   final bool isActive;
   final String description;
   final String activityLabel;
+  final List<CommunityMemberItem> members;
+
+  Color _parseHex(String value) {
+    final String clean = value.replaceFirst('#', '');
+    return Color(int.parse('FF$clean', radix: 16));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,18 +255,29 @@ class _CommunityHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Container(
+          SizedBox(
             height: 150,
-            color: color,
             child: Stack(
+              fit: StackFit.expand,
               children: <Widget>[
-                Center(
-                  child: Icon(
-                    Icons.groups_outlined,
-                    size: 56,
-                    color: AppColors.white.withValues(alpha: 0.88),
+                if (bannerUrl != null && bannerUrl!.trim().isNotEmpty)
+                  LoopMediaImage(
+                    url: bannerUrl!,
+                    height: 150,
+                    width: double.infinity,
+                    fallbackColorHex: coverColorHex,
+                  )
+                else
+                  Container(
+                    color: _parseHex(coverColorHex),
+                    child: Center(
+                      child: Icon(
+                        Icons.groups_outlined,
+                        size: 56,
+                        color: AppColors.white.withValues(alpha: 0.88),
+                      ),
+                    ),
                   ),
-                ),
                 if (isActive)
                   Positioned(
                     left: 12,
@@ -370,6 +387,33 @@ class _CommunityHeader extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (members.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Miembros',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: members
+                        .map(
+                          (CommunityMemberItem member) => Chip(
+                            label: Text(
+                              '${member.displayName} (${member.rol})',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
               ],
             ),
           ),

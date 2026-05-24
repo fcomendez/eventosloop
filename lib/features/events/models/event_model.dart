@@ -1,4 +1,5 @@
 import 'package:eventosloop/features/events/models/event_status.dart';
+import 'package:eventosloop/features/events/models/event_participation_status.dart';
 
 class EventModel {
   const EventModel({
@@ -18,6 +19,7 @@ class EventModel {
     required this.joinedCount,
     required this.coverColorHex,
     required this.communityId,
+    this.coverUrl,
     this.subCategory,
     this.isFlash = false,
     this.isHighlighted = false,
@@ -26,6 +28,7 @@ class EventModel {
     this.isHostedByMe = false,
     this.status = EventStatus.active,
     this.hostAvatarUrl,
+    this.participationStatus = EventParticipationStatus.none,
   });
 
   final int id;
@@ -44,6 +47,7 @@ class EventModel {
   final int capacity;
   final int joinedCount;
   final String coverColorHex;
+  final String? coverUrl;
   final int communityId;
   final bool isFlash;
   final bool isHighlighted;
@@ -52,6 +56,7 @@ class EventModel {
   final bool isHostedByMe;
   final EventStatus status;
   final String? hostAvatarUrl;
+  final EventParticipationStatus participationStatus;
 
   double get capacityProgress =>
       capacity <= 0 ? 0 : (joinedCount / capacity).clamp(0, 1);
@@ -61,5 +66,8 @@ class EventModel {
   bool get isSuspended => status == EventStatus.suspended;
 
   bool get isJoinableByParticipants =>
-      status == EventStatus.active && !isHostedByMe;
+      status == EventStatus.active &&
+      !isHostedByMe &&
+      participationStatus == EventParticipationStatus.none &&
+      (capacity <= 0 || joinedCount < capacity);
 }

@@ -1,4 +1,8 @@
-﻿-- LOOP / Supabase â€” MER: region
+﻿-- LOOP â€” Esquema completo (tablas, RLS, RPCs)
+-- Sin datos de catalogo ni demo. Ejecutar con scripts/apply-schema.ps1
+-- Idempotente: se puede re-ejecutar en desarrollo.
+
+-- LOOP / Supabase â€” MER: region
 -- Ejecutar antes de comuna.sql (comuna referencia region).
 
 create table if not exists public.region (
@@ -7,25 +11,6 @@ create table if not exists public.region (
   created_at timestamptz not null default now()
 );
 
-insert into public.region (nombre)
-values
-  ('Arica y Parinacota'),
-  ('Tarapaca'),
-  ('Antofagasta'),
-  ('Atacama'),
-  ('Coquimbo'),
-  ('Valparaiso'),
-  ('Metropolitana de Santiago'),
-  ('O Higgins'),
-  ('Maule'),
-  ('Nuble'),
-  ('Biobio'),
-  ('La Araucania'),
-  ('Los Rios'),
-  ('Los Lagos'),
-  ('Aysen'),
-  ('Magallanes y de la Antartica Chilena')
-on conflict (nombre) do nothing;
 
 alter table public.region enable row level security;
 
@@ -75,78 +60,6 @@ begin
   end if;
 end $$;
 
-insert into public.comuna (nombre, region_id_region)
-select v.nombre, r.id_region
-from (values
-  ('Arica', 'Arica y Parinacota'),
-  ('Camarones', 'Arica y Parinacota'),
-  ('Putre', 'Arica y Parinacota'),
-  ('General Lagos', 'Arica y Parinacota'),
-  ('Iquique', 'Tarapaca'),
-  ('Alto Hospicio', 'Tarapaca'),
-  ('Pozo Almonte', 'Tarapaca'),
-  ('Antofagasta', 'Antofagasta'),
-  ('Calama', 'Antofagasta'),
-  ('Mejillones', 'Antofagasta'),
-  ('Tocopilla', 'Antofagasta'),
-  ('Copiapo', 'Atacama'),
-  ('Caldera', 'Atacama'),
-  ('Vallenar', 'Atacama'),
-  ('Chanaral', 'Atacama'),
-  ('La Serena', 'Coquimbo'),
-  ('Coquimbo', 'Coquimbo'),
-  ('Ovalle', 'Coquimbo'),
-  ('Illapel', 'Coquimbo'),
-  ('Valparaiso', 'Valparaiso'),
-  ('Vina del Mar', 'Valparaiso'),
-  ('Quilpue', 'Valparaiso'),
-  ('San Antonio', 'Valparaiso'),
-  ('Santiago', 'Metropolitana de Santiago'),
-  ('Puente Alto', 'Metropolitana de Santiago'),
-  ('Maipu', 'Metropolitana de Santiago'),
-  ('Las Condes', 'Metropolitana de Santiago'),
-  ('La Florida', 'Metropolitana de Santiago'),
-  ('Providencia', 'Metropolitana de Santiago'),
-  ('Nunoa', 'Metropolitana de Santiago'),
-  ('Rancagua', 'O Higgins'),
-  ('San Fernando', 'O Higgins'),
-  ('Rengo', 'O Higgins'),
-  ('Santa Cruz', 'O Higgins'),
-  ('Talca', 'Maule'),
-  ('Curico', 'Maule'),
-  ('Linares', 'Maule'),
-  ('Constitucion', 'Maule'),
-  ('Chillan', 'Nuble'),
-  ('San Carlos', 'Nuble'),
-  ('Bulnes', 'Nuble'),
-  ('Quillon', 'Nuble'),
-  ('Concepcion', 'Biobio'),
-  ('Talcahuano', 'Biobio'),
-  ('Los Angeles', 'Biobio'),
-  ('Chiguayante', 'Biobio'),
-  ('Temuco', 'La Araucania'),
-  ('Padre Las Casas', 'La Araucania'),
-  ('Villarrica', 'La Araucania'),
-  ('Angol', 'La Araucania'),
-  ('Valdivia', 'Los Rios'),
-  ('La Union', 'Los Rios'),
-  ('Rio Bueno', 'Los Rios'),
-  ('Panguipulli', 'Los Rios'),
-  ('Puerto Montt', 'Los Lagos'),
-  ('Osorno', 'Los Lagos'),
-  ('Castro', 'Los Lagos'),
-  ('Puerto Varas', 'Los Lagos'),
-  ('Coyhaique', 'Aysen'),
-  ('Aysen', 'Aysen'),
-  ('Chile Chico', 'Aysen'),
-  ('Cochrane', 'Aysen'),
-  ('Punta Arenas', 'Magallanes y de la Antartica Chilena'),
-  ('Puerto Natales', 'Magallanes y de la Antartica Chilena'),
-  ('Porvenir', 'Magallanes y de la Antartica Chilena'),
-  ('Cabo de Hornos', 'Magallanes y de la Antartica Chilena')
-) as v(nombre, region_nombre)
-inner join public.region r on r.nombre = v.region_nombre
-on conflict (nombre, region_id_region) do nothing;
 
 create index if not exists idx_comuna_region
   on public.comuna(region_id_region);
@@ -273,68 +186,6 @@ for delete
 to authenticated
 using (auth_user_id = auth.uid());
 
--- Semilla inicial basada en listado inicial de intereses
--- Nota: "icono" usa nombres tecnicos de Material Icons (en ingles).
--- Eso no afecta el idioma visual de la app, solo el identificador interno.
-insert into public.intereses (categoria, nombre, slug, icono, color_hex)
-values
-  ('DEPORTE', 'Running', 'running', 'directions_run', '#0682BC'),
-  ('DEPORTE', 'Atletismo', 'atletismo', 'timer', '#0682BC'),
-  ('DEPORTE', 'Futbol', 'futbol', 'sports_soccer', '#0682BC'),
-  ('DEPORTE', 'Basquetbol', 'basquetbol', 'sports_basketball', '#0682BC'),
-  ('DEPORTE', 'Voleibol', 'voleibol', 'sports_volleyball', '#0682BC'),
-  ('DEPORTE', 'Senderismo', 'senderismo', 'hiking', '#0682BC'),
-  ('DEPORTE', 'Trekking', 'trekking', 'terrain', '#0682BC'),
-  ('DEPORTE', 'Ciclismo', 'ciclismo', 'directions_bike', '#0682BC'),
-  ('DEPORTE', 'Patinaje', 'patinaje', 'roller_skating', '#0682BC'),
-  ('BIENESTAR', 'Yoga', 'yoga', 'self_improvement', '#0682BC'),
-  ('BIENESTAR', 'Meditacion', 'meditacion', 'spa', '#0682BC'),
-  ('DEPORTE', 'Boxeo', 'boxeo', 'sports_mma', '#0682BC'),
-  ('DEPORTE', 'Karate', 'karate', 'sports_kabaddi', '#0682BC'),
-  ('GASTRONOMIA', 'Gastronomia', 'gastronomia', 'restaurant', '#0682BC'),
-  ('GASTRONOMIA', 'Cafeteria', 'cafeteria', 'coffee', '#0682BC'),
-  ('GASTRONOMIA', 'Enologia', 'enologia', 'wine_bar', '#0682BC'),
-  ('GASTRONOMIA', 'Cocteleria', 'cocteleria', 'local_bar', '#0682BC'),
-  ('GASTRONOMIA', 'Cocina', 'cocina', 'soup_kitchen', '#0682BC'),
-  ('GASTRONOMIA', 'Reposteria', 'reposteria', 'cake', '#0682BC'),
-  ('GASTRONOMIA', 'Picnic', 'picnic', 'lunch_dining', '#0682BC'),
-  ('CULTURA', 'Cine', 'cine', 'movie', '#0682BC'),
-  ('CULTURA', 'Teatro', 'teatro', 'theaters', '#0682BC'),
-  ('CULTURA', 'Conciertos', 'conciertos', 'music_note', '#0682BC'),
-  ('CULTURA', 'Festivales', 'festivales', 'celebration', '#0682BC'),
-  ('CULTURA', 'Museos', 'museos', 'museum', '#0682BC'),
-  ('ARTE', 'Fotografia', 'fotografia', 'photo_camera', '#0682BC'),
-  ('CULTURA', 'Lectura', 'lectura', 'menu_book', '#0682BC'),
-  ('JUEGOS', 'Ajedrez', 'ajedrez', 'extension', '#0682BC'),
-  ('JUEGOS', 'Billar', 'billar', 'sports', '#0682BC'),
-  ('JUEGOS', 'Videojuegos', 'videojuegos', 'sports_esports', '#0682BC'),
-  ('JUEGOS', 'Gaming', 'gaming', 'stadia_controller', '#0682BC'),
-  ('BAILE', 'Salsa', 'salsa', 'music_note', '#0682BC'),
-  ('BAILE', 'Bachata', 'bachata', 'music_note', '#0682BC'),
-  ('JUEGOS', 'Trivia', 'trivia', 'quiz', '#0682BC'),
-  ('ENTRETENCION', 'Karaoke', 'karaoke', 'mic', '#0682BC'),
-  ('EDUCACION', 'Idiomas', 'idiomas', 'translate', '#0682BC'),
-  ('ARTE', 'Ceramica', 'ceramica', 'palette', '#0682BC'),
-  ('ARTE', 'Pintura', 'pintura', 'format_paint', '#0682BC'),
-  ('ARTE', 'Costura', 'costura', 'content_cut', '#0682BC'),
-  ('PROFESIONAL', 'Networking', 'networking', 'groups', '#0682BC'),
-  ('PROFESIONAL', 'Emprendimiento', 'emprendimiento', 'lightbulb', '#0682BC'),
-  ('PROFESIONAL', 'Debate', 'debate', 'record_voice_over', '#0682BC'),
-  ('SOCIAL', 'Voluntariado', 'voluntariado', 'volunteer_activism', '#0682BC'),
-  ('ESTILO_DE_VIDA', 'Mascotas', 'mascotas', 'pets', '#0682BC'),
-  ('ESTILO_DE_VIDA', 'Viajes', 'viajes', 'flight', '#0682BC'),
-  ('ESTILO_DE_VIDA', 'Campismo', 'campismo', 'camping', '#0682BC'),
-  ('ESTILO_DE_VIDA', 'Jardineria', 'jardineria', 'yard', '#0682BC'),
-  ('ESTILO_DE_VIDA', 'Bricolaje', 'bricolaje', 'handyman', '#0682BC'),
-  ('CIENCIA', 'Astronomia', 'astronomia', 'nightlight', '#0682BC'),
-  ('ARTE', 'Bisuteria', 'bisuteria', 'diamond', '#0682BC')
-on conflict (slug) do update
-set
-  categoria = excluded.categoria,
-  nombre = excluded.nombre,
-  icono = excluded.icono,
-  color_hex = excluded.color_hex,
-  activo = true;
 -- LOOP / Supabase â€” MER: comunidades
 -- Requiere: usuario.sql
 
@@ -457,6 +308,7 @@ create table if not exists public.evento (
   estado text not null default 'ACTIVO',
   es_privado boolean not null default false,
   whatsapp_link text,
+  cover_url text,
   usuario_id_usuario bigint not null references public.usuario(id_usuario) on delete cascade,
   comuna_id_comuna bigint references public.comuna(id_comuna) on delete set null,
   comunidad_id_comunidad bigint references public.comunidades(id_comunidad) on delete set null
@@ -979,3 +831,719 @@ begin
   select auth.uid(), unnest(ids);
 end;
 $$;
+
+
+-- ---------------------------------------------------------------------------
+-- Comunidades fase 2: estado, intereses puente, RLS avanzada, RPCs
+-- ---------------------------------------------------------------------------
+-- LOOP â€” Fase 2 comunidades: estado, intereses, RLS privacidad, RPCs admin/moderadores
+-- Ejecutar DESPUES de apply-schema.ps1 (re-ejecutable)
+
+-- Helpers
+create or replace function public.usuario_actual_id()
+returns bigint
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select id_usuario from public.usuario where auth_user_id = auth.uid() limit 1;
+$$;
+
+create or replace function public.es_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.usuario u
+    where u.auth_user_id = auth.uid()
+      and u.rol_user = 'ADMIN'
+  )
+  or exists (
+    select 1
+    from public.roles_sistema rs
+    inner join public.usuario u on u.id_usuario = rs.usuario_id_usuario
+    where u.auth_user_id = auth.uid()
+      and rs.nombre_rol = 'ADMIN'
+  );
+$$;
+
+create or replace function public.es_miembro_comunidad(p_comunidad_id bigint)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.miembro_comunidad mc
+    where mc.id_comunidad = p_comunidad_id
+      and mc.usuario_id_usuario = public.usuario_actual_id()
+  );
+$$;
+
+create or replace function public.es_lider_comunidad(p_comunidad_id bigint)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.miembro_comunidad mc
+    where mc.id_comunidad = p_comunidad_id
+      and mc.usuario_id_usuario = public.usuario_actual_id()
+      and mc.rol = 'LIDER'
+  );
+$$;
+
+-- Columna estado en comunidades
+alter table public.comunidades
+  add column if not exists estado text not null default 'PENDIENTE';
+
+alter table public.comunidades
+  drop constraint if exists comunidades_estado_check;
+alter table public.comunidades
+  add constraint comunidades_estado_check
+  check (estado in ('PENDIENTE', 'ACTIVA', 'BLOQUEADA'));
+
+alter table public.comunidades
+  drop constraint if exists comunidades_privacidad_check;
+alter table public.comunidades
+  add constraint comunidades_privacidad_check
+  check (privacidad in ('PUBLICA', 'PRIVADA'));
+
+create index if not exists idx_comunidades_estado
+  on public.comunidades(estado);
+
+create index if not exists idx_comunidades_privacidad
+  on public.comunidades(privacidad);
+
+-- Tabla puente comunidad_intereses
+create table if not exists public.comunidad_intereses (
+  id_comunidad bigint not null references public.comunidades(id_comunidad) on delete cascade,
+  id_interes bigint not null references public.intereses(id_interes) on delete cascade,
+  primary key (id_comunidad, id_interes)
+);
+
+create index if not exists idx_comunidad_intereses_interes
+  on public.comunidad_intereses(id_interes);
+
+alter table public.comunidad_intereses enable row level security;
+
+-- RLS comunidades: filtrar privadas y pendientes
+drop policy if exists comunidades_select_authenticated on public.comunidades;
+drop policy if exists comunidades_select_visible on public.comunidades;
+create policy comunidades_select_visible
+on public.comunidades
+for select
+to authenticated
+using (
+  public.es_admin()
+  or usuario_id_usuario = public.usuario_actual_id()
+  or (
+    estado = 'ACTIVA'
+    and (
+      privacidad = 'PUBLICA'
+      or public.es_miembro_comunidad(id_comunidad)
+    )
+  )
+);
+
+drop policy if exists comunidades_insert_own on public.comunidades;
+create policy comunidades_insert_own
+on public.comunidades
+for insert
+to authenticated
+with check (
+  usuario_id_usuario = public.usuario_actual_id()
+  and estado = 'PENDIENTE'
+);
+
+drop policy if exists comunidades_update_owner on public.comunidades;
+create policy comunidades_update_owner
+on public.comunidades
+for update
+to authenticated
+using (
+  usuario_id_usuario = public.usuario_actual_id()
+  and estado = 'PENDIENTE'
+);
+
+drop policy if exists comunidades_update_admin on public.comunidades;
+create policy comunidades_update_admin
+on public.comunidades
+for update
+to authenticated
+using (public.es_admin());
+
+-- RLS comunidad_intereses
+drop policy if exists comunidad_intereses_select_visible on public.comunidad_intereses;
+create policy comunidad_intereses_select_visible
+on public.comunidad_intereses
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.comunidades c
+    where c.id_comunidad = comunidad_intereses.id_comunidad
+      and (
+        public.es_admin()
+        or c.usuario_id_usuario = public.usuario_actual_id()
+        or (
+          c.estado = 'ACTIVA'
+          and (
+            c.privacidad = 'PUBLICA'
+            or public.es_miembro_comunidad(c.id_comunidad)
+          )
+        )
+      )
+  )
+);
+
+-- RLS miembro_comunidad: permitir update de rol por lider/admin
+drop policy if exists miembro_comunidad_update_rol on public.miembro_comunidad;
+create policy miembro_comunidad_update_rol
+on public.miembro_comunidad
+for update
+to authenticated
+using (
+  public.es_admin()
+  or public.es_lider_comunidad(id_comunidad)
+);
+
+-- RPC: solicitar crear comunidad (queda PENDIENTE)
+create or replace function public.solicitar_comunidad(
+  p_nombre text,
+  p_descripcion text,
+  p_privacidad text default 'PUBLICA',
+  p_interes_ids bigint[] default '{}'
+)
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid bigint;
+  v_id bigint;
+  v_interes bigint;
+begin
+  v_uid := public.usuario_actual_id();
+  if v_uid is null then
+    raise exception 'Usuario no encontrado';
+  end if;
+  if p_nombre is null or length(trim(p_nombre)) < 3 then
+    raise exception 'El nombre debe tener al menos 3 caracteres';
+  end if;
+  if p_privacidad not in ('PUBLICA', 'PRIVADA') then
+    raise exception 'Privacidad invalida';
+  end if;
+
+  insert into public.comunidades (
+    nombre, descripcion, privacidad, estado, usuario_id_usuario
+  )
+  values (
+    trim(p_nombre), nullif(trim(coalesce(p_descripcion, '')), ''),
+    p_privacidad, 'PENDIENTE', v_uid
+  )
+  returning id_comunidad into v_id;
+
+  foreach v_interes in array coalesce(p_interes_ids, '{}')
+  loop
+    insert into public.comunidad_intereses (id_comunidad, id_interes)
+    values (v_id, v_interes)
+    on conflict do nothing;
+  end loop;
+
+  return v_id;
+end;
+$$;
+
+-- RPC: admin aprueba PENDIENTE -> ACTIVA
+create or replace function public.aprobar_comunidad(p_id_comunidad bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_owner bigint;
+begin
+  if not public.es_admin() then
+    raise exception 'No autorizado';
+  end if;
+
+  update public.comunidades
+  set estado = 'ACTIVA'
+  where id_comunidad = p_id_comunidad
+    and estado = 'PENDIENTE'
+  returning usuario_id_usuario into v_owner;
+
+  if v_owner is null then
+    raise exception 'Comunidad no encontrada o ya procesada';
+  end if;
+
+  insert into public.miembro_comunidad (id_comunidad, usuario_id_usuario, rol)
+  values (p_id_comunidad, v_owner, 'LIDER')
+  on conflict (id_comunidad, usuario_id_usuario) do update set rol = 'LIDER';
+end;
+$$;
+
+-- RPC: asignar rol de miembro (MODERADOR, MIEMBRO, LIDER)
+create or replace function public.asignar_rol_miembro_comunidad(
+  p_id_comunidad bigint,
+  p_usuario_id bigint,
+  p_rol text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_rol not in ('MIEMBRO', 'MODERADOR', 'LIDER') then
+    raise exception 'Rol invalido';
+  end if;
+  if not (public.es_admin() or public.es_lider_comunidad(p_id_comunidad)) then
+    raise exception 'No autorizado';
+  end if;
+
+  update public.miembro_comunidad
+  set rol = p_rol
+  where id_comunidad = p_id_comunidad
+    and usuario_id_usuario = p_usuario_id;
+
+  if not found then
+    raise exception 'Miembro no encontrado en la comunidad';
+  end if;
+end;
+$$;
+
+grant execute on function public.solicitar_comunidad(text, text, text, bigint[]) to authenticated;
+grant execute on function public.aprobar_comunidad(bigint) to authenticated;
+grant execute on function public.asignar_rol_miembro_comunidad(bigint, bigint, text) to authenticated;
+
+
+-- ---------------------------------------------------------------------------
+-- Reportes de eventos
+-- ---------------------------------------------------------------------------
+-- LOOP / Supabase â€” reporte de eventos
+-- Requiere: evento.sql, usuario.sql, roles_sistema.sql
+
+create table if not exists public.reporte_evento (
+  id_reporte bigint generated always as identity primary key,
+  motivo text not null,
+  descripcion text,
+  estado text not null default 'PENDIENTE',
+  fecha_reporte timestamptz not null default now(),
+  fecha_resolucion timestamptz,
+  usuario_id_usuario bigint not null references public.usuario(id_usuario) on delete cascade,
+  evento_id_evento bigint not null references public.evento(id_evento) on delete cascade,
+  moderador_id_usuario bigint references public.usuario(id_usuario) on delete set null
+);
+
+create index if not exists idx_reporte_evento_evento
+  on public.reporte_evento(evento_id_evento);
+
+create index if not exists idx_reporte_evento_estado
+  on public.reporte_evento(estado);
+
+alter table public.reporte_evento enable row level security;
+
+drop policy if exists reporte_evento_select_own_or_admin on public.reporte_evento;
+create policy reporte_evento_select_own_or_admin
+on public.reporte_evento
+for select
+to authenticated
+using (
+  usuario_id_usuario in (
+    select id_usuario from public.usuario where auth_user_id = auth.uid()
+  )
+  or public.es_admin_o_moderador()
+);
+
+drop policy if exists reporte_evento_insert_own on public.reporte_evento;
+create policy reporte_evento_insert_own
+on public.reporte_evento
+for insert
+to authenticated
+with check (
+  usuario_id_usuario in (
+    select id_usuario from public.usuario where auth_user_id = auth.uid()
+  )
+);
+
+drop policy if exists reporte_evento_update_admin on public.reporte_evento;
+create policy reporte_evento_update_admin
+on public.reporte_evento
+for update
+to authenticated
+using (public.es_admin_o_moderador());
+
+
+-- ---------------------------------------------------------------------------
+-- Lectura anonima region/comuna (formulario de registro)
+-- ---------------------------------------------------------------------------
+-- Permite leer region y comuna durante el registro (usuario aun no autenticado).
+-- Ejecutar en Supabase SQL Editor si el formulario de registro no carga ubicaciones.
+
+drop policy if exists region_select_anon on public.region;
+create policy region_select_anon
+on public.region
+for select
+to anon
+using (true);
+
+drop policy if exists comuna_select_anon on public.comuna;
+create policy comuna_select_anon
+on public.comuna
+for select
+to anon
+using (true);
+
+-- ---------------------------------------------------------------------------
+-- Preferencias de perfil y contacto extendido
+-- ---------------------------------------------------------------------------
+alter table public.usuario add column if not exists telefono text;
+alter table public.usuario add column if not exists nacionalidad text default 'Chileno';
+alter table public.usuario add column if not exists edad_min_eventos int not null default 18;
+alter table public.usuario add column if not exists edad_max_eventos int not null default 35;
+alter table public.usuario add column if not exists notificar_eventos_recomendados boolean not null default true;
+alter table public.usuario add column if not exists mostrar_stats_perfil boolean not null default true;
+
+-- ---------------------------------------------------------------------------
+-- Notificaciones (inbox persistente)
+-- ---------------------------------------------------------------------------
+create table if not exists public.notificacion (
+  id_notificacion bigint generated always as identity primary key,
+  usuario_destino_id bigint not null references public.usuario(id_usuario) on delete cascade,
+  usuario_origen_id bigint references public.usuario(id_usuario) on delete set null,
+  tipo text not null,
+  titulo text not null,
+  cuerpo text not null,
+  leida boolean not null default false,
+  id_post bigint references public.publicaciones(id_post) on delete set null,
+  id_evento bigint references public.evento(id_evento) on delete set null,
+  id_comunidad bigint references public.comunidades(id_comunidad) on delete set null,
+  id_participacion bigint references public.participantes_evento(id_participacion) on delete set null,
+  fecha_creacion timestamptz not null default now()
+);
+
+create index if not exists idx_notificacion_destino
+  on public.notificacion(usuario_destino_id, fecha_creacion desc);
+
+create index if not exists idx_notificacion_destino_leida
+  on public.notificacion(usuario_destino_id, leida);
+
+alter table public.notificacion enable row level security;
+
+drop policy if exists notificacion_select_own on public.notificacion;
+create policy notificacion_select_own
+on public.notificacion
+for select
+to authenticated
+using (
+  usuario_destino_id in (
+    select id_usuario from public.usuario where auth_user_id = auth.uid()
+  )
+);
+
+drop policy if exists notificacion_update_own on public.notificacion;
+create policy notificacion_update_own
+on public.notificacion
+for update
+to authenticated
+using (
+  usuario_destino_id in (
+    select id_usuario from public.usuario where auth_user_id = auth.uid()
+  )
+)
+with check (
+  usuario_destino_id in (
+    select id_usuario from public.usuario where auth_user_id = auth.uid()
+  )
+);
+
+-- Helper: insertar notificacion (triggers + RPC). Evita auto-notificacion.
+create or replace function public.crear_notificacion(
+  p_destino_id bigint,
+  p_origen_id bigint,
+  p_tipo text,
+  p_titulo text,
+  p_cuerpo text,
+  p_id_post bigint default null,
+  p_id_evento bigint default null,
+  p_id_comunidad bigint default null,
+  p_id_participacion bigint default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_destino_id is null then
+    return;
+  end if;
+  if p_origen_id is not null and p_destino_id = p_origen_id then
+    return;
+  end if;
+  insert into public.notificacion (
+    usuario_destino_id,
+    usuario_origen_id,
+    tipo,
+    titulo,
+    cuerpo,
+    id_post,
+    id_evento,
+    id_comunidad,
+    id_participacion
+  ) values (
+    p_destino_id,
+    p_origen_id,
+    p_tipo,
+    p_titulo,
+    left(p_cuerpo, 500),
+    p_id_post,
+    p_id_evento,
+    p_id_comunidad,
+    p_id_participacion
+  );
+end;
+$$;
+
+-- Trigger: comentario en publicacion -> notifica al autor del post
+create or replace function public.trg_notificacion_comentario()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_post_owner bigint;
+begin
+  select p.usuario_id_usuario
+  into v_post_owner
+  from public.publicaciones p
+  where p.id_post = new.publicaciones_id_post;
+
+  perform public.crear_notificacion(
+    v_post_owner,
+    new.usuario_id_usuario,
+    'COMENTARIO',
+    'Nuevo comentario en tu publicacion',
+    new.texto_comentario,
+    p_id_post => new.publicaciones_id_post
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists notificacion_on_comentario on public.comentario;
+create trigger notificacion_on_comentario
+after insert on public.comentario
+for each row execute function public.trg_notificacion_comentario();
+
+-- Trigger: like en publicacion -> notifica al autor del post
+create or replace function public.trg_notificacion_like()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_post_owner bigint;
+begin
+  select p.usuario_id_usuario
+  into v_post_owner
+  from public.publicaciones p
+  where p.id_post = new.publicaciones_id_post;
+
+  perform public.crear_notificacion(
+    v_post_owner,
+    new.usuario_id_usuario,
+    'LIKE',
+    'Nueva reaccion en tu publicacion',
+    'Alguien reacciono a tu contenido',
+    p_id_post => new.publicaciones_id_post
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists notificacion_on_like on public.reacciones_post;
+create trigger notificacion_on_like
+after insert on public.reacciones_post
+for each row execute function public.trg_notificacion_like();
+
+-- Trigger: solicitud/inscripcion a evento
+create or replace function public.trg_notificacion_participante_insert()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_organizador bigint;
+  v_titulo_evento text;
+begin
+  select e.usuario_id_usuario, coalesce(e.titulo, e.nombre, 'Evento')
+  into v_organizador, v_titulo_evento
+  from public.evento e
+  where e.id_evento = new.evento_id_evento;
+
+  if new.estado_solicitud = 'PENDIENTE' then
+    perform public.crear_notificacion(
+      v_organizador,
+      new.usuario_id_usuario,
+      'SOLICITUD_EVENTO',
+      'Nueva solicitud de participacion',
+      v_titulo_evento,
+      p_id_evento => new.evento_id_evento,
+      p_id_participacion => new.id_participacion
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists notificacion_on_participante_insert on public.participantes_evento;
+create trigger notificacion_on_participante_insert
+after insert on public.participantes_evento
+for each row execute function public.trg_notificacion_participante_insert();
+
+create or replace function public.trg_notificacion_participante_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_titulo_evento text;
+begin
+  if old.estado_solicitud is not distinct from new.estado_solicitud then
+    return new;
+  end if;
+
+  select coalesce(e.titulo, e.nombre, 'Evento')
+  into v_titulo_evento
+  from public.evento e
+  where e.id_evento = new.evento_id_evento;
+
+  if new.estado_solicitud = 'APROBADO' then
+    perform public.crear_notificacion(
+      new.usuario_id_usuario,
+      null,
+      'INSCRIPCION_APROBADA',
+      'Solicitud aprobada',
+      'Ya puedes participar en: ' || v_titulo_evento,
+      p_id_evento => new.evento_id_evento,
+      p_id_participacion => new.id_participacion
+    );
+  elsif new.estado_solicitud = 'RECHAZADO' then
+    perform public.crear_notificacion(
+      new.usuario_id_usuario,
+      null,
+      'INSCRIPCION_RECHAZADA',
+      'Solicitud rechazada',
+      'No fue posible inscribirte en: ' || v_titulo_evento,
+      p_id_evento => new.evento_id_evento,
+      p_id_participacion => new.id_participacion
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists notificacion_on_participante_update on public.participantes_evento;
+create trigger notificacion_on_participante_update
+after update of estado_solicitud on public.participantes_evento
+for each row execute function public.trg_notificacion_participante_update();
+
+-- RPC: marcar una o todas como leidas
+create or replace function public.marcar_notificacion_leida(p_id_notificacion bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user bigint;
+begin
+  select id_usuario into v_user
+  from public.usuario
+  where auth_user_id = auth.uid();
+
+  update public.notificacion
+  set leida = true
+  where id_notificacion = p_id_notificacion
+    and usuario_destino_id = v_user;
+end;
+$$;
+
+create or replace function public.marcar_todas_notificaciones_leidas()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user bigint;
+begin
+  select id_usuario into v_user
+  from public.usuario
+  where auth_user_id = auth.uid();
+
+  update public.notificacion
+  set leida = true
+  where usuario_destino_id = v_user
+    and leida = false;
+end;
+$$;
+
+grant execute on function public.marcar_notificacion_leida(bigint) to authenticated;
+grant execute on function public.marcar_todas_notificaciones_leidas() to authenticated;
+
+-- Eliminacion de cuenta (soft delete del perfil en public.usuario)
+create or replace function public.eliminar_mi_cuenta()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_usuario_id bigint;
+begin
+  select id_usuario into v_usuario_id
+  from public.usuario
+  where auth_user_id = auth.uid();
+
+  if v_usuario_id is null then
+    raise exception 'Usuario no encontrado';
+  end if;
+
+  update public.usuario
+  set
+    estado_cuenta = 'ELIMINADO',
+    nombres = 'Usuario',
+    apellidos = 'Eliminado',
+    username = 'deleted_' || v_usuario_id::text,
+    email = 'deleted_' || v_usuario_id::text || '@loop.local',
+    telefono = null,
+    avatar_url = null,
+    nacionalidad = null,
+    genero = null
+  where id_usuario = v_usuario_id;
+end;
+$$;
+
+grant execute on function public.eliminar_mi_cuenta() to authenticated;
+

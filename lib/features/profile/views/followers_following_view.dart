@@ -2,6 +2,7 @@ import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
 import 'package:eventosloop/features/profile/models/profile_model.dart';
 import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
+import 'package:eventosloop/features/profile/services/profile_supabase_service.dart';
 import 'package:flutter/material.dart';
 
 class FollowersFollowingView extends StatefulWidget {
@@ -10,18 +11,21 @@ class FollowersFollowingView extends StatefulWidget {
     required this.initialTab,
     required this.followersCount,
     required this.followingCount,
+    this.userId,
   });
 
   final int initialTab;
   final int followersCount;
   final int followingCount;
+  final int? userId;
 
   @override
   State<FollowersFollowingView> createState() => _FollowersFollowingViewState();
 }
 
 class _FollowersFollowingViewState extends State<FollowersFollowingView> {
-  final ProfileMockService _service = ProfileMockService();
+  final ProfileSupabaseService _supabaseService = ProfileSupabaseService();
+  final ProfileMockService _mockService = ProfileMockService();
   final TextEditingController _searchController = TextEditingController();
   final List<ProfileConnectionModel> _followers = <ProfileConnectionModel>[];
   final List<ProfileConnectionModel> _following = <ProfileConnectionModel>[];
@@ -49,10 +53,30 @@ class _FollowersFollowingViewState extends State<FollowersFollowingView> {
   }
 
   Future<void> _load() async {
+    if (widget.userId != null) {
+      final List<ProfileConnectionModel> followers =
+          await _supabaseService.fetchFollowers(widget.userId!);
+      final List<ProfileConnectionModel> following =
+          await _supabaseService.fetchFollowing(widget.userId!);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _followers
+          ..clear()
+          ..addAll(followers);
+        _following
+          ..clear()
+          ..addAll(following);
+        _loading = false;
+      });
+      return;
+    }
+
     final List<ProfileConnectionModel> followers =
-        await _service.fetchFollowers();
+        await _mockService.fetchFollowers();
     final List<ProfileConnectionModel> following =
-        await _service.fetchFollowing();
+        await _mockService.fetchFollowing();
     if (!mounted) {
       return;
     }

@@ -1,6 +1,6 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/events/models/participant_request_model.dart';
-import 'package:eventosloop/features/events/services/participant_request_mock_service.dart';
+import 'package:eventosloop/features/events/services/participant_request_service.dart';
 import 'package:flutter/material.dart';
 
 class ParticipantRequestsView extends StatefulWidget {
@@ -19,8 +19,7 @@ class ParticipantRequestsView extends StatefulWidget {
 }
 
 class _ParticipantRequestsViewState extends State<ParticipantRequestsView> {
-  final ParticipantRequestMockService _service =
-      ParticipantRequestMockService();
+  final ParticipantRequestService _service = ParticipantRequestService();
   List<ParticipantRequestModel> _requests = <ParticipantRequestModel>[];
   String _categoryFilter = 'Todos';
   bool _loading = true;
@@ -52,7 +51,11 @@ class _ParticipantRequestsViewState extends State<ParticipantRequestsView> {
         .toList();
   }
 
-  void _respond(int id, {required bool accept}) {
+  void _respond(int id, {required bool accept}) async {
+    await _service.respond(participacionId: id, accept: accept);
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _requests.removeWhere((ParticipantRequestModel r) => r.id == id);
     });

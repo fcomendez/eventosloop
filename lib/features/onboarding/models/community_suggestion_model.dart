@@ -6,6 +6,7 @@ class CommunitySuggestionModel {
     required this.membersLabel,
     required this.imageTag,
     this.description,
+    this.interestTags = const <String>[],
   });
 
   final int id;
@@ -14,4 +15,5 @@ class CommunitySuggestionModel {
   final String membersLabel;
   final String imageTag;
   final String? description;
+  final List<String> interestTags;
 }

@@ -7,6 +7,7 @@ create table if not exists public.comunidades (
   descripcion text,
   banner_url text,
   privacidad text not null default 'PUBLICA',
+  estado text not null default 'PENDIENTE',
   fecha_creacion timestamptz not null default now(),
   usuario_id_usuario bigint not null references public.usuario(id_usuario) on delete cascade
 );

@@ -199,18 +199,54 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _ExploreHome extends StatelessWidget {
+class _ExploreHome extends StatefulWidget {
   const _ExploreHome();
 
+  @override
+  State<_ExploreHome> createState() => _ExploreHomeState();
+}
+
+class _ExploreHomeState extends State<_ExploreHome> {
   static final ExploreMockService _service = ExploreMockService();
+  List<ExploreRecommendedCommunityItem> _communities =
+      <ExploreRecommendedCommunityItem>[];
+  List<ExploreUpcomingEventItem> _upcomingEvents =
+      <ExploreUpcomingEventItem>[];
+  bool _loadingCommunities = true;
+  bool _loadingUpcoming = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCommunities();
+    _loadUpcoming();
+  }
+
+  Future<void> _loadCommunities() async {
+    final List<ExploreRecommendedCommunityItem> items =
+        await _service.fetchRecommendedCommunities();
+    if (mounted) {
+      setState(() {
+        _communities = items;
+        _loadingCommunities = false;
+      });
+    }
+  }
+
+  Future<void> _loadUpcoming() async {
+    final List<ExploreUpcomingEventItem> items =
+        await _service.fetchUpcomingEvents();
+    if (mounted) {
+      setState(() {
+        _upcomingEvents = items;
+        _loadingUpcoming = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final List<ExploreNearbyEventItem> nearby = _service.previewNearbyEvents();
-    final List<ExploreRecommendedCommunityItem> communities =
-        _service.previewRecommendedCommunities();
-    final List<ExploreUpcomingEventItem> upcoming =
-        _service.previewUpcomingEvents();
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 22),
@@ -244,7 +280,10 @@ class _ExploreHome extends StatelessWidget {
                   );
                 },
               ),
-              _CommunitiesCarousel(items: communities),
+              _CommunitiesCarousel(
+                items: _communities,
+                loading: _loadingCommunities,
+              ),
               const SizedBox(height: 18),
               _ExploreSectionTitle(
                 title: 'Eventos proximos',
@@ -257,7 +296,10 @@ class _ExploreHome extends StatelessWidget {
                   );
                 },
               ),
-              _UpcomingEventsCarousel(items: upcoming),
+              _UpcomingEventsCarousel(
+                items: _upcomingEvents,
+                loading: _loadingUpcoming,
+              ),
             ],
           ),
         ),
@@ -392,9 +434,13 @@ class _NearbyEventsCarousel extends StatelessWidget {
 }
 
 class _CommunitiesCarousel extends StatelessWidget {
-  const _CommunitiesCarousel({required this.items});
+  const _CommunitiesCarousel({
+    required this.items,
+    this.loading = false,
+  });
 
   final List<ExploreRecommendedCommunityItem> items;
+  final bool loading;
 
   Color _parseHex(String hex) {
     return Color(int.parse('FF${hex.replaceFirst('#', '')}', radix: 16));
@@ -402,6 +448,23 @@ class _CommunitiesCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const SizedBox(
+        height: 148,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (items.isEmpty) {
+      return const SizedBox(
+        height: 148,
+        child: Center(
+          child: Text(
+            'No hay comunidades publicas disponibles.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
     return SizedBox(
       height: 148,
       child: ListView(
@@ -425,9 +488,13 @@ class _CommunitiesCarousel extends StatelessWidget {
 }
 
 class _UpcomingEventsCarousel extends StatelessWidget {
-  const _UpcomingEventsCarousel({required this.items});
+  const _UpcomingEventsCarousel({
+    required this.items,
+    this.loading = false,
+  });
 
   final List<ExploreUpcomingEventItem> items;
+  final bool loading;
 
   Color _parseHex(String hex) {
     return Color(int.parse('FF${hex.replaceFirst('#', '')}', radix: 16));
@@ -435,6 +502,23 @@ class _UpcomingEventsCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const SizedBox(
+        height: 190,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (items.isEmpty) {
+      return const SizedBox(
+        height: 190,
+        child: Center(
+          child: Text(
+            'No hay eventos proximos disponibles.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
     return SizedBox(
       height: 190,
       child: ListView(

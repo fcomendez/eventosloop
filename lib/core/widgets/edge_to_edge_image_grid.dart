@@ -1,3 +1,4 @@
+import 'package:eventosloop/core/widgets/loop_media_image.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -6,12 +7,14 @@ class EdgeToEdgeGridItem {
     required this.id,
     required this.label,
     required this.colorHex,
+    this.imageUrl,
     this.onTap,
   });
 
   final int id;
   final String label;
   final String colorHex;
+  final String? imageUrl;
   final VoidCallback? onTap;
 }
 
@@ -68,14 +71,17 @@ class EdgeToEdgeImageGrid extends StatelessWidget {
                         splashColor: AppColors.white.withValues(alpha: 0.12),
                         child: Ink(
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: <Color>[
-                                _parseHex(item.colorHex),
-                                AppColors.primaryDark.withValues(alpha: 0.85),
-                              ],
-                            ),
+                            gradient: item.imageUrl == null
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: <Color>[
+                                      _parseHex(item.colorHex),
+                                      AppColors.primaryDark
+                                          .withValues(alpha: 0.85),
+                                    ],
+                                  )
+                                : null,
                             border: Border(
                               right: showRightBorder
                                   ? const BorderSide(
@@ -91,16 +97,24 @@ class EdgeToEdgeImageGrid extends StatelessWidget {
                                   : BorderSide.none,
                             ),
                           ),
-                          child: Center(
-                            child: Text(
-                              item.label,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
+                          child: item.imageUrl != null
+                              ? LoopMediaImage(
+                                  url: item.imageUrl!,
+                                  width: tileSize,
+                                  height: tileSize,
+                                  fallbackColorHex: item.colorHex,
+                                  fallbackLabel: item.label,
+                                )
+                              : Center(
+                                  child: Text(
+                                    item.label,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: AppColors.white,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                     ),
