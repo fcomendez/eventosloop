@@ -1,9 +1,8 @@
-import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/features/profile/models/profile_model.dart';
 import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
 import 'package:eventosloop/features/profile/services/profile_supabase_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileController extends ChangeNotifier {
   ProfileController({ProfileMockService? service, this.userId})
@@ -35,8 +34,7 @@ class ProfileController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (AppEnv.useSupabase &&
-          Supabase.instance.client.auth.currentSession != null) {
+      if (supabaseLive) {
         final int? targetId = userId ?? await _resolveCurrentUserId();
         if (targetId != null) {
           final ProfileModel? fromDb =
@@ -51,14 +49,17 @@ class ProfileController extends ChangeNotifier {
             return;
           }
         }
+        _error = 'No se pudo cargar el perfil';
+      } else if (allowMockFallback) {
+        _profile = userId == null
+            ? await _service.fetchProfile()
+            : await _service.fetchProfileByUserId(userId!);
+        _allPastEvents = await _service.fetchPastEvents(userId: userId);
+        _targetUserId = _profile?.userId;
+        _isFollowing = _profile?.isFollowing ?? false;
+      } else {
+        _error = 'Supabase no esta configurado';
       }
-
-      _profile = userId == null
-          ? await _service.fetchProfile()
-          : await _service.fetchProfileByUserId(userId!);
-      _allPastEvents = await _service.fetchPastEvents(userId: userId);
-      _targetUserId = _profile?.userId;
-      _isFollowing = _profile?.isFollowing ?? false;
     } catch (_) {
       _error = 'No se pudo cargar el perfil';
     }
@@ -78,15 +79,15 @@ class ProfileController extends ChangeNotifier {
       return;
     }
 
-    if (AppEnv.useSupabase) {
+    if (supabaseLive) {
       try {
         await _supabaseService.toggleFollow(_targetUserId!);
         await loadProfile();
         return;
       } catch (_) {}
+    } else if (allowMockFallback) {
+      _isFollowing = !_isFollowing;
+      notifyListeners();
     }
-
-    _isFollowing = !_isFollowing;
-    notifyListeners();
   }
 }

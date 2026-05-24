@@ -940,14 +940,33 @@ class ProfileSupabaseService {
     if (header == null) {
       return null;
     }
-    final ProfilePostsData posts = await fetchUserPosts(userId);
-    final List<ProfileCommunityModel> communities =
-        await fetchUserCommunities(userId);
-    final ProfileFollowStats stats =
-        await fetchFollowStats(targetUserId: userId);
-    final List<String> interests = await fetchUserInterests(userId);
-    final List<ProfilePastEventModel> pastEvents =
-        await fetchPastEvents(userId);
+    ProfilePostsData posts = const ProfilePostsData(
+      imagePosts: <ProfileImagePostModel>[],
+      writtenPosts: <ProfileWrittenPostModel>[],
+    );
+    List<ProfileCommunityModel> communities = const <ProfileCommunityModel>[];
+    ProfileFollowStats stats = const ProfileFollowStats(
+      followersCount: 0,
+      followingCount: 0,
+      isFollowing: false,
+    );
+    List<String> interests = const <String>[];
+    List<ProfilePastEventModel> pastEvents = const <ProfilePastEventModel>[];
+    try {
+      posts = await fetchUserPosts(userId);
+    } catch (_) {}
+    try {
+      communities = await fetchUserCommunities(userId);
+    } catch (_) {}
+    try {
+      stats = await fetchFollowStats(targetUserId: userId);
+    } catch (_) {}
+    try {
+      interests = await fetchUserInterests(userId);
+    } catch (_) {}
+    try {
+      pastEvents = await fetchPastEvents(userId);
+    } catch (_) {}
 
     return ProfileModel(
       userId: header.userId,

@@ -34,6 +34,8 @@ class FeedItemModel {
     this.mediaLabel,
     this.mediaColorHex,
     this.mediaUrl,
+    this.authorUserId,
+    this.communityId,
   });
 
   final int id;
@@ -46,6 +48,8 @@ class FeedItemModel {
   final String? mediaLabel;
   final String? mediaColorHex;
   final String? mediaUrl;
+  final int? authorUserId;
+  final int? communityId;
   final int likesCount;
   final int commentsCount;
   final int sharesCount;

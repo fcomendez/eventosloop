@@ -1,6 +1,7 @@
 import 'package:eventosloop/features/onboarding/models/interes_model.dart';
 import 'package:eventosloop/features/onboarding/services/intereses_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InteresesController extends ChangeNotifier {
   InteresesController({InteresesService? service})
@@ -52,7 +53,9 @@ class InteresesController extends ChangeNotifier {
         ..clear()
         ..addAll(previos);
       if (_intereses.isEmpty) {
-        _error = 'No hay intereses disponibles en el catalogo';
+        _error = Supabase.instance.client.auth.currentSession == null
+            ? 'Inicia sesion para cargar intereses. Si acabas de registrarte, confirma tu cuenta o vuelve al login.'
+            : 'No hay intereses en el catalogo. Ejecuta scripts/seed-catalogo.ps1 en el backend.';
       }
     } catch (e) {
       _intereses = const <InteresModel>[];

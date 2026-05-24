@@ -40,7 +40,7 @@ class _CreateEventViewState extends State<CreateEventView> {
   bool _isPrivate = false;
   bool _submitting = false;
   XFile? _selectedImage;
-  List<UserCommunityOption> _communities = UserCommunitiesMock.participando;
+  List<UserCommunityOption> _communities = const <UserCommunityOption>[];
   bool _loadingCommunities = true;
 
   static const List<String> _capacitySuggestions = <String>[

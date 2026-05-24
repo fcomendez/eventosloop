@@ -2,6 +2,7 @@ enum AdminUserStatus { active, pending, suspended }
 
 class AdminUserRow {
   const AdminUserRow({
+    required this.idUsuario,
     required this.name,
     required this.email,
     required this.role,
@@ -11,6 +12,7 @@ class AdminUserRow {
     required this.avatarColor,
   });
 
+  final int idUsuario;
   final String name;
   final String email;
   final String role;
@@ -26,6 +28,7 @@ enum AdminEventChatStatus { active, quiet, moderationRequired }
 
 class AdminEventRow {
   const AdminEventRow({
+    required this.idEvento,
     required this.name,
     required this.dateLabel,
     required this.community,
@@ -37,6 +40,7 @@ class AdminEventRow {
     required this.needsModeration,
   });
 
+  final int idEvento;
   final String name;
   final String dateLabel;
   final String community;

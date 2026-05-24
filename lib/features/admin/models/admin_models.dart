@@ -1,3 +1,4 @@
+import 'package:eventosloop/features/admin/models/admin_community_models.dart';
 import 'package:flutter/material.dart';
 
 enum AdminTopTab { dashboard, analytics, community }
@@ -52,11 +53,15 @@ class AdminInterestRanking {
 class AdminModerationIncident {
   const AdminModerationIncident({
     required this.reportId,
+    required this.contentType,
+    required this.contentId,
+    required this.authorUserId,
     required this.authorName,
     required this.authorHandle,
     required this.postedLabel,
     required this.riskLabel,
     required this.content,
+    this.mediaUrl,
     required this.likesLabel,
     required this.commentsLabel,
     required this.joinedLabel,
@@ -70,11 +75,15 @@ class AdminModerationIncident {
   });
 
   final String reportId;
+  final AdminReportContentType contentType;
+  final int contentId;
+  final int authorUserId;
   final String authorName;
   final String authorHandle;
   final String postedLabel;
   final String riskLabel;
   final String content;
+  final String? mediaUrl;
   final String likesLabel;
   final String commentsLabel;
   final String joinedLabel;

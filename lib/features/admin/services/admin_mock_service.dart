@@ -108,6 +108,9 @@ class AdminMockService {
   AdminModerationIncident fetchSampleIncident({String reportId = '849201'}) {
     return AdminModerationIncident(
       reportId: reportId,
+      contentType: AdminReportContentType.post,
+      contentId: 0,
+      authorUserId: 0,
       authorName: 'Marcus Vance',
       authorHandle: '@marcus_22',
       postedLabel: 'Publicado hace 4 horas',
@@ -209,10 +212,12 @@ class AdminMockService {
   }
 
   List<AdminReportQueueRow> fetchReportQueue() {
-    return const <AdminReportQueueRow>[
+    final DateTime now = DateTime.now();
+    return <AdminReportQueueRow>[
       AdminReportQueueRow(
         id: '1',
         dateLabel: '21 oct, 14:20',
+        sortDate: now,
         reporterHandle: '@julia_v',
         objectLabel: 'Publicacion ID: 8823-X',
         objectAuthor: '@marcus_22',
@@ -220,43 +225,50 @@ class AdminMockService {
         reasonColor: 0xFFD64545,
         status: AdminReportStatus.pending,
         actionLabel: 'Procesado por IA',
-        incidentReportId: '849201',
+        incidentReportId: 'post-849201',
+        contentType: AdminReportContentType.post,
       ),
       AdminReportQueueRow(
         id: '2',
         dateLabel: '21 oct, 13:05',
+        sortDate: now.subtract(const Duration(hours: 1)),
         reporterHandle: '@diego.dev',
         objectLabel: 'Comentario: 1122-Y',
         objectAuthor: '@spam_bot',
         reason: 'Spam',
         reasonColor: 0xFF0682BC,
         status: AdminReportStatus.reviewed,
-        actionLabel: 'Procesado por IA',
-        incidentReportId: '849202',
+        actionLabel: 'Resuelto',
+        incidentReportId: 'post-849202',
+        contentType: AdminReportContentType.post,
       ),
       AdminReportQueueRow(
         id: '3',
         dateLabel: '21 oct, 11:48',
+        sortDate: now.subtract(const Duration(hours: 3)),
         reporterHandle: '@camila.foodie',
         objectLabel: 'Publicacion ID: 7710-Z',
         objectAuthor: '@unknown_user',
         reason: 'Inapropiado',
         reasonColor: 0xFFE08A3A,
         status: AdminReportStatus.pending,
-        actionLabel: 'Procesado por IA',
-        incidentReportId: '849203',
+        actionLabel: 'Pendiente',
+        incidentReportId: 'post-849203',
+        contentType: AdminReportContentType.post,
       ),
       AdminReportQueueRow(
         id: '4',
         dateLabel: '21 oct, 10:12',
+        sortDate: now.subtract(const Duration(hours: 4)),
         reporterHandle: '@martina.loop',
-        objectLabel: 'Publicacion ID: 6601-A',
+        objectLabel: 'Evento ID: 6601-A',
         objectAuthor: '@fake_profile',
         reason: 'Suplantacion',
         reasonColor: 0xFF5B79AA,
         status: AdminReportStatus.pending,
-        actionLabel: 'Procesado por IA',
-        incidentReportId: '849204',
+        actionLabel: 'Pendiente',
+        incidentReportId: 'event-849204',
+        contentType: AdminReportContentType.event,
       ),
     ];
   }
@@ -264,6 +276,7 @@ class AdminMockService {
   List<AdminUserRow> fetchUsers() {
     return const <AdminUserRow>[
       AdminUserRow(
+        idUsuario: 1,
         name: 'Sarah Jenkins',
         email: 'sarah.j@loop.io',
         role: 'ADMIN',
@@ -273,6 +286,7 @@ class AdminMockService {
         avatarColor: 0xFF0682BC,
       ),
       AdminUserRow(
+        idUsuario: 2,
         name: 'Marcus Vance',
         email: 'marcus.v@loop.io',
         role: 'USER',
@@ -282,6 +296,7 @@ class AdminMockService {
         avatarColor: 0xFF7B61B5,
       ),
       AdminUserRow(
+        idUsuario: 3,
         name: 'Elena Solis',
         email: 'elena.s@loop.io',
         role: 'USER',
@@ -291,6 +306,7 @@ class AdminMockService {
         avatarColor: 0xFF2E9E6A,
       ),
       AdminUserRow(
+        idUsuario: 4,
         name: 'Diego Rojas',
         email: 'diego.r@loop.io',
         role: 'USER',
@@ -314,6 +330,7 @@ class AdminMockService {
   List<AdminEventRow> fetchLiveEvents() {
     return const <AdminEventRow>[
       AdminEventRow(
+        idEvento: 1,
         name: 'Proyecto Musica Urbana',
         dateLabel: '21 oct 2025',
         community: 'Creative Arts Hub',
@@ -325,6 +342,7 @@ class AdminMockService {
         needsModeration: false,
       ),
       AdminEventRow(
+        idEvento: 2,
         name: 'Noche de Pitch Startups',
         dateLabel: '21 oct 2025',
         community: 'Founders Circle',
@@ -336,6 +354,7 @@ class AdminMockService {
         needsModeration: false,
       ),
       AdminEventRow(
+        idEvento: 3,
         name: 'Night Run Santiago',
         dateLabel: '22 oct 2025',
         community: 'Running Santiago',
@@ -347,6 +366,7 @@ class AdminMockService {
         needsModeration: true,
       ),
       AdminEventRow(
+        idEvento: 4,
         name: 'Taller de Ceramica',
         dateLabel: '23 oct 2025',
         community: 'Maker Studio',

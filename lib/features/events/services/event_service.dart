@@ -1,11 +1,11 @@
 import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/features/events/models/event_model.dart';
 import 'package:eventosloop/features/events/models/event_status.dart';
 import 'package:eventosloop/features/events/services/event_mock_service.dart';
 import 'package:eventosloop/features/events/services/event_participation_service.dart';
 import 'package:eventosloop/features/events/services/event_participation_supabase_service.dart';
 import 'package:eventosloop/features/events/services/event_supabase_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EventService {
   EventService({
@@ -17,57 +17,46 @@ class EventService {
   final EventSupabaseService _supabase;
   final EventMockService _mock;
 
-  bool get _canUseSupabase =>
-      AppEnv.useSupabase &&
-      Supabase.instance.client.auth.currentSession != null;
-
   Future<EventModel?> fetchById(int eventId) async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
-        final EventModel? event = await _supabase.fetchById(eventId);
-        if (event != null) {
-          return event;
-        }
-      } catch (_) {}
+        return await _supabase.fetchById(eventId);
+      } catch (_) {
+        return null;
+      }
     }
     return _mock.fetchById(eventId);
   }
 
   Future<List<EventModel>> fetchByCommunityId(int communityId) async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
-        final List<EventModel> events =
-            await _supabase.fetchByCommunityId(communityId);
-        if (events.isNotEmpty) {
-          return events;
-        }
-      } catch (_) {}
+        return await _supabase.fetchByCommunityId(communityId);
+      } catch (_) {
+        return const <EventModel>[];
+      }
     }
     return _mock.fetchByCommunityId(communityId);
   }
 
   Future<List<EventModel>> listarActivos({int limit = 50}) async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
-        final List<EventModel> events =
-            await _supabase.listarActivos(limit: limit);
-        if (events.isNotEmpty) {
-          return events;
-        }
-      } catch (_) {}
+        return await _supabase.listarActivos(limit: limit);
+      } catch (_) {
+        return const <EventModel>[];
+      }
     }
     return _mock.fetchAll();
   }
 
   Future<List<EventModel>> listarProximos({int limit = 20}) async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
-        final List<EventModel> events =
-            await _supabase.listarProximos(limit: limit);
-        if (events.isNotEmpty) {
-          return events;
-        }
-      } catch (_) {}
+        return await _supabase.listarProximos(limit: limit);
+      } catch (_) {
+        return const <EventModel>[];
+      }
     }
     return _mock.fetchAll();
   }
@@ -76,22 +65,22 @@ class EventService {
     required int eventId,
     required EventStatus status,
   }) async {
-    if (_canUseSupabase) {
-      try {
-        await _supabase.actualizarEstado(eventId: eventId, status: status);
-        return;
-      } catch (_) {}
+    if (supabaseLive) {
+      await _supabase.actualizarEstado(eventId: eventId, status: status);
+      return;
     }
     await _mock.updateEventStatus(eventId: eventId, status: status);
   }
 
   Future<List<EventModel>> listarMisEventosInscritos() async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
         return await EventParticipationService(
           supabaseService: EventParticipationSupabaseService(),
         ).listarMisEventos();
-      } catch (_) {}
+      } catch (_) {
+        return const <EventModel>[];
+      }
     }
     return const <EventModel>[];
   }
@@ -110,7 +99,7 @@ class EventService {
     double? longitud,
     String? coverUrl,
   }) async {
-    if (_canUseSupabase) {
+    if (AppEnv.useSupabase) {
       return _supabase.crearEvento(
         titulo: titulo,
         descripcion: descripcion,
@@ -144,7 +133,7 @@ class EventService {
     double? longitud,
     String? coverUrl,
   }) async {
-    if (_canUseSupabase) {
+    if (AppEnv.useSupabase) {
       await _supabase.actualizarEvento(
         eventId: eventId,
         titulo: titulo,
@@ -166,14 +155,14 @@ class EventService {
   }
 
   Future<int?> resolveComunaId(String nombreComuna) async {
-    if (_canUseSupabase) {
+    if (AppEnv.useSupabase) {
       return _supabase.resolveComunaId(nombreComuna);
     }
     return null;
   }
 
   Future<void> cancelarEvento(int eventId) async {
-    if (_canUseSupabase) {
+    if (AppEnv.useSupabase) {
       await _supabase.cancelarEvento(eventId);
       return;
     }

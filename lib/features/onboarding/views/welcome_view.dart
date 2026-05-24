@@ -1,6 +1,8 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/features/auth/views/login_view.dart';
 import 'package:eventosloop/features/onboarding/views/intereses_selection_view.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class WelcomeView extends StatelessWidget {
   const WelcomeView({super.key});
@@ -72,6 +74,14 @@ class WelcomeView extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
+                      if (Supabase.instance.client.auth.currentSession == null) {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const LoginView(),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute<void>(
                           builder: (_) => const InteresesSelectionView(),

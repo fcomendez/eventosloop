@@ -742,6 +742,8 @@ class PostSupabaseService {
 
       id: (row['id_post'] as num).toInt(),
 
+      authorUserId: (row['usuario_id_usuario'] as num).toInt(),
+
       authorName: authorName,
 
       authorInitials: authorInitials(

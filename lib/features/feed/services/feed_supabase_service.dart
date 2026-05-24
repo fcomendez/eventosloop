@@ -21,10 +21,13 @@ class FeedSupabaseService {
           contenido,
           url_media,
           fecha_publicacion,
+          usuario_id_usuario,
+          comunidades_id_comunidad,
           usuario:usuario_id_usuario (
             nombres,
             apellidos,
-            username
+            username,
+            avatar_url
           ),
           comunidad:comunidades_id_comunidad (
             id_comunidad,
@@ -115,6 +118,11 @@ class FeedSupabaseService {
     final bool hasCommunity =
         communityName != null && communityName.trim().isNotEmpty;
 
+    final int? authorUserId = (row['usuario_id_usuario'] as num?)?.toInt();
+    final int? communityId =
+        (row['comunidades_id_comunidad'] as num?)?.toInt() ??
+            (comunidad?['id_comunidad'] as num?)?.toInt();
+
     return FeedItemModel(
       id: id,
       type: hasCommunity ? FeedItemType.comunidad : FeedItemType.personal,
@@ -135,6 +143,8 @@ class FeedSupabaseService {
       mediaLabel: row['url_media'] != null ? 'Imagen' : null,
       mediaColorHex: '#D9EAF5',
       mediaUrl: row['url_media'] as String?,
+      authorUserId: authorUserId,
+      communityId: communityId,
       likesCount: likesCount,
       commentsCount: commentsCount,
       sharesCount: 0,

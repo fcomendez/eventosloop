@@ -27,7 +27,7 @@ class _CreatePostViewState extends State<CreatePostView> {
 
   String? _selectedCommunityId;
   XFile? _selectedImage;
-  List<UserCommunityOption> _communities = UserCommunitiesMock.participando;
+  List<UserCommunityOption> _communities = const <UserCommunityOption>[];
   bool _loadingCommunities = true;
   bool _submitting = false;
 

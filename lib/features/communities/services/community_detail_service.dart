@@ -1,4 +1,4 @@
-import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/core/utils/relative_time_label.dart';
 import 'package:eventosloop/features/communities/models/community_list_item.dart';
 import 'package:eventosloop/features/communities/models/community_model.dart';
@@ -30,39 +30,46 @@ class CommunityDetailService {
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  bool get _canUseSupabase =>
-      AppEnv.useSupabase && _client.auth.currentSession != null;
-
   Future<CommunityDetailData?> fetchDetail(int communityId) async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
         final CommunityListItem? item =
             await _supabase.obtenerPorId(communityId);
-        if (item != null) {
-          final List<CommunityMemberItem> members =
-              await _supabase.listarMiembros(communityId);
-          final List<CommunityPostModel> posts =
-              await _fetchPosts(communityId);
-          return CommunityDetailData(
-            community: _mapCommunity(item, members),
-            posts: posts,
-            members: members,
-          );
+        if (item == null) {
+          return null;
         }
-      } catch (_) {}
+        List<CommunityMemberItem> members = const <CommunityMemberItem>[];
+        List<CommunityPostModel> posts = const <CommunityPostModel>[];
+        try {
+          members = await _supabase.listarMiembros(communityId);
+        } catch (_) {}
+        try {
+          posts = await _fetchPosts(communityId);
+        } catch (_) {}
+        return CommunityDetailData(
+          community: _mapCommunity(item, members),
+          posts: posts,
+          members: members,
+        );
+      } catch (_) {
+        return null;
+      }
     }
 
-    final CommunityModel? community = await _mock.fetchById(communityId);
-    if (community == null) {
-      return null;
+    if (allowMockFallback) {
+      final CommunityModel? community = await _mock.fetchById(communityId);
+      if (community == null) {
+        return null;
+      }
+      final List<CommunityPostModel> posts =
+          await _mock.fetchPosts(communityId);
+      return CommunityDetailData(
+        community: community,
+        posts: posts,
+        members: const <CommunityMemberItem>[],
+      );
     }
-    final List<CommunityPostModel> posts =
-        await _mock.fetchPosts(communityId);
-    return CommunityDetailData(
-      community: community,
-      posts: posts,
-      members: const <CommunityMemberItem>[],
-    );
+    return null;
   }
 
   CommunityModel _mapCommunity(

@@ -1,8 +1,7 @@
-import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/features/events/models/participant_request_model.dart';
 import 'package:eventosloop/features/events/services/participant_request_mock_service.dart';
 import 'package:eventosloop/features/events/services/participant_request_supabase_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ParticipantRequestService {
   ParticipantRequestService({
@@ -14,21 +13,19 @@ class ParticipantRequestService {
   final ParticipantRequestSupabaseService _supabase;
   final ParticipantRequestMockService _mock;
 
-  bool get _canUseSupabase =>
-      AppEnv.useSupabase &&
-      Supabase.instance.client.auth.currentSession != null;
-
   Future<ParticipantRequestSummary> fetchPendingSummary() async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
-        final ParticipantRequestSummary summary =
-            await _supabase.fetchPendingSummary();
-        if (summary.totalPending > 0) {
-          return summary;
-        }
-      } catch (_) {}
+        return await _supabase.fetchPendingSummary();
+      } catch (_) {
+        return const ParticipantRequestSummary(
+          totalPending: 0,
+          firstEventId: null,
+          firstEventTitle: null,
+        );
+      }
     }
-    if (_mock.pendingCount > 0) {
+    if (allowMockFallback && _mock.pendingCount > 0) {
       return ParticipantRequestSummary(
         totalPending: _mock.pendingCount,
         firstEventId: ParticipantRequestMockService.defaultPrivateEventId,
@@ -43,28 +40,28 @@ class ParticipantRequestService {
   }
 
   Future<List<ParticipantRequestModel>> fetchByEventId(int eventId) async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
-        final List<ParticipantRequestModel> items =
-            await _supabase.fetchByEventId(eventId);
-        return items;
-      } catch (_) {}
+        return await _supabase.fetchByEventId(eventId);
+      } catch (_) {
+        return const <ParticipantRequestModel>[];
+      }
     }
-    return _mock.fetchByEventId(eventId);
+    if (allowMockFallback) {
+      return _mock.fetchByEventId(eventId);
+    }
+    return const <ParticipantRequestModel>[];
   }
 
   Future<void> respond({
     required int participacionId,
     required bool accept,
   }) async {
-    if (_canUseSupabase) {
-      try {
-        await _supabase.respond(
-          participacionId: participacionId,
-          accept: accept,
-        );
-        return;
-      } catch (_) {}
+    if (supabaseLive) {
+      await _supabase.respond(
+        participacionId: participacionId,
+        accept: accept,
+      );
     }
   }
 }

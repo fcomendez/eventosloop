@@ -85,6 +85,8 @@ class FeedController extends ChangeNotifier {
       mediaLabel: current.mediaLabel,
       mediaColorHex: current.mediaColorHex,
       mediaUrl: current.mediaUrl,
+      authorUserId: current.authorUserId,
+      communityId: current.communityId,
       likesCount: wasLiked ? current.likesCount - 1 : current.likesCount + 1,
       commentsCount: current.commentsCount,
       sharesCount: current.sharesCount,

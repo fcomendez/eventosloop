@@ -3,7 +3,8 @@ import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/barra_interactiva.dart';
 import 'package:eventosloop/core/widgets/full_bleed_publication_card.dart';
 import 'package:eventosloop/features/explore/models/explore_catalog_models.dart';
-import 'package:eventosloop/features/explore/services/explore_mock_service.dart';
+import 'package:eventosloop/features/explore/services/explore_service.dart';
+import 'package:eventosloop/features/explore/services/explore_search_service.dart';
 import 'package:eventosloop/features/explore/views/explore_catalog_list_views.dart';
 import 'package:eventosloop/features/main_navigation/views/nav_placeholder_view.dart';
 import 'package:flutter/material.dart';
@@ -207,19 +208,33 @@ class _ExploreHome extends StatefulWidget {
 }
 
 class _ExploreHomeState extends State<_ExploreHome> {
-  static final ExploreMockService _service = ExploreMockService();
+  static final ExploreService _service = ExploreService();
+  List<ExploreNearbyEventItem> _nearbyEvents = <ExploreNearbyEventItem>[];
   List<ExploreRecommendedCommunityItem> _communities =
       <ExploreRecommendedCommunityItem>[];
   List<ExploreUpcomingEventItem> _upcomingEvents =
       <ExploreUpcomingEventItem>[];
+  bool _loadingNearby = true;
   bool _loadingCommunities = true;
   bool _loadingUpcoming = true;
 
   @override
   void initState() {
     super.initState();
+    _loadNearby();
     _loadCommunities();
     _loadUpcoming();
+  }
+
+  Future<void> _loadNearby() async {
+    final List<ExploreNearbyEventItem> items =
+        await _service.fetchNearbyPreview(limit: 6);
+    if (mounted) {
+      setState(() {
+        _nearbyEvents = items;
+        _loadingNearby = false;
+      });
+    }
   }
 
   Future<void> _loadCommunities() async {
@@ -246,8 +261,6 @@ class _ExploreHomeState extends State<_ExploreHome> {
 
   @override
   Widget build(BuildContext context) {
-    final List<ExploreNearbyEventItem> nearby = _service.previewNearbyEvents();
-
     return ListView(
       padding: const EdgeInsets.only(bottom: 22),
       children: <Widget>[
@@ -267,7 +280,10 @@ class _ExploreHomeState extends State<_ExploreHome> {
                   );
                 },
               ),
-              _NearbyEventsCarousel(items: nearby),
+              _NearbyEventsCarousel(
+                items: _nearbyEvents,
+                loading: _loadingNearby,
+              ),
               const SizedBox(height: 18),
               _ExploreSectionTitle(
                 title: 'Comunidades recomendadas',
@@ -325,6 +341,15 @@ class _ExploreHomeState extends State<_ExploreHome> {
               return const Padding(
                 padding: EdgeInsets.all(24),
                 child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.data!.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'No hay publicaciones destacadas.',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
               );
             }
             return Column(
@@ -403,9 +428,13 @@ class _ExploreSectionTitle extends StatelessWidget {
 }
 
 class _NearbyEventsCarousel extends StatelessWidget {
-  const _NearbyEventsCarousel({required this.items});
+  const _NearbyEventsCarousel({
+    required this.items,
+    this.loading = false,
+  });
 
   final List<ExploreNearbyEventItem> items;
+  final bool loading;
 
   Color _parseHex(String hex) {
     return Color(int.parse('FF${hex.replaceFirst('#', '')}', radix: 16));
@@ -413,6 +442,23 @@ class _NearbyEventsCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (items.isEmpty) {
+      return const SizedBox(
+        height: 180,
+        child: Center(
+          child: Text(
+            'No hay eventos cercanos disponibles.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
     return SizedBox(
       height: 180,
       child: ListView(
@@ -719,7 +765,7 @@ class _CommunityCard extends StatelessWidget {
   }
 }
 
-class _SearchResults extends StatelessWidget {
+class _SearchResults extends StatefulWidget {
   const _SearchResults({
     required this.filter,
     required this.query,
@@ -729,75 +775,100 @@ class _SearchResults extends StatelessWidget {
   final String query;
 
   @override
+  State<_SearchResults> createState() => _SearchResultsState();
+}
+
+class _SearchResultsState extends State<_SearchResults> {
+  final ExploreSearchService _service = ExploreSearchService();
+  late Future<List<dynamic>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SearchResults oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.query != widget.query || oldWidget.filter != widget.filter) {
+      _future = _load();
+    }
+  }
+
+  Future<List<dynamic>> _load() {
+    switch (widget.filter) {
+      case ExploreFilter.personas:
+        return _service.searchPersons(widget.query);
+      case ExploreFilter.comunidades:
+        return _service.searchCommunities(widget.query);
+      case ExploreFilter.eventos:
+        return _service.searchEvents(widget.query);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final String title = switch (filter) {
+    final String title = switch (widget.filter) {
       ExploreFilter.personas => 'Personas',
       ExploreFilter.comunidades => 'Comunidades',
       ExploreFilter.eventos => 'Eventos',
     };
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 22),
-      children: <Widget>[
-        Text(
-          '$title para "$query"',
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (filter == ExploreFilter.personas) ...<Widget>[
-          _PersonResult(
-            userId: 101,
-            name: 'Martina Flores',
-            username: '@martina.loop',
-          ),
-          _PersonResult(
-            userId: 102,
-            name: 'Diego Rojas',
-            username: '@diego.dev',
-          ),
-          _PersonResult(
-            userId: 103,
-            name: 'Camila Torres',
-            username: '@camila.foodie',
-          ),
-        ] else if (filter == ExploreFilter.comunidades) ...<Widget>[
-          _CommunityResult(
-            communityId: 1,
-            name: 'Running Santiago',
-            members: '1.8k miembros',
-          ),
-          _CommunityResult(
-            communityId: 2,
-            name: 'Cine Club',
-            members: '840 miembros',
-          ),
-          _CommunityResult(
-            communityId: 3,
-            name: 'Outdoor Chile',
-            members: '1.4k miembros',
-          ),
-        ] else ...<Widget>[
-          _EventResult(
-            eventId: 6,
-            name: 'Yoga al amanecer',
-            meta: 'Hoy · Providencia',
-          ),
-          _EventResult(
-            eventId: 5,
-            name: 'Festival urbano',
-            meta: 'Sab 25 · Santiago',
-          ),
-          _EventResult(
-            eventId: 3,
-            name: 'Taller de ceramica',
-            meta: 'Mar 28 · Barrio Italia',
-          ),
-        ],
-      ],
+    return FutureBuilder<List<dynamic>>(
+      future: _future,
+      builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final List<dynamic> results = snapshot.data ?? <dynamic>[];
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 22),
+          children: <Widget>[
+            Text(
+              '$title para "${widget.query.trim()}"',
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (results.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  'No se encontraron resultados.',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              )
+            else if (widget.filter == ExploreFilter.personas)
+              ...results.cast<ExploreSearchPerson>().map(
+                    (ExploreSearchPerson person) => _PersonResult(
+                      userId: person.userId,
+                      name: person.name,
+                      username: person.username,
+                    ),
+                  )
+            else if (widget.filter == ExploreFilter.comunidades)
+              ...results.cast<ExploreSearchCommunity>().map(
+                    (ExploreSearchCommunity community) => _CommunityResult(
+                      communityId: community.communityId,
+                      name: community.name,
+                      members: community.membersLabel,
+                    ),
+                  )
+            else
+              ...results.cast<ExploreSearchEvent>().map(
+                    (ExploreSearchEvent event) => _EventResult(
+                      eventId: event.eventId,
+                      name: event.name,
+                      meta: event.meta,
+                    ),
+                  ),
+          ],
+        );
+      },
     );
   }
 }

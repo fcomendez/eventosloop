@@ -1,5 +1,6 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/features/profile/models/profile_model.dart';
 import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
 import 'package:eventosloop/features/profile/services/profile_supabase_service.dart';
@@ -53,11 +54,18 @@ class _FollowersFollowingViewState extends State<FollowersFollowingView> {
   }
 
   Future<void> _load() async {
-    if (widget.userId != null) {
+    int? targetId = widget.userId;
+    if (targetId == null && supabaseLive) {
+      final ProfileHeaderData? header =
+          await _supabaseService.fetchCurrentUserHeader();
+      targetId = header?.userId;
+    }
+
+    if (targetId != null) {
       final List<ProfileConnectionModel> followers =
-          await _supabaseService.fetchFollowers(widget.userId!);
+          await _supabaseService.fetchFollowers(targetId);
       final List<ProfileConnectionModel> following =
-          await _supabaseService.fetchFollowing(widget.userId!);
+          await _supabaseService.fetchFollowing(targetId);
       if (!mounted) {
         return;
       }
@@ -73,22 +81,29 @@ class _FollowersFollowingViewState extends State<FollowersFollowingView> {
       return;
     }
 
-    final List<ProfileConnectionModel> followers =
-        await _mockService.fetchFollowers();
-    final List<ProfileConnectionModel> following =
-        await _mockService.fetchFollowing();
-    if (!mounted) {
+    if (allowMockFallback) {
+      final List<ProfileConnectionModel> followers =
+          await _mockService.fetchFollowers();
+      final List<ProfileConnectionModel> following =
+          await _mockService.fetchFollowing();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _followers
+          ..clear()
+          ..addAll(followers);
+        _following
+          ..clear()
+          ..addAll(following);
+        _loading = false;
+      });
       return;
     }
-    setState(() {
-      _followers
-        ..clear()
-        ..addAll(followers);
-      _following
-        ..clear()
-        ..addAll(following);
-      _loading = false;
-    });
+
+    if (mounted) {
+      setState(() => _loading = false);
+    }
   }
 
   List<ProfileConnectionModel> get _visibleItems {

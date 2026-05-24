@@ -147,23 +147,31 @@ class CommunitySupabaseService {
           .order('rol'),
     );
 
-    return data.map((Map<String, dynamic> row) {
-      final Map<String, dynamic>? usuario =
-          row['usuario'] as Map<String, dynamic>?;
-      final String? nombres = usuario?['nombres'] as String?;
-      final String? apellidos = usuario?['apellidos'] as String?;
-      final String displayName = <String>[
-        if (nombres != null && nombres.trim().isNotEmpty) nombres.trim(),
-        if (apellidos != null && apellidos.trim().isNotEmpty) apellidos.trim(),
-      ].join(' ').trim();
-      return CommunityMemberItem(
-        usuarioId: (usuario?['id_usuario'] as num).toInt(),
-        displayName: displayName.isEmpty
-            ? (usuario?['username'] as String? ?? 'Usuario')
-            : displayName,
-        rol: row['rol'] as String? ?? 'MIEMBRO',
-      );
-    }).toList();
+    return data
+        .map((Map<String, dynamic> row) {
+          final Map<String, dynamic>? usuario =
+              row['usuario'] as Map<String, dynamic>?;
+          final int? usuarioId = (usuario?['id_usuario'] as num?)?.toInt();
+          if (usuarioId == null) {
+            return null;
+          }
+          final String? nombres = usuario?['nombres'] as String?;
+          final String? apellidos = usuario?['apellidos'] as String?;
+          final String displayName = <String>[
+            if (nombres != null && nombres.trim().isNotEmpty) nombres.trim(),
+            if (apellidos != null && apellidos.trim().isNotEmpty)
+              apellidos.trim(),
+          ].join(' ').trim();
+          return CommunityMemberItem(
+            usuarioId: usuarioId,
+            displayName: displayName.isEmpty
+                ? (usuario?['username'] as String? ?? 'Usuario')
+                : displayName,
+            rol: row['rol'] as String? ?? 'MIEMBRO',
+          );
+        })
+        .whereType<CommunityMemberItem>()
+        .toList();
   }
 
   Future<void> unirse(int communityId) async {

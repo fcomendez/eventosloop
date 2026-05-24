@@ -43,6 +43,7 @@ class AdminUserSupabaseService {
           DateTime.parse(row['fecha_registro'] as String);
 
       return AdminUserRow(
+        idUsuario: id,
         name: name.isEmpty
             ? (row['username'] as String? ?? 'Usuario')
             : name,
@@ -54,6 +55,62 @@ class AdminUserSupabaseService {
         avatarColor: 0xFF0682BC + (id % 5) * 0x00181818,
       );
     }).toList();
+  }
+
+  Future<void> actualizarRol({
+    required int usuarioId,
+    required String nuevoRol,
+  }) async {
+    await _supabase.from('usuario').update(<String, dynamic>{
+      'rol_user': nuevoRol,
+    }).eq('id_usuario', usuarioId);
+
+    if (nuevoRol == 'ADMIN' || nuevoRol == 'MODERADOR') {
+      await _supabase.from('roles_sistema').upsert(<String, dynamic>{
+        'nombre_rol': nuevoRol,
+        'usuario_id_usuario': usuarioId,
+      });
+    }
+
+    final int? moderadorId = await _currentUsuarioId();
+    await _supabase.from('adm_log').insert(<String, dynamic>{
+      'accion_realizada': 'CAMBIAR_ROL',
+      'detalle': 'Rol actualizado a $nuevoRol',
+      'entidad_tipo': 'usuario',
+      'entidad_id': usuarioId,
+      'usuario_id_usuario': moderadorId,
+    });
+  }
+
+  Future<void> actualizarEstado({
+    required int usuarioId,
+    required String estado,
+  }) async {
+    await _supabase.from('usuario').update(<String, dynamic>{
+      'estado_cuenta': estado,
+    }).eq('id_usuario', usuarioId);
+
+    final int? moderadorId = await _currentUsuarioId();
+    await _supabase.from('adm_log').insert(<String, dynamic>{
+      'accion_realizada': 'CAMBIAR_ESTADO',
+      'detalle': 'Estado actualizado a $estado',
+      'entidad_tipo': 'usuario',
+      'entidad_id': usuarioId,
+      'usuario_id_usuario': moderadorId,
+    });
+  }
+
+  Future<int?> _currentUsuarioId() async {
+    final String? authId = _supabase.auth.currentUser?.id;
+    if (authId == null) {
+      return null;
+    }
+    final Map<String, dynamic>? row = await _supabase
+        .from('usuario')
+        .select('id_usuario')
+        .eq('auth_user_id', authId)
+        .maybeSingle();
+    return (row?['id_usuario'] as num?)?.toInt();
   }
 
   Future<Map<String, List<String>>> _loadInterestsByAuthId() async {
@@ -83,6 +140,7 @@ class AdminUserSupabaseService {
     return switch (estado) {
       'PENDIENTE' => AdminUserStatus.pending,
       'SUSPENDIDO' => AdminUserStatus.suspended,
+      'ELIMINADO' => AdminUserStatus.suspended,
       _ => AdminUserStatus.active,
     };
   }

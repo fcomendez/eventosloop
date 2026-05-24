@@ -635,7 +635,7 @@ class _RegisteredEventCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      highlighted ? 'Ver entrada' : 'Detalles del evento',
+                      highlighted ? 'Ver entrada' : 'Participar',
                     ),
                   ),
                 ),

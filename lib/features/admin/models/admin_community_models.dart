@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+enum AdminReportContentType { post, event }
+
 enum AdminCommunityStatus { pending, active, banned }
 
 class AdminCommunityRow {
@@ -48,6 +50,7 @@ class AdminReportQueueRow {
   const AdminReportQueueRow({
     required this.id,
     required this.dateLabel,
+    required this.sortDate,
     required this.reporterHandle,
     required this.objectLabel,
     required this.objectAuthor,
@@ -56,10 +59,12 @@ class AdminReportQueueRow {
     required this.status,
     required this.actionLabel,
     required this.incidentReportId,
+    required this.contentType,
   });
 
   final String id;
   final String dateLabel;
+  final DateTime sortDate;
   final String reporterHandle;
   final String objectLabel;
   final String objectAuthor;
@@ -68,4 +73,5 @@ class AdminReportQueueRow {
   final AdminReportStatus status;
   final String actionLabel;
   final String incidentReportId;
+  final AdminReportContentType contentType;
 }
