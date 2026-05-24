@@ -57,6 +57,7 @@ class PostDetailMockService {
         if (post.id == id) {
           return PostDetailModel(
             id: post.id,
+            authorUserId: 1,
             authorName: post.authorName,
             authorInitials: post.authorInitials,
             username: '@${post.authorName.toLowerCase().replaceAll(' ', '.')}',
@@ -95,6 +96,7 @@ class PostDetailMockService {
   PostDetailModel _fromFeedItem(FeedItemModel item) {
     return PostDetailModel(
       id: item.id,
+      authorUserId: item.authorUserId ?? 1,
       authorName: item.author.name,
       authorInitials: item.author.avatarInitials,
       username: item.author.username,
@@ -125,6 +127,7 @@ class PostDetailMockService {
   static final Map<int, PostDetailModel> _mockPosts = <int, PostDetailModel>{
     301: PostDetailModel(
       id: 301,
+      authorUserId: 1,
       authorName: 'Alex Rivero',
       authorInitials: 'AR',
       username: '@alex.rivero',
@@ -161,6 +164,7 @@ class PostDetailMockService {
     if (existing != null) {
       _mockPosts[postId] = PostDetailModel(
         id: existing.id,
+        authorUserId: existing.authorUserId,
         authorName: existing.authorName,
         authorInitials: existing.authorInitials,
         username: existing.username,

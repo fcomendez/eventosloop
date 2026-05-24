@@ -164,6 +164,14 @@ for select
 to authenticated
 using (activo = true);
 
+-- Catalogo publico (onboarding / registro antes de confirmar sesion)
+drop policy if exists intereses_select_anon on public.intereses;
+create policy intereses_select_anon
+on public.intereses
+for select
+to anon
+using (activo = true);
+
 -- Tabla puente: cada usuario solo puede leer/escribir sus intereses
 drop policy if exists usuario_intereses_select_own on public.usuario_intereses;
 create policy usuario_intereses_select_own

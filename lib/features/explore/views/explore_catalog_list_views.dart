@@ -1,7 +1,7 @@
 import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/explore/models/explore_catalog_models.dart';
-import 'package:eventosloop/features/explore/services/explore_mock_service.dart';
+import 'package:eventosloop/features/explore/services/explore_service.dart';
 import 'package:flutter/material.dart';
 
 class NearbyEventsListView extends StatefulWidget {
@@ -12,7 +12,7 @@ class NearbyEventsListView extends StatefulWidget {
 }
 
 class _NearbyEventsListViewState extends State<NearbyEventsListView> {
-  final ExploreMockService _service = ExploreMockService();
+  final ExploreService _service = ExploreService();
   UserLocationContext? _location;
   List<ExploreNearbyEventItem> _items = <ExploreNearbyEventItem>[];
   bool _loading = true;
@@ -102,7 +102,7 @@ class RecommendedCommunitiesListView extends StatefulWidget {
 
 class _RecommendedCommunitiesListViewState
     extends State<RecommendedCommunitiesListView> {
-  final ExploreMockService _service = ExploreMockService();
+  final ExploreService _service = ExploreService();
   List<ExploreRecommendedCommunityItem> _items =
       <ExploreRecommendedCommunityItem>[];
   bool _loading = true;
@@ -216,7 +216,7 @@ class UpcomingEventsListView extends StatefulWidget {
 }
 
 class _UpcomingEventsListViewState extends State<UpcomingEventsListView> {
-  final ExploreMockService _service = ExploreMockService();
+  final ExploreService _service = ExploreService();
   List<ExploreUpcomingEventItem> _items = <ExploreUpcomingEventItem>[];
   bool _loading = true;
 

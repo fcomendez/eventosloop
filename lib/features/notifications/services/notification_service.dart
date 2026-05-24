@@ -1,8 +1,7 @@
-import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/features/notifications/models/notification_model.dart';
 import 'package:eventosloop/features/notifications/services/notification_mock_service.dart';
 import 'package:eventosloop/features/notifications/services/notification_supabase_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationService {
   NotificationService({
@@ -14,36 +13,42 @@ class NotificationService {
   final NotificationSupabaseService _supabase;
   final NotificationMockService _mock;
 
-  bool get _canUseSupabase =>
-      AppEnv.useSupabase &&
-      Supabase.instance.client.auth.currentSession != null;
-
   Future<List<NotificationModel>> fetchAll() async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
         return await _supabase.fetchAll();
-      } catch (_) {}
+      } catch (_) {
+        return const <NotificationModel>[];
+      }
     }
-    return _mock.fetchAll();
+    if (allowMockFallback) {
+      return _mock.fetchAll();
+    }
+    return const <NotificationModel>[];
   }
 
   Future<int> unreadCount() async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       try {
         return await _supabase.fetchUnreadCount();
-      } catch (_) {}
+      } catch (_) {
+        return 0;
+      }
     }
-    return _mock.unreadCount;
+    if (allowMockFallback) {
+      return _mock.unreadCount;
+    }
+    return 0;
   }
 
   Future<void> markAsRead(int notificationId) async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       await _supabase.markAsRead(notificationId);
     }
   }
 
   Future<void> markAllAsRead() async {
-    if (_canUseSupabase) {
+    if (supabaseLive) {
       await _supabase.markAllAsRead();
     }
   }

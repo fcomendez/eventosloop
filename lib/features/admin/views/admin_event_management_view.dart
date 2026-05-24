@@ -1,3 +1,4 @@
+import 'package:eventosloop/core/navigation/detail_navigation.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/admin/models/admin_directory_models.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
@@ -134,7 +135,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                           crossAxisCount: columns,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 2.2,
+                          childAspectRatio: 2.8,
                         ),
                         itemBuilder: (BuildContext context, int index) {
                           final AdminEventStat stat = _stats[index];
@@ -168,6 +169,7 @@ class _AdminEventManagementViewState extends State<AdminEventManagementView> {
                       : Column(
                           children: _events.map((AdminEventRow event) {
                             return ListTile(
+                              onTap: () => openEventDetail(context, event.idEvento),
                               leading: CircleAvatar(
                                 backgroundColor: Color(event.iconColor),
                                 child: const Icon(Icons.event, color: Colors.white),

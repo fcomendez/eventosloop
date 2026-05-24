@@ -32,7 +32,7 @@ class _EditPostViewState extends State<EditPostView> {
   bool _loading = true;
   bool _saving = false;
   String? _existingMediaLabel;
-  List<UserCommunityOption> _communities = UserCommunitiesMock.participando;
+  List<UserCommunityOption> _communities = const <UserCommunityOption>[];
 
   @override
   void initState() {

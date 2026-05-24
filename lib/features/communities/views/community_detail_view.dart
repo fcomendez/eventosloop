@@ -93,6 +93,7 @@ class _CommunityDetailViewState extends State<CommunityDetailView> {
                                       activityLabel:
                                           _community!.activityLabel,
                                       members: _members,
+                                      memberCount: _members.length,
                                     ),
                                     const SizedBox(height: 16),
                                     _ContentTabs(
@@ -221,6 +222,7 @@ class _CommunityHeader extends StatelessWidget {
     required this.description,
     required this.activityLabel,
     required this.members,
+    required this.memberCount,
   });
 
   final String coverColorHex;
@@ -231,6 +233,89 @@ class _CommunityHeader extends StatelessWidget {
   final String description;
   final String activityLabel;
   final List<CommunityMemberItem> members;
+  final int memberCount;
+
+  void _showMembersSheet(BuildContext context) {
+    if (members.isEmpty) {
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          minChildSize: 0.35,
+          maxChildSize: 0.9,
+          builder: (BuildContext context, ScrollController controller) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          'Miembros ($memberCount)',
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    controller: controller,
+                    itemCount: members.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (BuildContext context, int index) {
+                      final CommunityMemberItem member = members[index];
+                      return ListTile(
+                        onTap: () {
+                          Navigator.pop(context);
+                          openUserProfile(context, member.usuarioId);
+                        },
+                        title: Text(
+                          member.displayName,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        subtitle: Text(
+                          member.rol,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: AppColors.primary,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   Color _parseHex(String value) {
     final String clean = value.replaceFirst('#', '');
@@ -371,49 +456,32 @@ class _CommunityHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: <Widget>[
-                    const Icon(Icons.people_outline,
-                        color: AppColors.primary, size: 18),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        activityLabel,
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w800,
+                InkWell(
+                  onTap: members.isEmpty ? null : () => _showMembersSheet(context),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Row(
+                    children: <Widget>[
+                      const Icon(Icons.people_outline,
+                          color: AppColors.primary, size: 18),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          activityLabel,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      if (members.isNotEmpty)
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                    ],
+                  ),
                 ),
-                if (members.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Miembros',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: members
-                        .map(
-                          (CommunityMemberItem member) => Chip(
-                            label: Text(
-                              '${member.displayName} (${member.rol})',
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
               ],
             ),
           ),

@@ -1,4 +1,4 @@
-import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/admin/models/admin_community_models.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
@@ -24,7 +24,6 @@ class _AdminCommunityManagementViewState
   final CommunitySupabaseService _communityService = CommunitySupabaseService();
   List<CommunityListItem> _communities = <CommunityListItem>[];
   bool _loading = true;
-  bool _usingMock = false;
   String _searchQuery = '';
 
   @override
@@ -35,27 +34,40 @@ class _AdminCommunityManagementViewState
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    if (AppEnv.useSupabase) {
+    if (supabaseLive) {
       try {
         final List<CommunityListItem> items =
             await _communityService.listarParaAdmin();
         if (mounted) {
           setState(() {
             _communities = items;
-            _usingMock = false;
             _loading = false;
           });
         }
         return;
       } catch (_) {
-        // Fallback al mock.
+        if (mounted) {
+          setState(() {
+            _communities = const <CommunityListItem>[];
+            _loading = false;
+          });
+        }
+        return;
       }
     }
-    final List<AdminCommunityRow> mockRows = _mockService.fetchCommunities();
+    if (allowMockFallback) {
+      final List<AdminCommunityRow> mockRows = _mockService.fetchCommunities();
+      if (mounted) {
+        setState(() {
+          _communities = mockRows.map(_mockToListItem).toList();
+          _loading = false;
+        });
+      }
+      return;
+    }
     if (mounted) {
       setState(() {
-        _communities = mockRows.map(_mockToListItem).toList();
-        _usingMock = true;
+        _communities = const <CommunityListItem>[];
         _loading = false;
       });
     }
@@ -107,7 +119,7 @@ class _AdminCommunityManagementViewState
   }
 
   Future<void> _openActions(CommunityListItem item) async {
-    if (_usingMock) {
+    if (!supabaseLive) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Conecta Supabase para gestionar comunidades reales.'),
@@ -140,9 +152,9 @@ class _AdminCommunityManagementViewState
         children: <Widget>[
           AdminPageHeader(
             title: 'Gestion de comunidades',
-            subtitle: _usingMock
-                ? 'Conecta Supabase para gestion real'
-                : 'Aprobacion, moderadores e intereses',
+            subtitle: supabaseLive
+                ? 'Aprobacion, moderadores e intereses'
+                : 'Conecta Supabase para gestion real',
             trailing: <Widget>[
               IconButton(
                 onPressed: _load,
@@ -166,13 +178,16 @@ class _AdminCommunityManagementViewState
             ),
           ),
           const SizedBox(height: 18),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : AdminSectionCard(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: <Widget>[
+          _loading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : AdminSectionCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
                         const Padding(
                           padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
                           child: Row(
@@ -192,11 +207,12 @@ class _AdminCommunityManagementViewState
                             child: Text('No hay comunidades registradas.'),
                           )
                         else
-                          Expanded(
-                            child: ListView.separated(
-                              itemCount: communities.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (BuildContext context, int index) {
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: communities.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (BuildContext context, int index) {
                                 final CommunityListItem row = communities[index];
                                 return Padding(
                                   padding:
@@ -332,11 +348,9 @@ class _AdminCommunityManagementViewState
                                 );
                               },
                             ),
-                          ),
                       ],
                     ),
                   ),
-          ),
           const SizedBox(height: 14),
           Text(
             'Mostrando ${communities.length} comunidad${communities.length == 1 ? '' : 'es'}',

@@ -19,6 +19,7 @@ class PostCommentModel {
 class PostDetailModel {
   const PostDetailModel({
     required this.id,
+    required this.authorUserId,
     required this.authorName,
     required this.authorInitials,
     required this.username,
@@ -40,6 +41,7 @@ class PostDetailModel {
   });
 
   final int id;
+  final int authorUserId;
   final String authorName;
   final String authorInitials;
   final String username;

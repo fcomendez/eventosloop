@@ -216,6 +216,30 @@ class AdminSupabaseService {
     ];
   }
 
+  Future<String> buildSystemReportSummary() async {
+    if (!_ready) {
+      throw Exception('Supabase no esta disponible');
+    }
+    final List<AdminKpiMetric> kpis = await fetchDashboardKpis();
+    final int activeEvents =
+        await _count('evento', filters: <String, Object?>{'estado': 'ACTIVO'});
+    final int totalPosts = await _count('publicaciones');
+    final int participations = await _count('participantes_evento');
+    final DateTime now = DateTime.now();
+    final StringBuffer buffer = StringBuffer()
+      ..writeln('Reporte LOOP — ${now.day}/${now.month}/${now.year}')
+      ..writeln('')
+      ..writeln('Resumen general:');
+    for (final AdminKpiMetric kpi in kpis) {
+      buffer.writeln('• ${kpi.label}: ${kpi.value} (${kpi.badgeLabel})');
+    }
+    buffer
+      ..writeln('• Eventos activos: $activeEvents')
+      ..writeln('• Publicaciones totales: $totalPosts')
+      ..writeln('• Participaciones registradas: $participations');
+    return buffer.toString();
+  }
+
   Future<List<AdminGrowthPoint>> fetchGrowthSeries({required bool monthly}) async {
     if (!_ready) {
       return const <AdminGrowthPoint>[];

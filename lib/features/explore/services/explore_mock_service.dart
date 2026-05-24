@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:eventosloop/core/config/app_env.dart';
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/core/services/geocoding_service.dart';
 import 'package:eventosloop/core/services/location_service.dart';
 import 'package:eventosloop/features/communities/models/community_list_item.dart';
@@ -11,8 +12,8 @@ import 'package:eventosloop/features/explore/models/explore_catalog_models.dart'
 import 'package:eventosloop/features/posts/services/post_supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ExploreMockService {
-  ExploreMockService({
+class ExploreService {
+  ExploreService({
     LocationService? locationService,
     GeocodingService? geocodingService,
   })  : _locationService = locationService ?? LocationService(),
@@ -278,7 +279,10 @@ class ExploreMockService {
               )
               .toList();
         }
-      } catch (_) {}
+        return const <ExploreNearbyEventItem>[];
+      } catch (_) {
+        return const <ExploreNearbyEventItem>[];
+      }
     }
     await Future<void>.delayed(const Duration(milliseconds: 120));
     return _nearbyEvents
@@ -305,13 +309,11 @@ class ExploreMockService {
       try {
         final CommunitySupabaseService service = CommunitySupabaseService();
         final List<CommunityListItem> items = await service.listarExplorables();
-        if (items.isNotEmpty) {
-          return items
-              .map((CommunityListItem item) => _mapCommunityListItem(item, location))
-              .toList();
-        }
+        return items
+            .map((CommunityListItem item) => _mapCommunityListItem(item, location))
+            .toList();
       } catch (_) {
-        // Fallback al mock si Supabase falla.
+        return const <ExploreRecommendedCommunityItem>[];
       }
     }
     await Future<void>.delayed(const Duration(milliseconds: 120));
@@ -348,13 +350,11 @@ class ExploreMockService {
         final EventService eventService = EventService();
         final List<EventModel> events =
             await eventService.listarProximos(limit: 12);
-        if (events.isNotEmpty) {
-          return events
-              .map((EventModel event) => _mapUpcomingEvent(event, location))
-              .toList();
-        }
+        return events
+            .map((EventModel event) => _mapUpcomingEvent(event, location))
+            .toList();
       } catch (_) {
-        // Fallback al mock.
+        return const <ExploreUpcomingEventItem>[];
       }
     }
     await Future<void>.delayed(const Duration(milliseconds: 120));
@@ -377,32 +377,22 @@ class ExploreMockService {
   }
 
   Future<List<ExploreFeaturedPostItem>> fetchFeaturedPosts() async {
-    if (AppEnv.useSupabase &&
-        Supabase.instance.client.auth.currentSession != null) {
+    if (supabaseLive) {
       try {
         final PostSupabaseService service = PostSupabaseService();
-        final List<ExploreFeaturedPostItem> items =
-            await service.fetchFeatured(limit: 6);
-        if (items.isNotEmpty) {
-          return items;
-        }
-      } catch (_) {}
+        return await service.fetchFeatured(limit: 6);
+      } catch (_) {
+        return const <ExploreFeaturedPostItem>[];
+      }
     }
     await Future<void>.delayed(const Duration(milliseconds: 80));
     return List<ExploreFeaturedPostItem>.from(_featuredPosts);
   }
 
-  List<ExploreNearbyEventItem> previewNearbyEvents({int limit = 3}) {
-    return _nearbyEvents.take(limit).toList();
-  }
-
-  List<ExploreRecommendedCommunityItem> previewRecommendedCommunities(
-      {int limit = 3}) {
-    return _recommendedCommunities.take(limit).toList();
-  }
-
-  List<ExploreUpcomingEventItem> previewUpcomingEvents({int limit = 3}) {
-    return _upcomingEvents.take(limit).toList();
+  /// Vista previa del carrusel (datos reales con limite).
+  Future<List<ExploreNearbyEventItem>> fetchNearbyPreview({int limit = 6}) async {
+    final List<ExploreNearbyEventItem> items = await fetchNearbyEvents();
+    return items.take(limit).toList();
   }
 
   double _distanceKm(
@@ -432,3 +422,6 @@ class _ScoredEvent {
   final EventModel event;
   final double distanceKm;
 }
+
+/// Nombre historico; preferir [ExploreService].
+typedef ExploreMockService = ExploreService;

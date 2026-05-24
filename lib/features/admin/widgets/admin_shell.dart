@@ -1,9 +1,11 @@
+import 'package:eventosloop/core/config/supabase_runtime.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/core/widgets/loop_user_avatar.dart';
+import 'package:eventosloop/features/admin/services/admin_supabase_service.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
 import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
-import 'package:eventosloop/features/profile/models/profile_model.dart';
 import 'package:eventosloop/features/profile/services/profile_mock_service.dart';
+import 'package:eventosloop/features/profile/services/profile_supabase_service.dart';
 import 'package:flutter/material.dart';
 
 class AdminShell extends StatelessWidget {
@@ -147,17 +149,6 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           if (wide) const SizedBox(width: 12),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none),
-            color: AppColors.textSecondary,
-          ),
-          if (wide)
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.help_outline),
-              color: AppColors.textSecondary,
-            ),
           const _AdminUserAvatar(),
         ],
       ),
@@ -173,8 +164,10 @@ class _AdminUserAvatar extends StatefulWidget {
 }
 
 class _AdminUserAvatarState extends State<_AdminUserAvatar> {
-  final ProfileMockService _profileService = ProfileMockService();
-  ProfileModel? _profile;
+  final ProfileSupabaseService _supabaseService = ProfileSupabaseService();
+  final ProfileMockService _mockService = ProfileMockService();
+  String? _avatarUrl;
+  String _initials = 'AD';
 
   @override
   void initState() {
@@ -183,16 +176,35 @@ class _AdminUserAvatarState extends State<_AdminUserAvatar> {
   }
 
   Future<void> _loadProfile() async {
-    final ProfileModel profile = await _profileService.fetchProfile();
-    if (!mounted) {
+    if (supabaseLive) {
+      final ProfileHeaderData? header =
+          await _supabaseService.fetchCurrentUserHeader();
+      if (!mounted) {
+        return;
+      }
+      if (header != null) {
+        setState(() {
+          _avatarUrl = header.avatarUrl;
+          _initials = header.avatarInitials;
+        });
+      }
       return;
     }
-    setState(() => _profile = profile);
+    if (allowMockFallback) {
+      final profile = await _mockService.fetchProfile();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _avatarUrl = profile.avatarUrl;
+        _initials = profile.avatarInitials;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_profile == null) {
+    if (_avatarUrl == null && _initials == 'AD' && supabaseLive) {
       return Material(
         color: Colors.transparent,
         child: InkWell(
@@ -216,8 +228,8 @@ class _AdminUserAvatarState extends State<_AdminUserAvatar> {
     }
 
     return LoopUserAvatar(
-      avatarUrl: _profile!.avatarUrl,
-      initials: _profile!.avatarInitials,
+      avatarUrl: _avatarUrl,
+      initials: _initials,
       radius: 16,
       fontSize: 11,
       onTap: () => exitAdminToFeed(context),
@@ -406,10 +418,48 @@ class _SidebarPanel extends StatelessWidget {
           SizedBox(
             height: 42,
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Reporte generado (mock)')),
+              onPressed: () async {
+                final AdminSupabaseService service = AdminSupabaseService();
+                final ScaffoldMessengerState messenger =
+                    ScaffoldMessenger.of(context);
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Generando reporte...')),
                 );
+                try {
+                  final String summary = await service.buildSystemReportSummary();
+                  if (!context.mounted) {
+                    return;
+                  }
+                  await showDialog<void>(
+                    context: context,
+                    builder: (BuildContext dialogContext) => AlertDialog(
+                      title: const Text('Reporte del sistema'),
+                      content: SingleChildScrollView(
+                        child: Text(
+                          summary,
+                          style: const TextStyle(height: 1.4),
+                        ),
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text('Cerrar'),
+                        ),
+                      ],
+                    ),
+                  );
+                } catch (e) {
+                  if (!context.mounted) {
+                    return;
+                  }
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'No se pudo generar el reporte: ${e.toString().replaceFirst('Exception: ', '')}',
+                      ),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,

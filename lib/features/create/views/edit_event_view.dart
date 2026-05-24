@@ -41,7 +41,7 @@ class _EditEventViewState extends State<EditEventView> {
   String? _coverColorHex;
   String? _existingCoverUrl;
   XFile? _selectedImage;
-  List<UserCommunityOption> _communities = UserCommunitiesMock.participando;
+  List<UserCommunityOption> _communities = const <UserCommunityOption>[];
 
   static const List<String> _capacityOptions = <String>[
     '5',

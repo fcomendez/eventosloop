@@ -9,7 +9,8 @@ App Flutter para descubrir eventos y comunidades, con backend local Supabase en 
 1. **Docker Desktop** (en ejecución).
 2. **Flutter SDK** (`flutter doctor`).
 3. **Android Studio** (emulador Android) o **Chrome** (web).
-4. **PowerShell** (Windows).
+4. **Git** (para clonar).
+5. **PowerShell** (Windows) o **bash** (macOS/Linux) para los scripts SQL.
 
 ---
 
@@ -29,6 +30,8 @@ cd eventosloop
 ```powershell
 copy .env.example .env
 ```
+
+> Si usas `scripts\start-backend.ps1` (paso 3, opción A), el `.env` se crea solo si no existe.
 
 ### 3. Levantar el backend (Docker)
 
@@ -109,11 +112,13 @@ flutter run --dart-define=SUPABASE_URL=http://10.0.2.2:54321 --dart-define=SUPAB
 flutter run -d chrome --dart-define=SUPABASE_URL=http://127.0.0.1:54321 --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
 ```
 
-**7.3 Celular físico** (misma red Wi‑Fi; cambia la IP por la de tu PC — `ipconfig`):
+**7.3 Celular físico** (misma red Wi‑Fi; cambia la IP por la de tu PC — `ipconfig` en Windows, `ip addr` / `ifconfig` en Linux/macOS):
 
 ```powershell
 flutter run --dart-define=SUPABASE_URL=http://192.168.1.50:54321 --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
 ```
+
+> En celular físico, permite el puerto **54321** en el firewall del PC si la app no conecta.
 
 ### 8. Probar login
 
@@ -150,6 +155,7 @@ Si omitiste el paso 5.4, puedes **registrar un usuario nuevo** (requiere haber e
 | Problema | Qué hacer |
 |----------|-----------|
 | `connection refused` en la app | Verifica Docker (`paso 4`). En emulador usa `10.0.2.2`, no `127.0.0.1`. |
+| Celular no conecta al backend | Misma Wi‑Fi, IP LAN del PC en `SUPABASE_URL`, firewall con puerto **54321** abierto. |
 | Sin regiones al registrarse | Ejecuta el paso 5.3 (`seed-catalogo.ps1`). |
 | Imágenes no se suben | Verifica `loop-storage` en el paso 4 y ejecuta el paso 5.2. |
 | Base de datos vacía o corrupta | `docker compose down -v` → repite desde el paso 3. |
@@ -167,3 +173,25 @@ docker compose up -d
 ```
 
 Luego repite los **pasos 5 a 8**.
+
+---
+
+## macOS / Linux
+
+Mismos pasos; sustituye los scripts `.ps1` por:
+
+```bash
+cp .env.example .env
+docker compose up -d
+
+# Espera a que Postgres responda (docker compose ps → loop-db healthy)
+docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < docs/sql/loop_schema.sql
+docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < docs/sql/loop_storage.sql
+docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < docs/sql/loop_seed_catalogo.sql
+docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < docs/sql/loop_seed_demo.sql
+
+flutter pub get
+flutter run -d chrome --dart-define=SUPABASE_URL=http://127.0.0.1:54321 --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+```
+
+En emulador Android usa `http://10.0.2.2:54321`; en dispositivo físico, la IP LAN de tu máquina.

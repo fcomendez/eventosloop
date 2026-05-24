@@ -47,19 +47,21 @@ class _FeedHomeViewState extends State<FeedHomeView> {
     }
   }
 
-  int _eventIdFor(FeedItemModel item) {
-    return switch (item.id) {
-      120 => 1,
-      117 => 4,
-      _ => 1,
-    };
+  void _openItem(BuildContext context, FeedItemModel item) {
+    openPostDetail(context, item.id);
   }
 
-  void _openItem(BuildContext context, FeedItemModel item) {
-    if (item.type == FeedItemType.evento) {
-      openEventDetail(context, _eventIdFor(item));
-    } else {
-      openPostDetail(context, item.id);
+  void _openAuthor(BuildContext context, FeedItemModel item) {
+    final int? userId = item.authorUserId;
+    if (userId != null) {
+      openUserProfile(context, userId);
+    }
+  }
+
+  void _openCommunity(BuildContext context, FeedItemModel item) {
+    final int? communityId = item.communityId;
+    if (communityId != null) {
+      openCommunityDetail(context, communityId);
     }
   }
 
@@ -126,6 +128,8 @@ class _FeedHomeViewState extends State<FeedHomeView> {
                             item: item,
                             onLike: () => _controller.toggleLike(item.id),
                             onOpen: () => _openItem(context, item),
+                            onAuthorTap: () => _openAuthor(context, item),
+                            onCommunityTap: () => _openCommunity(context, item),
                           );
                         },
                       ),
@@ -242,11 +246,15 @@ class _FeedPostCard extends StatelessWidget {
     required this.item,
     required this.onLike,
     required this.onOpen,
+    required this.onAuthorTap,
+    required this.onCommunityTap,
   });
 
   final FeedItemModel item;
   final VoidCallback onLike;
   final VoidCallback onOpen;
+  final VoidCallback onAuthorTap;
+  final VoidCallback onCommunityTap;
 
   @override
   Widget build(BuildContext context) {
@@ -263,32 +271,39 @@ class _FeedPostCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
               child: Row(
                 children: <Widget>[
-                  LoopUserAvatar(
-                    avatarUrl: item.author.avatarUrl,
-                    initials: item.author.avatarInitials,
-                    radius: 19,
-                    fontSize: 12,
+                  GestureDetector(
+                    onTap: onAuthorTap,
+                    child: LoopUserAvatar(
+                      avatarUrl: item.author.avatarUrl,
+                      initials: item.author.avatarInitials,
+                      radius: 19,
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          item.author.name,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w800,
+                    child: GestureDetector(
+                      onTap: onAuthorTap,
+                      behavior: HitTestBehavior.opaque,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            item.author.name,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${item.author.username} · ${item.publishedLabel}',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
+                          Text(
+                            '${item.author.username} · ${item.publishedLabel}',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   _TypeChip(label: item.typeLabel),
@@ -299,12 +314,15 @@ class _FeedPostCard extends StatelessWidget {
             if (item.contextLabel != null)
               Padding(
                 padding: EdgeInsets.fromLTRB(12, hasMedia ? 10 : 0, 12, 6),
-                child: Text(
-                  item.contextLabel!,
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                child: GestureDetector(
+                  onTap: onCommunityTap,
+                  child: Text(
+                    item.contextLabel!,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
