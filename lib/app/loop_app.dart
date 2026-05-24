@@ -1,39 +1,44 @@
+import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/features/auth/views/splash_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
-/// Raíz de LOOP. Pantallas de auth y flujos se irán colgando aquí.
+/// Raiz de la aplicacion LOOP.
 class LoopApp extends StatelessWidget {
   const LoopApp({super.key});
-
-  static const Color _seedBlue = Color(0xFF1565C0);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'LOOP',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('es', 'CL'),
+      supportedLocales: const <Locale>[
+        Locale('es', 'CL'),
+        Locale('es'),
+      ],
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: _seedBlue),
+        scaffoldBackgroundColor: AppColors.screenBackground,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+        ),
         useMaterial3: true,
-      ),
-      home: const _HomeShell(),
-    );
-  }
-}
-
-class _HomeShell extends StatelessWidget {
-  const _HomeShell();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('LOOP')),
-      body: Center(
-        child: Text(
-          'Base del proyecto lista.\nSiguiente: flujo de inicio de sesión (ver docs/).',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.inputBackground,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
+      home: const SplashView(),
     );
   }
 }

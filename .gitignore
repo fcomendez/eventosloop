@@ -1,4 +1,4 @@
-# Flutter / Dart
+ # Flutter / Dart
 .dart_tool/
 .packages
 .pub-cache/
@@ -17,6 +17,8 @@ build/
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
 *.jks
+**/android/hs_err_*.log
+**/android/replay_*.log
 
 # iOS / Xcode
 **/ios/**/*.mode1v3

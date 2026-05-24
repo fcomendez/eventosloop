@@ -1,0 +1,7 @@
+-- Passwords de roles internos Supabase (debe coincidir con POSTGRES_PASSWORD del .env)
+\set pgpass `echo "$POSTGRES_PASSWORD"`
+
+ALTER USER authenticator WITH PASSWORD :'pgpass';
+ALTER USER pgbouncer WITH PASSWORD :'pgpass';
+ALTER USER supabase_auth_admin WITH PASSWORD :'pgpass';
+ALTER USER supabase_storage_admin WITH PASSWORD :'pgpass';
