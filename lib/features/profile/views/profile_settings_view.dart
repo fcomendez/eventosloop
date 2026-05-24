@@ -1,6 +1,7 @@
 import 'package:eventosloop/core/config/app_env.dart';
 import 'package:eventosloop/core/theme/app_colors.dart';
 import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
+import 'package:eventosloop/features/admin/services/admin_access_service.dart';
 import 'package:eventosloop/features/profile/services/profile_supabase_service.dart';
 import 'package:eventosloop/features/profile/views/profile_interests_settings_view.dart';
 import 'package:eventosloop/features/profile/views/profile_personal_info_view.dart';
@@ -15,11 +16,13 @@ class ProfileSettingsView extends StatefulWidget {
 
 class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   final ProfileSupabaseService _profileService = ProfileSupabaseService();
+  final AdminAccessService _adminAccess = AdminAccessService();
   RangeValues _ageRange = const RangeValues(18, 35);
   bool _notifyRecommendedEvents = true;
   bool _showProfileStats = true;
   bool _loading = true;
   bool _saving = false;
+  bool _canAccessAdmin = false;
 
   @override
   void initState() {
@@ -34,10 +37,12 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       }
       return;
     }
+    final bool canAdmin = await _adminAccess.puedeAccederAdmin();
     final ProfileSettingsData? settings =
         await _profileService.fetchProfileSettings();
     if (settings != null && mounted) {
       setState(() {
+        _canAccessAdmin = canAdmin;
         _ageRange = RangeValues(
           settings.ageMin.toDouble(),
           settings.ageMax.toDouble(),
@@ -49,7 +54,10 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       return;
     }
     if (mounted) {
-      setState(() => _loading = false);
+      setState(() {
+        _canAccessAdmin = canAdmin;
+        _loading = false;
+      });
     }
   }
 
@@ -262,12 +270,16 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                             },
                           ),
                           const Divider(height: 18),
-                          _settingsAction(
-                            icon: Icons.admin_panel_settings_outlined,
-                            title: 'Panel administracion',
-                            subtitle: 'Preview web — dashboard, analytics y moderacion.',
-                            onTap: () => openAdminDashboard(context),
-                          ),
+                          if (_canAccessAdmin) ...<Widget>[
+                            _settingsAction(
+                              icon: Icons.admin_panel_settings_outlined,
+                              title: 'Panel administracion',
+                              subtitle:
+                                  'Dashboard, usuarios, moderacion y analitica.',
+                              onTap: () => openAdminDashboard(context),
+                            ),
+                            const Divider(height: 18),
+                          ],
                         ],
                       ),
                     ),

@@ -1549,3 +1549,67 @@ $$;
 
 grant execute on function public.eliminar_mi_cuenta() to authenticated;
 
+-- Politicas RLS adicionales para panel de administracion
+drop policy if exists usuario_select_admin on public.usuario;
+create policy usuario_select_admin
+on public.usuario
+for select
+to authenticated
+using (public.es_admin_o_moderador());
+
+drop policy if exists usuario_update_admin on public.usuario;
+create policy usuario_update_admin
+on public.usuario
+for update
+to authenticated
+using (public.es_admin_o_moderador());
+
+drop policy if exists usuario_intereses_select_admin on public.usuario_intereses;
+create policy usuario_intereses_select_admin
+on public.usuario_intereses
+for select
+to authenticated
+using (public.es_admin_o_moderador());
+
+drop policy if exists evento_select_admin on public.evento;
+create policy evento_select_admin
+on public.evento
+for select
+to authenticated
+using (public.es_admin_o_moderador());
+
+drop policy if exists evento_update_admin on public.evento;
+create policy evento_update_admin
+on public.evento
+for update
+to authenticated
+using (public.es_admin_o_moderador());
+
+drop policy if exists evento_delete_admin on public.evento;
+create policy evento_delete_admin
+on public.evento
+for delete
+to authenticated
+using (public.es_admin_o_moderador());
+
+drop policy if exists publicaciones_update_admin on public.publicaciones;
+create policy publicaciones_update_admin
+on public.publicaciones
+for update
+to authenticated
+using (public.es_admin_o_moderador());
+
+drop policy if exists publicaciones_delete_admin on public.publicaciones;
+create policy publicaciones_delete_admin
+on public.publicaciones
+for delete
+to authenticated
+using (public.es_admin_o_moderador());
+
+drop policy if exists notificacion_insert_admin on public.notificacion;
+create policy notificacion_insert_admin
+on public.notificacion
+for insert
+to authenticated
+with check (public.es_admin_o_moderador());
+

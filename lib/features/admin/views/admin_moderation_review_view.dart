@@ -1,7 +1,8 @@
 import 'package:eventosloop/core/theme/app_colors.dart';
+import 'package:eventosloop/features/admin/models/admin_community_models.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
 import 'package:eventosloop/features/admin/navigation/admin_navigation.dart';
-import 'package:eventosloop/features/admin/services/admin_mock_service.dart';
+import 'package:eventosloop/features/admin/services/admin_supabase_service.dart';
 import 'package:eventosloop/features/admin/widgets/admin_shell.dart';
 import 'package:flutter/material.dart';
 
@@ -16,9 +17,18 @@ class AdminModerationReviewView extends StatefulWidget {
 }
 
 class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
-  final AdminMockService _service = AdminMockService();
+  final AdminSupabaseService _service = AdminSupabaseService();
   AdminModerationAction? _selectedAction;
   final TextEditingController _noteController = TextEditingController();
+  AdminModerationIncident? _incident;
+  bool _loading = true;
+  bool _processing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   @override
   void dispose() {
@@ -26,72 +36,102 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
     super.dispose();
   }
 
-  void _handleSidebar(AdminSidebarItem item) {
-    handleAdminSidebarNavigation(context, item, replace: true);
+  Future<void> _load() async {
+    if (widget.reportId == null) {
+      setState(() => _loading = false);
+      return;
+    }
+    try {
+      final AdminModerationIncident? incident =
+          await _service.fetchModerationIncident(widget.reportId!);
+      if (mounted) {
+        setState(() {
+          _incident = incident;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
-  void _confirmAction() {
+  Future<void> _confirmAction() async {
     if (_selectedAction == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selecciona una accion de moderacion')),
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Accion registrada en adm_log (mock)')),
-    );
+    if (_incident == null || widget.reportId == null) {
+      return;
+    }
+    setState(() => _processing = true);
+    try {
+      await _service.resolveReport(
+        reportId: widget.reportId!,
+        action: _selectedAction!,
+        note: _noteController.text.trim(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Accion registrada correctamente')),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+        setState(() => _processing = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final AdminModerationIncident incident = _service.fetchSampleIncident(
-      reportId: widget.reportId ?? '849201',
-    );
+    if (_loading) {
+      return AdminShell(
+        selectedTopTab: AdminTopTab.dashboard,
+        selectedSidebar: AdminSidebarItem.moderation,
+        onSidebarChanged: (AdminSidebarItem item) =>
+            handleAdminSidebarNavigation(context, item, replace: true),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final AdminModerationIncident? incident = _incident;
+    if (incident == null) {
+      return AdminShell(
+        selectedTopTab: AdminTopTab.dashboard,
+        selectedSidebar: AdminSidebarItem.moderation,
+        onSidebarChanged: (AdminSidebarItem item) =>
+            handleAdminSidebarNavigation(context, item, replace: true),
+        body: const Center(child: Text('Reporte no encontrado.')),
+      );
+    }
 
     return AdminShell(
       selectedTopTab: AdminTopTab.dashboard,
       selectedSidebar: AdminSidebarItem.moderation,
-      onSidebarChanged: _handleSidebar,
+      onSidebarChanged: (AdminSidebarItem item) =>
+          handleAdminSidebarNavigation(context, item, replace: true),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: <Widget>[
-              _BreadcrumbChip('Moderacion'),
-              const Icon(Icons.chevron_right, size: 16, color: AppColors.textSecondary),
-              _BreadcrumbChip('Contenido reportado'),
-              const Icon(Icons.chevron_right, size: 16, color: AppColors.textSecondary),
-              _BreadcrumbChip('Reporte #${incident.reportId}'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text(
-                  'Revisar incidente',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              OutlinedButton(onPressed: () {}, child: const Text('Omitir caso')),
-              const SizedBox(width: 8),
-              OutlinedButton(onPressed: () {}, child: const Text('Escalar')),
-            ],
+          Text(
+            'Reporte #${incident.reportId}',
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 18),
           LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               final bool wide = constraints.maxWidth >= 900;
-              final Widget leftColumn = Column(
+              final Widget left = Column(
                 children: <Widget>[
-                  _ReportedPostCard(incident: incident),
+                  _ReportedContentCard(incident: incident),
                   const SizedBox(height: 12),
                   _InfoCard(
                     title: 'Estadisticas de cuenta',
@@ -99,19 +139,19 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                       ('Registro', incident.joinedLabel),
                       ('Estado', incident.statusLabel),
                       ('Seguidores', incident.followersLabel),
-                      ('Reportes', incident.pendingReportsLabel),
+                      ('Reportes pendientes', incident.pendingReportsLabel),
                     ],
-                    highlightLast: true,
                   ),
-                  const SizedBox(height: 12),
-                  _InfoCard(
-                    title: 'Acciones previas',
-                    bullets: incident.previousActions,
-                  ),
+                  if (incident.previousActions.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 12),
+                    _InfoCard(
+                      title: 'Acciones previas (adm_log)',
+                      bullets: incident.previousActions,
+                    ),
+                  ],
                 ],
               );
-
-              final Widget rightColumn = Column(
+              final Widget right = Column(
                 children: <Widget>[
                   _ReportingDetailsCard(incident: incident),
                   const SizedBox(height: 12),
@@ -126,13 +166,8 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        const Text(
-                          'Nota de resolucion (interna)',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
+                        const Text('Nota de resolucion (interna)',
+                            style: TextStyle(fontWeight: FontWeight.w900)),
                         const SizedBox(height: 10),
                         TextField(
                           controller: _noteController,
@@ -146,9 +181,18 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                           width: double.infinity,
                           height: 46,
                           child: ElevatedButton.icon(
-                            onPressed: _confirmAction,
-                            icon: const Icon(Icons.check_circle_outline),
-                            label: const Text('Confirmar accion de moderacion'),
+                            onPressed: _processing ? null : _confirmAction,
+                            icon: _processing
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.check_circle_outline),
+                            label: const Text('Confirmar accion'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: AppColors.white,
@@ -160,18 +204,17 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
                   ),
                 ],
               );
-
               if (!wide) {
                 return Column(
-                  children: <Widget>[leftColumn, const SizedBox(height: 12), rightColumn],
+                  children: <Widget>[left, const SizedBox(height: 12), right],
                 );
               }
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Expanded(flex: 3, child: leftColumn),
+                  Expanded(flex: 3, child: left),
                   const SizedBox(width: 16),
-                  Expanded(flex: 2, child: rightColumn),
+                  Expanded(flex: 2, child: right),
                 ],
               );
             },
@@ -182,133 +225,69 @@ class _AdminModerationReviewViewState extends State<AdminModerationReviewView> {
   }
 }
 
-class _BreadcrumbChip extends StatelessWidget {
-  const _BreadcrumbChip(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: const TextStyle(
-        color: AppColors.textSecondary,
-        fontWeight: FontWeight.w700,
-        fontSize: 12,
-      ),
-    );
-  }
-}
-
-class _ReportedPostCard extends StatelessWidget {
-  const _ReportedPostCard({required this.incident});
+class _ReportedContentCard extends StatelessWidget {
+  const _ReportedContentCard({required this.incident});
 
   final AdminModerationIncident incident;
 
   @override
   Widget build(BuildContext context) {
+    final String typeLabel = incident.contentType == AdminReportContentType.post
+        ? 'Publicacion'
+        : 'Evento';
     return AdminSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              const CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.inputBackground,
-                child: Icon(Icons.person, color: AppColors.primary),
-              ),
-              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      incident.authorName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      '${incident.authorHandle} · ${incident.postedLabel}',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(incident.authorName,
+                        style: const TextStyle(fontWeight: FontWeight.w900)),
+                    Text('${incident.authorHandle} · $typeLabel · ${incident.postedLabel}',
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.textSecondary)),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.error.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
-                  incident.riskLabel,
-                  style: const TextStyle(
-                    color: AppColors.error,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+                child: Text(incident.riskLabel,
+                    style: const TextStyle(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 10)),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          Text(
-            incident.content,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            height: 160,
-            width: double.infinity,
-            decoration: BoxDecoration(
+          Text(incident.content, style: const TextStyle(height: 1.45)),
+          if (incident.mediaUrl != null && incident.mediaUrl!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 14),
+            ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[Color(0xFF1B1F3B), Color(0xFF5B3FA0)],
+              child: Image.network(
+                incident.mediaUrl!,
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 80,
+                  color: AppColors.inputBackground,
+                  alignment: Alignment.center,
+                  child: const Text('Imagen no disponible'),
+                ),
               ),
             ),
-            child: Stack(
-              alignment: Alignment.bottomCenter,
-              children: <Widget>[
-                Container(
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(12),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 40,
-                  child: Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFFB57CFF).withValues(alpha: 0.85),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: const Color(0xFFB57CFF).withValues(alpha: 0.5),
-                          blurRadius: 30,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: <Widget>[
@@ -325,7 +304,6 @@ class _ReportedPostCard extends StatelessWidget {
 
 class _StatChip extends StatelessWidget {
   const _StatChip(this.icon, this.label);
-
   final IconData icon;
   final String label;
 
@@ -336,13 +314,9 @@ class _StatChip extends StatelessWidget {
       children: <Widget>[
         Icon(icon, size: 16, color: AppColors.textSecondary),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(
+                color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
       ],
     );
   }
@@ -353,13 +327,11 @@ class _InfoCard extends StatelessWidget {
     required this.title,
     this.rows = const <(String, String)>[],
     this.bullets = const <String>[],
-    this.highlightLast = false,
   });
 
   final String title;
   final List<(String, String)> rows;
   final List<String> bullets;
-  final bool highlightLast;
 
   @override
   Widget build(BuildContext context) {
@@ -367,44 +339,19 @@ class _InfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          ...rows.map(
+            ((String, String) row) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text('${row.$1}: ${row.$2}',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
-          const SizedBox(height: 10),
-          ...rows.asMap().entries.map((MapEntry<int, (String, String)> entry) {
-            final int index = entry.key;
-            final (String label, String value) = entry.value;
-            final bool highlight = highlightLast && index == rows.length - 1;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: <Widget>[
-                  Text(
-                    '$label: ',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      color: highlight ? AppColors.error : AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
           ...bullets.map(
             (String item) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text('• $item', style: const TextStyle(height: 1.35)),
+              child: Text('• $item'),
             ),
           ),
         ],
@@ -415,7 +362,6 @@ class _InfoCard extends StatelessWidget {
 
 class _ReportingDetailsCard extends StatelessWidget {
   const _ReportingDetailsCard({required this.incident});
-
   final AdminModerationIncident incident;
 
   @override
@@ -424,51 +370,29 @@ class _ReportingDetailsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
-            'Detalles del reporte',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          const Text('Detalles del reporte',
+              style: TextStyle(fontWeight: FontWeight.w900)),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             children: incident.reasonTags
-                .map(
-                  (String tag) => Chip(
-                    label: Text(tag),
-                    backgroundColor: AppColors.inputBackground,
-                  ),
-                )
+                .map((String tag) => Chip(label: Text(tag)))
                 .toList(),
           ),
           const SizedBox(height: 8),
-          Text(
-            incident.reportVolumeLabel,
-            style: const TextStyle(
-              color: AppColors.error,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Comentarios del reportante',
-            style: TextStyle(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          ...incident.reporterComments.map(
-            (String comment) => Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
+          Text(incident.reportVolumeLabel,
+              style: const TextStyle(fontWeight: FontWeight.w800)),
+          if (incident.reporterComments.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            const Text('Comentarios del reportante',
+                style: TextStyle(fontWeight: FontWeight.w800)),
+            ...incident.reporterComments.map(
+              (String c) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(c),
               ),
-              child: Text(comment, style: const TextStyle(height: 1.35)),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -490,29 +414,24 @@ class _ActionSelectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
-            'Seleccionar accion',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          const Text('Seleccionar accion',
+              style: TextStyle(fontWeight: FontWeight.w900)),
           const SizedBox(height: 10),
           _ActionTile(
             title: 'Advertir usuario',
-            subtitle: 'Enviar notificacion de advertencia',
+            subtitle: 'Notificacion + marcar reporte resuelto',
             selected: selected == AdminModerationAction.warnUser,
             onTap: () => onSelected(AdminModerationAction.warnUser),
           ),
           _ActionTile(
             title: 'Eliminar contenido',
-            subtitle: 'Quitar publicacion y todos los comentarios',
+            subtitle: 'Elimina post o cancela evento',
             selected: selected == AdminModerationAction.deleteContent,
             onTap: () => onSelected(AdminModerationAction.deleteContent),
           ),
           _ActionTile(
-            title: 'Baneo permanente',
-            subtitle: 'Revocar todo acceso de inmediato',
+            title: 'Suspender usuario',
+            subtitle: 'Estado SUSPENDIDO en la cuenta',
             danger: true,
             selected: selected == AdminModerationAction.permanentBan,
             onTap: () => onSelected(AdminModerationAction.permanentBan),
@@ -563,20 +482,12 @@ class _ActionTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: danger ? AppColors.error : AppColors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
+                      Text(title,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900, color: accent)),
+                      Text(subtitle,
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.textSecondary)),
                     ],
                   ),
                 ),

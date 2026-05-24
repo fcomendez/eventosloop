@@ -141,7 +141,7 @@ class _AdminCommunityManagementViewState
           AdminPageHeader(
             title: 'Gestion de comunidades',
             subtitle: _usingMock
-                ? 'Datos mock — conecta Supabase para gestion real'
+                ? 'Conecta Supabase para gestion real'
                 : 'Aprobacion, moderadores e intereses',
             trailing: <Widget>[
               IconButton(

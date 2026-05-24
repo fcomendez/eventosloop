@@ -1,3 +1,5 @@
+import 'package:eventosloop/features/admin/services/admin_access_service.dart';
+import 'package:eventosloop/features/admin/widgets/admin_access_gate.dart';
 import 'package:eventosloop/features/admin/models/admin_models.dart';
 import 'package:eventosloop/features/admin/views/admin_ad_console_view.dart';
 import 'package:eventosloop/features/admin/views/admin_analytics_view.dart';
@@ -11,22 +13,36 @@ import 'package:eventosloop/features/admin/views/admin_user_management_view.dart
 import 'package:eventosloop/features/feed/views/feed_home_view.dart';
 import 'package:flutter/material.dart';
 
-void openAdminDashboard(BuildContext context) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => const AdminDashboardView()),
+final AdminAccessService _adminAccess = AdminAccessService();
+
+Route<void> _adminRoute(Widget child) {
+  return MaterialPageRoute<void>(
+    builder: (_) => AdminAccessGate(child: child),
   );
+}
+
+Future<void> openAdminDashboard(BuildContext context) async {
+  if (!await _adminAccess.puedeAccederAdmin()) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No tienes permisos de administrador.'),
+        ),
+      );
+    }
+    return;
+  }
+  if (context.mounted) {
+    Navigator.of(context).push(_adminRoute(const AdminDashboardView()));
+  }
 }
 
 void openAdminCommunityManagement(BuildContext context) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => const AdminCommunityManagementView()),
-  );
+  Navigator.of(context).push(_adminRoute(const AdminCommunityManagementView()));
 }
 
 void openAdminModerationQueue(BuildContext context) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => const AdminModerationQueueView()),
-  );
+  Navigator.of(context).push(_adminRoute(const AdminModerationQueueView()));
 }
 
 void handleAdminSidebarNavigation(
@@ -42,7 +58,7 @@ void handleAdminSidebarNavigation(
     AdminSidebarItem.systemStatus => const AdminSystemStatusView(),
   };
 
-  final Route<void> route = MaterialPageRoute<void>(builder: (_) => target);
+  final Route<void> route = _adminRoute(target);
   if (replace) {
     Navigator.of(context).pushReplacement(route);
   } else {
@@ -56,9 +72,7 @@ void handleAdminTopTabNavigation(
   bool replace = true,
 }) {
   if (tab == AdminTopTab.community) {
-    final Route<void> route = MaterialPageRoute<void>(
-      builder: (_) => const AdminCommunityManagementView(),
-    );
+    final Route<void> route = _adminRoute(const AdminCommunityManagementView());
     if (replace) {
       Navigator.of(context).pushReplacement(route);
     } else {
@@ -67,9 +81,7 @@ void handleAdminTopTabNavigation(
     return;
   }
   if (tab == AdminTopTab.analytics) {
-    final Route<void> route = MaterialPageRoute<void>(
-      builder: (_) => const AdminAnalyticsView(),
-    );
+    final Route<void> route = _adminRoute(const AdminAnalyticsView());
     if (replace) {
       Navigator.of(context).pushReplacement(route);
     } else {
@@ -78,9 +90,7 @@ void handleAdminTopTabNavigation(
     return;
   }
   if (tab == AdminTopTab.dashboard) {
-    final Route<void> route = MaterialPageRoute<void>(
-      builder: (_) => const AdminDashboardView(),
-    );
+    final Route<void> route = _adminRoute(const AdminDashboardView());
     if (replace) {
       Navigator.of(context).pushReplacement(route);
     } else {
@@ -91,9 +101,7 @@ void handleAdminTopTabNavigation(
 
 void openAdminModerationReview(BuildContext context, {String? reportId}) {
   Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => AdminModerationReviewView(reportId: reportId),
-    ),
+    _adminRoute(AdminModerationReviewView(reportId: reportId)),
   );
 }
 
