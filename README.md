@@ -15,9 +15,9 @@ App Flutter para descubrir eventos y comunidades, con backend local Supabase sel
 
 ---
 
-## Gu├¡a r├ípida: clonar y probar
+## Guia rapida: clonar y probar
 
-Sigue estos pasos en orden la **primera vez** que clones el repo (o despu├®s de `docker compose down -v`).
+Sigue estos pasos en orden la **primera vez** que clones el repo (o despues de `docker compose down -v`).
 
 ### 1. Clonar y configurar entorno
 
@@ -33,13 +33,13 @@ copy .env.example .env
 docker compose up -d
 ```
 
-Comprobar que todo est├® arriba:
+Comprobar que todo este arriba:
 
 ```powershell
 docker compose ps
 ```
 
-Deben aparecer **8 contenedores** `loop-*` en estado **Up** (algunos tambi├®n **healthy**):
+Deben aparecer **8 contenedores** `loop-*` en estado **Up** (algunos tambien **healthy**):
 
 | Contenedor | Rol |
 |------------|-----|
@@ -48,8 +48,8 @@ Deben aparecer **8 contenedores** `loop-*` en estado **Up** (algunos tambi├®n
 | `loop-rest` | PostgREST (API tablas) |
 | `loop-kong` | API Gateway (:54321) |
 | `loop-meta` | Metadatos para Studio |
-| `loop-storage` | Supabase Storage (im├ígenes) |
-| `loop-imgproxy` | Transformaci├│n de im├ígenes |
+| `loop-storage` | Supabase Storage (imagenes) |
+| `loop-imgproxy` | Transformacion de imagenes |
 | `loop-studio` | Supabase Studio (:54323) |
 
 ### 3. Inicializar base de datos
@@ -73,11 +73,11 @@ powershell -ExecutionPolicy Bypass -File scripts\seed-demo.ps1
 | Script | Archivo SQL | ┬┐Obligatorio? |
 |--------|-------------|---------------|
 | `apply-schema.ps1` | `docs/sql/loop_schema.sql` | **S├¡** (primera vez o volumen nuevo) |
-| `apply-storage.ps1` | `docs/sql/loop_storage.sql` | **S├¡** (buckets de im├ígenes) |
+| `apply-storage.ps1` | `docs/sql/loop_storage.sql` | **S├¡** (buckets de imagenes) |
 | `seed-catalogo.ps1` | `docs/sql/loop_seed_catalogo.sql` | **S├¡** (sin esto no hay regiones/comunas/intereses) |
 | `seed-demo.ps1` | `docs/sql/loop_seed_demo.sql` | Recomendado (login inmediato con cuentas demo) |
 
-> **Nota:** En el primer arranque del volumen, Docker tambi├®n carga el esquema desde `docker/db/init/migrations/100-loop-schema.sql`. Aun as├¡ debes ejecutar los scripts anteriores: el cat├ílogo y los datos demo **no** se cargan solos.
+> **Nota:** En el primer arranque del volumen, Docker tambien carga el esquema desde `docker/db/init/migrations/100-loop-schema.sql`. Aun asi debes ejecutar los scripts anteriores: el catalogo y los datos demo **no** se cargan solos.
 
 ### 4. Ejecutar la app Flutter
 
@@ -85,7 +85,7 @@ powershell -ExecutionPolicy Bypass -File scripts\seed-demo.ps1
 flutter pub get
 ```
 
-Configura los argumentos de ejecuci├│n en **Android Studio ÔåÆ Run ÔåÆ Edit Configurations ÔåÆ Additional run args** (o p├ísalos en la terminal con `flutter run`).
+Configura los argumentos de ejecucion en **Android Studio ÔåÆ Run ÔåÆ Edit Configurations ÔåÆ Additional run args** (o ps en terminal con `flutter run`).
 
 **Emulador Android** (`10.0.2.2` apunta al localhost de tu PC):
 
@@ -99,7 +99,7 @@ Configura los argumentos de ejecuci├│n en **Android Studio ÔåÆ Run ÔåÆ
 --dart-define=SUPABASE_URL=http://127.0.0.1:54321 --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
 ```
 
-**Celular f├¡sico** (misma WiFi; reemplaza la IP por la de tu PC ÔÇö `ipconfig` ÔåÆ IPv4):
+**Celular fisico** (misma WiFi; reemplaza la IP por la de tu PC o `ipconfig`  IPv4):
 
 ```
 --dart-define=SUPABASE_URL=http://192.168.1.50:54321 --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
@@ -129,7 +129,7 @@ Si omitiste `seed-demo.ps1`, puedes **registrar un usuario nuevo** en la app (re
 | http://127.0.0.1:54323 | Supabase Studio (explorar la BD) |
 | http://127.0.0.1:54322 | PostgreSQL directo (solo diagn├│stico) |
 
-**Anon key** (Supabase local ÔÇö incluida tambi├®n en `.env.example`):
+**Anon key** (Supabase local ÔÇö incluida tambien en `.env.example`):
 
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
@@ -148,18 +148,18 @@ Fuente de verdad en `docs/sql/`:
 | `loop_seed_catalogo.sql` | Regiones, comunas, intereses |
 | `loop_seed_demo.sql` | Usuarios, comunidades, eventos, posts |
 
-Los scripts PowerShell en `scripts/` apuntan a esos archivos. **No ejecutes** los SQL sueltos de `docs/sql/archive/` (solo referencia hist├│rica).
+Los scripts PowerShell en `scripts/` apuntan a esos archivos. **No ejecutes** los SQL sueltos de `docs/sql/archive/` (solo referencia historica).
 
-### Cu├índo repetir los scripts
+### Cuando repetir los scripts
 
-| Situaci├│n | Qu├® hacer |
+| Situacion | Que hacer |
 |-----------|-----------|
-| Primera instalaci├│n o `docker compose down -v` | Los **4 scripts** en orden (schema ÔåÆ storage ÔåÆ cat├ílogo ÔåÆ demo) |
+| Primera instalacion o `docker compose down -v` | Los **4 scripts** en orden (schema ÔåÆ storage ÔåÆ catalogo ÔåÆ demo) |
 | Agregaste Storage a un entorno ya existente | `apply-storage.ps1` (y `apply-schema.ps1` si falta `cover_url`) |
 | Solo refrescar datos demo | `scripts\seed-demo.ps1` |
 | Docker ya corriendo, BD intacta | No hace falta repetir |
 
-> Las im├ígenes del seed demo son referencias en SQL; **no** suben archivos a Storage. Las fotos reales en buckets las generas al crear posts, eventos, avatar o banner desde la app.
+> Las imagenes del seed demo son referencias en SQL; **no** suben archivos a Storage. Las fotos reales en buckets las generas al crear posts, eventos, avatar o banner desde la app.
 
 ---
 
@@ -185,7 +185,7 @@ Flutter (Android / Web)
 
 ## Verificaci├│n del ambiente
 
-Checklist despu├®s de instalar:
+Checklist despues de instalar:
 
 - [ ] `docker compose ps` ÔåÆ **8** contenedores `loop-*` en **Up** (incluye `loop-storage` y `loop-imgproxy`)
 - [ ] http://127.0.0.1:54323 abre Supabase Studio
